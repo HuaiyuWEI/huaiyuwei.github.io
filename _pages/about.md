@@ -1,6 +1,6 @@
 ---
 permalink: /
-title: "About"
+title: "Huaiyu's homepage"
 author_profile: true
 redirect_from: 
   - /about/
