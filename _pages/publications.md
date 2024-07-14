@@ -9,7 +9,7 @@ author_profile: true
   <div class="wordwrap">You can also find my articles on <a href="{{site.author.googlescholar}}">my Google Scholar profile</a>.</div>
 {% endif %}
 
-1. Wei, H., Wang, Y., & Mak, J. (2024). Parameterizing eddy buoyancy fluxes across prograde shelf/slope fronts using a slope-aware GEOMETRIC closure. _Journal of Physical Oceanography_, 54(2), 359-377.
+1. __**Wei, H.**__, Wang, Y., & Mak, J. (2024). Parameterizing eddy buoyancy fluxes across prograde shelf/slope fronts using a slope-aware GEOMETRIC closure. _Journal of Physical Oceanography_, 54(2), 359-377.
 
 2. Xie, C.*, __**Wei, H.**__*, & Wang, Y. (2023). Bathymetry-aware mesoscale eddy parameterizations across upwelling slope fronts: A machine learning-augmented approach. _Journal of Physical Oceanography_, 53(12), 2861-2891. (*Contributed equally*)
 
@@ -25,7 +25,7 @@ author_profile: true
 
 
 
-{% include base_path %}
+#{% include base_path %}
 
 #{% for post in site.publications reversed %}
 #  {% include archive-single.html %}
