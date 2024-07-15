@@ -9,9 +9,9 @@ author_profile: true
   <div class="wordwrap">You can also find my articles on <a href="{{site.author.googlescholar}}">my Google Scholar profile</a>.</div>
 {% endif %}
 
-1. <ins>_Wei, H._</ins>, Wang, Y., & Mak, J. (2024). Parameterizing eddy buoyancy fluxes across prograde shelf/slope fronts using a slope-aware GEOMETRIC closure. _Journal of Physical Oceanography_, 54(2), 359-377.
+1. <ins>***Wei, H.***</ins>, Wang, Y., & Mak, J. (2024). Parameterizing eddy buoyancy fluxes across prograde shelf/slope fronts using a slope-aware GEOMETRIC closure. _Journal of Physical Oceanography_, 54(2), 359-377.
 
-2. Xie, C.*, <ins>_Wei, H._</ins>*, & Wang, Y. (2023). Bathymetry-aware mesoscale eddy parameterizations across upwelling slope fronts: A machine learning-augmented approach. _Journal of Physical Oceanography_, 53(12), 2861-2891. (*Contributed equally*)
+2. Xie, C.*, <ins>_Wei, H._</ins>, & Wang, Y. (2023). Bathymetry-aware mesoscale eddy parameterizations across upwelling slope fronts: A machine learning-augmented approach. _Journal of Physical Oceanography_, 53(12), 2861-2891. (*Contributed equally*)
 
 3. Xie, C., <ins>_Wei, H._</ins>, & Wang, Y. (2023). Impact of parameterized isopycnal diffusivity on shelf-ocean exchanges under upwelling-favorable winds: offline tracer simulations augmented by artificial neural network. _Journal of Advances in Modeling Earth Systems_, 15(4), e2022MS003424.
 
