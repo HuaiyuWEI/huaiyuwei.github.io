@@ -9,7 +9,7 @@ author_profile: true
   <div class="wordwrap">You can also find my publications on <a href="{{site.author.googlescholar}}">my Google Scholar profile</a>.</div>
 {% endif %}
 
-1. Li, D., <ins>***Wei, H.***</ins>, & Ruan, X. (2024). The importance of eddy stirring in wind-driven coastal upwelling. \textit{Journal of Physical Oceanography}, In press.   
+1. Li, D., <ins>***Wei, H.***</ins>, & Ruan, X. (2024). The importance of eddy stirring in wind-driven coastal upwelling. _Journal of Physical Oceanography_, In press.   
         
 2. <ins>***Wei, H.***</ins>, Wang, Y., & Mak, J. (2024). Parameterizing eddy buoyancy fluxes across prograde shelf/slope fronts using a slope-aware GEOMETRIC closure. _Journal of Physical Oceanography_, 54(2), 359-377.
 
