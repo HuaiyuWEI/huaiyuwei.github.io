@@ -20,18 +20,38 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 ## 🔬 Research Projects
 
 
-### 🌊 Reconstructing Ocean Meridional Overturning Circulation Using Machine Learning
+### 🔁 Reconstructing Ocean Meridional Overturning Circulation Using Machine Learning
 
 <img src="images/DBNN.png" alt="MOC" width="600"/>
 
 We developed a dual-branch neural network that uses satellite measurable quantities, such as ocean bottom pressure, sea surface height, and wind stress, to reconstruct the oceanic meridional overturning circulation (MOC). 
 
-### ⛰️ Formation of Abyssal Prograde Flows and the impact on global overturning circulation
+
+### ♆ Formation of Abyssal Prograde Flows and the impact on global overturning circulation
+
+<img src="images/Neptune_model.png" alt="Prograde flow" width="600"/>
+
+
+### ♆ How does Abyssal Prograde Flows impact the global overturning circulation?
 
 <img src="images/Neptune_Upwelling.png" alt="Prograde flow" width="600"/>
 
 
 ### 🌀 Mesoscale Eddy Parameterization over Sloping Topography
+
+<div style="display: flex; gap: 20px; flex-wrap: wrap;">
+  <video width="300" controls>
+    <source src="images/prograde.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <video width="300" controls>
+    <source src="images/retrograde.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</div>
+
+
 
 <img src="images/ww21.png" alt="Prograde flow" width="600"/>
 
