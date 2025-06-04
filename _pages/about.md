@@ -47,7 +47,7 @@ We developed a dual-branch neural network that uses satellite measurable quantit
 
 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
   <video width="300" controls>
-    <source src="videos/prograde.mp4" type="video/mp4">
+    <source src="videos/Prograde.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
 
