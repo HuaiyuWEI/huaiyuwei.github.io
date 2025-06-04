@@ -35,12 +35,12 @@ We developed a dual-branch neural network that uses satellite measurable quantit
 
 ### ♆ Formation of Abyssal Prograde Flows and the impact on global overturning circulation
 
-<img src="videos/Neptune_model.png" alt="Prograde flow" width="600"/>
+<img src="images/Neptune_model.png" alt="Prograde flow" width="600"/>
 
 
 ### ♆ How does Abyssal Prograde Flows impact the global overturning circulation?
 
-<img src="videos/Neptune_Upwelling.png" alt="Prograde flow" width="600"/>
+<img src="images/Neptune_Upwelling.png" alt="Prograde flow" width="600"/>
 
 
 ### 🌀 Mesoscale Eddy Parameterization over Sloping Topography
