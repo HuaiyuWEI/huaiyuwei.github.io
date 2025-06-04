@@ -24,29 +24,35 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 <img src="images/DBNN.png" alt="MOC" width="600"/>
 
+
+<video width="600" controls>
+  <source src="videos/Truth_Vs_Reconstruction.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 We developed a dual-branch neural network that uses satellite measurable quantities, such as ocean bottom pressure, sea surface height, and wind stress, to reconstruct the oceanic meridional overturning circulation (MOC). 
 
 
 ### ♆ Formation of Abyssal Prograde Flows and the impact on global overturning circulation
 
-<img src="images/Neptune_model.png" alt="Prograde flow" width="600"/>
+<img src="videos/Neptune_model.png" alt="Prograde flow" width="600"/>
 
 
 ### ♆ How does Abyssal Prograde Flows impact the global overturning circulation?
 
-<img src="images/Neptune_Upwelling.png" alt="Prograde flow" width="600"/>
+<img src="videos/Neptune_Upwelling.png" alt="Prograde flow" width="600"/>
 
 
 ### 🌀 Mesoscale Eddy Parameterization over Sloping Topography
 
 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
   <video width="300" controls>
-    <source src="images/prograde.mp4" type="video/mp4">
+    <source src="videos/prograde.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
 
   <video width="300" controls>
-    <source src="images/retrograde.mp4" type="video/mp4">
+    <source src="videos/retrograde.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
 </div>
