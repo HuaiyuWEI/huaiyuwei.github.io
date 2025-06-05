@@ -9,9 +9,9 @@ author_profile: true
   <div class="wordwrap">You can also find my publications on <a href="{{site.author.googlescholar}}">my Google Scholar profile</a>.</div>
 {% endif %}
 
-<ins>***Wei, H.***</ins>, Stewart, A. L., McWilliams, J. C., Capó, E. Formation of abyssal downwelling-favorable prograde flows via mesoscale eddy potential vorticity mixing: dependence on environmental parameters. _In preparation_. (Preprint available upon request)
+***Wei, H.***</ins>, Stewart, A. L., McWilliams, J. C., Capó, E. Formation of abyssal downwelling-favorable prograde flows via mesoscale eddy potential vorticity mixing: dependence on environmental parameters. _In preparation_. (Preprint available upon request)
 
-<ins>***Wei, H.***</ins>, Srinivasan, K., Stewart, A. L., Solodoch, A., Manucharyan, G., Hogg, A. Full-depth reconstruction of long-term Meridional Overturning Circulation variability from satellite-measurable quantities via machine learning. _Submitted_. Preprint available on <a href="https://essopenarchive.org/doi/full/10.22541/essoar.173557395.51571776">ESS OPEN ARCHIVE</a>
+***Wei, H.***</ins>, Srinivasan, K., Stewart, A. L., Solodoch, A., Manucharyan, G., Hogg, A. Full-depth reconstruction of long-term Meridional Overturning Circulation variability from satellite-measurable quantities via machine learning. _Submitted_. Preprint available on <a href="https://essopenarchive.org/doi/full/10.22541/essoar.173557395.51571776">ESS OPEN ARCHIVE</a>
 
 1. Li, D., <ins>***Wei, H.***</ins>, & Ruan, X. (2025). The importance of eddy stirring in wind-driven coastal upwelling. _Journal of Physical Oceanography_, 55(1), 29-42.
 
