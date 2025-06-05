@@ -26,10 +26,10 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
   </video>
 </p>
 
-My doctoral research focused on parameterizing mesoscale eddies over sloping seafloors. We developed schemes for eddy advection and eddy diffusion across continental slopes using idealized numerical simulations, and some of these parameterizations have been implemented in MITgcm.
+*My doctoral research focused on parameterizing mesoscale eddies over sloping seafloors across both prograde (left video) and retrograde fronts (right video). We developed slope-aware schemes for both eddy advection and eddy diffusion, and some of these parameterizations have been implemented in MITgcm.*
 
 ![Schematic of eddy diffusion across continental slopes under upwelling‐favorable winds](images/ww21.png)  
-*Eddy diffusion is suppressed in the upper open ocean, where alongshore flows strengthen, and enhanced at depth, where alongshore flows weaken. Steep topography “squeezes” eddy shapes, limiting mixing length and minimizing eddy diffusivity.*
+*Eddy diffusion is suppressed in the upper open ocean, where alongshore flows strengthen, and enhanced at depth, where alongshore flows weaken. Steep topography “squeezes” eddy, making them highly anisotropic and inefficient in stirring tracers cross-shore.*
 
 ![Slope‐aware GEOMETRIC scaling for eddy buoyancy flux](images/WWSM22.png)  
 *Existing eddy parameterizations cannot constrain eddy buoyancy fluxes across continental slopes. We proposed a slope‐aware GEOMETRIC scaling that incorporates topographic suppression effects via analytical functions of the slope Burger number.*
@@ -63,7 +63,7 @@ My doctoral research focused on parameterizing mesoscale eddies over sloping sea
 
 ![Schematic of slope-adjacent upwelling in the abyssal overturning circulation](images/Neptune_Upwelling.png)
 
-*The modern view of the return pathway for the abyssal overturning circulation suggests that dense water rises primarily through diapycnal upwelling within thin bottom boundary layers along sloping ocean boundaries. We investigate how mesoscale eddies and prograde flows influence this slope‐adjacent upwelling paradigm.*
+*The modern view of the return pathway for the abyssal overturning circulation suggests that dense water rises primarily through diapycnal upwelling within thin bottom boundary layers along sloping ocean boundaries. We are investigating how mesoscale eddies and prograde flows influence this slope‐adjacent upwelling paradigm.*
 
 ---
 
