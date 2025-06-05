@@ -7,7 +7,7 @@ redirect_from:
   - /about.html
 ---
 
-I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric and Oceanic Sciences, working with Andrew Stewart. My interests span geophysical fluid dynamics, including mesoscale eddies, overturning circulations, and the dynamic impacts of large‐scale topography in the ocean. Before joining UCLA, I completed my Ph.D. at the Hong Kong University of Science and Technology under the guidance of Yan Wang.
+I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric and Oceanic Sciences, working with Andrew Stewart.  I am interested in a wide range of topics in geophysical fluid dynamics, including mesoscale eddies, overturning circulations, and the dynamic impacts of large scale topography. Before joining UCLA, I obtained my Ph.D. at the Hong Kong University of Science and Technology under the guidance of Yan Wang.
 
 ---
 
@@ -45,7 +45,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 ---
 
-### 🎰 Reconstructing the Ocean Meridional Overturning Circulation Using Machine Learning
+### 🎰 Reconstructing the Meridional Overturning Circulation Using Machine Learning
 
 ![Dual‐branch neural network architecture for MOC reconstruction](images/DBNN.png)
 
@@ -61,7 +61,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 ---
 
-### ♆ Formation of Abyssal Prograde Flows and Their Impact on Global Overturning Circulation
+### ♆ Formation of Abyssal Prograde Flows via Eddy Potential Vorticity Mixing
 
 ![Idealized simulation of abyssal prograde flows](images/Neptune_model.png)
 
@@ -79,5 +79,5 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 ## 📫 Contact
 
-Feel free to reach out for collaboration or discussion!  
+Feel free to reach out for discussion or collaboration!  
 📧 [huaiyu.wei@atmos.ucla.edu](mailto:huaiyu.wei@atmos.ucla.edu)
