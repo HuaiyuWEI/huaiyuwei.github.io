@@ -36,12 +36,12 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
     width="650"
   />
 </div>
-*Eddy diffusion is suppressed in the upper open ocean, where alongshore flows strengthen, and enhanced at depth, where alongshore flows weaken. Steep topography “squeezes” eddy, making them highly anisotropic and inefficient in stirring tracers cross-shore [(Wei and Wang 2021)](https://doi.org/10.1029/2021MS002498/).*
+*Eddy diffusion is suppressed in the upper open ocean, where alongshore flows strengthen, and enhanced at depth, where alongshore flows weaken. Steep topography “squeezes” eddy, making them highly anisotropic and inefficient in stirring tracers cross-shore [(Wei and Wang 2021)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021MS002498).*
 
 
 <br />
 ![Slope‐aware GEOMETRIC scaling for eddy buoyancy flux](images/WWSM22.png)  
-*Existing eddy parameterizations cannot constrain eddy buoyancy fluxes across continental slopes. We proposed a slope‐aware GEOMETRIC scaling that incorporates topographic suppression effects via analytical functions of the slope Burger number. ([Wei et al. 2022](https://doi.org/10.1029/2022MS003229/);[Wei et al. 2024](https://doi.org/10.1175/JPO-D-23-0152.1))*
+*Existing eddy parameterizations cannot constrain eddy buoyancy fluxes across continental slopes. We proposed a slope‐aware GEOMETRIC scaling that incorporates topographic suppression effects via analytical functions of the slope Burger number. ([Wei et al. 2022](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2022MS003229); [Wei et al. 2024](https://doi.org/10.1175/JPO-D-23-0152.1))*
 
 ---
 
