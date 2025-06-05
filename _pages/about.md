@@ -28,9 +28,13 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 *My doctoral research focused on parameterizing mesoscale eddies over sloping seafloors across both prograde (left video) and retrograde fronts (right video). We developed slope-aware schemes for both eddy advection and eddy diffusion, and some of these parameterizations have been implemented in MITgcm.*
 
+
+<br />
 ![Schematic of eddy diffusion across continental slopes under upwelling‐favorable winds](images/ww21.png)  
 *Eddy diffusion is suppressed in the upper open ocean, where alongshore flows strengthen, and enhanced at depth, where alongshore flows weaken. Steep topography “squeezes” eddy, making them highly anisotropic and inefficient in stirring tracers cross-shore.*
 
+
+<br />
 ![Slope‐aware GEOMETRIC scaling for eddy buoyancy flux](images/WWSM22.png)  
 *Existing eddy parameterizations cannot constrain eddy buoyancy fluxes across continental slopes. We proposed a slope‐aware GEOMETRIC scaling that incorporates topographic suppression effects via analytical functions of the slope Burger number.*
 
