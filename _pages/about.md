@@ -11,7 +11,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 ---
 
-## 🔬 Research Projects
+## Research Projects
 
 ### 🌀 Mesoscale Eddy Parameterization over Sloping Topography
 
@@ -45,7 +45,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 ---
 
-### 🔁 Reconstructing the Ocean Meridional Overturning Circulation Using Machine Learning
+### 🎰 Reconstructing the Ocean Meridional Overturning Circulation Using Machine Learning
 
 ![Dual‐branch neural network architecture for MOC reconstruction](images/DBNN.png)
 
