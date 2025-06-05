@@ -16,11 +16,11 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 ### 🌀 Mesoscale Eddy Parameterization over Sloping Topography
 
 <p style="display: flex; gap: 20px; flex-wrap: wrap;">
-  <video width="390" controls>
+  <video width="360" controls>
     <source src="/videos/Prograde.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
-  <video width="390" controls>
+  <video width="360" controls>
     <source src="/videos/retrograde.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
@@ -30,7 +30,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 
 <br />
-![Schematic of eddy diffusion across continental slopes under upwelling‐favorable winds](images/ww21.png)  
+<img src="images/ww21.png" alt="Schematic of eddy diffusion across continental slopes under upwelling‐favorable winds" width="600" />
 *Eddy diffusion is suppressed in the upper open ocean, where alongshore flows strengthen, and enhanced at depth, where alongshore flows weaken. Steep topography “squeezes” eddy, making them highly anisotropic and inefficient in stirring tracers cross-shore.*
 
 
@@ -46,7 +46,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 *We developed a dual‐branch neural network that uses satellite‐measurable quantities, such as ocean bottom pressure, sea surface height, and wind stress, to reconstruct the oceanic meridional overturning circulation (MOC).*
 
-<video width="800" controls>
+<video width="700" controls>
   <source src="/videos/Truth_Vs_Reconstruction.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
