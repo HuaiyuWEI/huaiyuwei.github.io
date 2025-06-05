@@ -16,12 +16,12 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 ### 🌀 Mesoscale Eddy Parameterization over Sloping Topography
 
 <p style="display: flex; gap: 20px; flex-wrap: wrap;">
-  <video width="300" controls>
+  <video width="390" controls>
     <source src="/videos/Prograde.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
-  <video width="300" controls>
-    <source src="/videos/Retrograde.mp4" type="video/mp4">
+  <video width="390" controls>
+    <source src="/videos/retrograde.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
 </p>
@@ -40,14 +40,14 @@ My doctoral research focused on parameterizing mesoscale eddies over sloping sea
 
 ![Dual‐branch neural network architecture for MOC reconstruction](images/DBNN.png)
 
-We developed a dual‐branch neural network that uses satellite‐measurable quantities—such as ocean bottom pressure, sea surface height, and wind stress—to reconstruct the oceanic meridional overturning circulation (MOC).
+*We developed a dual‐branch neural network that uses satellite‐measurable quantities, such as ocean bottom pressure, sea surface height, and wind stress, to reconstruct the oceanic meridional overturning circulation (MOC).*
 
-<video width="600" controls>
+<video width="800" controls>
   <source src="/videos/Truth_Vs_Reconstruction.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
-*Animation comparing diagnosed vs. reconstructed MOC on decadal and longer timescales in the Australian ACCESS-ESM1.5 climate model.*
+*Animation comparing diagnosed vs. reconstructed MOC on decadal and longer timescales in the ACCESS-ESM1.5 preindustrail simulation.*
 
 ---
 
@@ -55,7 +55,7 @@ We developed a dual‐branch neural network that uses satellite‐measurable qua
 
 ![Idealized simulation of abyssal prograde flows](images/Neptune_model.png)
 
-Observations and simulations have revealed ubiquitous prograde mean flows (currents aligned with the direction of topographic Rossby wave propagation along isobaths) over sloping topography in the abyssal ocean. Using idealized simulations, we show that prograde flows are driven by eddy momentum fluxes resulting from mesoscale eddy stirring of potential vorticity gradients induced by the sloping seafloor.
+*Observations and simulations have revealed ubiquitous prograde mean flows (currents aligned with the direction of topographic Rossby wave propagation along isobaths) over sloping topography in the abyssal ocean. Using idealized simulations, we show that prograde flows are driven by eddy momentum fluxes resulting from mesoscale eddy stirring of potential vorticity gradients induced by the sloping seafloor.*
 
 ---
 
@@ -63,7 +63,7 @@ Observations and simulations have revealed ubiquitous prograde mean flows (curre
 
 ![Schematic of slope-adjacent upwelling in the abyssal overturning circulation](images/Neptune_Upwelling.png)
 
-The modern view of the return pathway for the abyssal overturning circulation suggests that dense water rises primarily through diapycnal upwelling within thin bottom boundary layers along sloping ocean boundaries. We investigate how mesoscale eddies and prograde flows influence this slope‐adjacent upwelling paradigm.
+*The modern view of the return pathway for the abyssal overturning circulation suggests that dense water rises primarily through diapycnal upwelling within thin bottom boundary layers along sloping ocean boundaries. We investigate how mesoscale eddies and prograde flows influence this slope‐adjacent upwelling paradigm.*
 
 ---
 
