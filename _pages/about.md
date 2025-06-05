@@ -30,7 +30,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 
 <br />
-<img src="images/ww21.png" alt="Schematic of eddy diffusion across continental slopes under upwelling‐favorable winds" width="600" />
+<img src="images/ww21.png" alt="Schematic of eddy diffusion across continental slopes under upwelling‐favorable winds" width="700" />
 *Eddy diffusion is suppressed in the upper open ocean, where alongshore flows strengthen, and enhanced at depth, where alongshore flows weaken. Steep topography “squeezes” eddy, making them highly anisotropic and inefficient in stirring tracers cross-shore.*
 
 
@@ -46,6 +46,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 *We developed a dual‐branch neural network that uses satellite‐measurable quantities, such as ocean bottom pressure, sea surface height, and wind stress, to reconstruct the oceanic meridional overturning circulation (MOC).*
 
+<br />
 <video width="700" controls>
   <source src="/videos/Truth_Vs_Reconstruction.mp4" type="video/mp4">
   Your browser does not support the video tag.
