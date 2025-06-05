@@ -7,7 +7,7 @@ redirect_from:
   - /about.html
 ---
 
-I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric and Oceanic Sciences, working with Andrew Stewart.  I am interested in a wide range of topics in geophysical fluid dynamics, including mesoscale eddies, overturning circulations, and the dynamic impacts of large scale topography. Before joining UCLA, I obtained my Ph.D. at the Hong Kong University of Science and Technology under the guidance of Yan Wang.
+I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric and Oceanic Sciences, working with Andrew Stewart.  I am interested in a wide range of topics in geophysical fluid dynamics, including mesoscale eddies, topography-flow interaction, and overturning circulations. Before joining UCLA, I completed my Ph.D. at the Hong Kong University of Science and Technology under the guidance of Yan Wang.
 
 ---
 
@@ -26,7 +26,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
   </video>
 </p>
 
-*My doctoral research focused on parameterizing mesoscale eddies over sloping seafloors across both prograde (left video) and retrograde fronts (right video). We developed slope-aware schemes for both eddy advection and eddy diffusion, and some of these parameterizations have been implemented in MITgcm.*
+*My doctoral research focused on parameterizing mesoscale eddies over sloping seafloors across both prograde (left video) and retrograde fronts (right video). We developed slope-aware parameterization schemes for both eddy advection and eddy diffusion, and some of these parameterizations have been implemented into MITgcm.*
 
 <br />
 <div style="text-align: center;">
@@ -41,7 +41,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 <br />
 ![Slope‐aware GEOMETRIC scaling for eddy buoyancy flux](images/WWSM22.png)  
-*Existing eddy parameterizations cannot constrain eddy buoyancy fluxes across continental slopes. We proposed a slope‐aware GEOMETRIC scaling that incorporates topographic suppression effects via analytical functions of the slope Burger number. ([Wei et al. 2022](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2022MS003229); [Wei et al. 2024](https://doi.org/10.1175/JPO-D-23-0152.1))*
+*Existing eddy parameterizations cannot constrain eddy advection across continental slopes. We proposed a slope‐aware GEOMETRIC scaling that incorporates topographic suppression effects via analytical functions of the slope Burger number. ([Wei et al. 2022](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2022MS003229); [Wei et al. 2024](https://doi.org/10.1175/JPO-D-23-0152.1))*
 
 ---
 
@@ -73,7 +73,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 ![Schematic of slope-adjacent upwelling in the abyssal overturning circulation](images/Neptune_Upwelling.png)
 
-*The modern view of the return pathway for the abyssal overturning circulation suggests that dense water rises primarily through diapycnal upwelling within thin bottom boundary layers along sloping ocean boundaries. We are investigating how mesoscale eddies and prograde flows influence this slope‐adjacent upwelling paradigm.*
+*The modern view of the return pathway of the abyssal overturning circulation suggests that dense water rises primarily through diapycnal upwelling within thin bottom boundary layers along sloping ocean boundaries. We are investigating how mesoscale eddies and prograde flows influence this slope‐adjacent upwelling paradigm.*
 
 ---
 
