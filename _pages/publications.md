@@ -10,14 +10,12 @@ author_profile: true
 {% endif %}
 
 ## 📝 In Preparation / Submitted
-
 -<ins>***Wei, H.***</ins>, Stewart, A. L., McWilliams, J. C., Capó, E. Formation of abyssal downwelling-favorable prograde flows via mesoscale eddy potential vorticity mixing: dependence on environmental parameters. _In preparation_. (Preprint available upon request)
 
 -<ins>***Wei, H.***</ins>, Srinivasan, K., Stewart, A. L., Solodoch, A., Manucharyan, G., Hogg, A. Full-depth reconstruction of long-term Meridional Overturning Circulation variability from satellite-measurable quantities via machine learning. _Submitted_. Preprint available on <a href="https://essopenarchive.org/doi/full/10.22541/essoar.173557395.51571776">ESS OPEN ARCHIVE</a>
 
 ---
 ## 📚 Peer-Reviewed Publications
-
 1. Li, D., <ins>***Wei, H.***</ins>, & Ruan, X. (2025). The importance of eddy stirring in wind-driven coastal upwelling. _Journal of Physical Oceanography_, 55(1), 29-42.
 
 2. <ins>***Wei, H.***</ins>, Wang, Y., & Mak, J. (2024). Parameterizing eddy buoyancy fluxes across prograde shelf/slope fronts using a slope-aware GEOMETRIC closure. _Journal of Physical Oceanography_, 54(2), 359-377.
@@ -36,8 +34,5 @@ author_profile: true
 
 
 ---
-(Doctoral dissertation, Hong Kong University of Science and Technology (Hong Kong)).
 ## 🎓 Dissertation
-
-<ins>***Wei, H.***</ins> (2024). Parameterizing Mesoscale Eddy Fluxes Across Continental Slopes. _Ph.D. dissertation, The Hong Kong University of Science and Technology_.  
-[(Available online)](https://lbezone.hkust.edu.hk/rse/?p=63844)
+<ins>***Wei, H.***</ins> (2024). Parameterizing Mesoscale Eddy Fluxes Across Continental Slopes. _Ph.D. dissertation, The Hong Kong University of Science and Technology_. [(Available online)](https://lbezone.hkust.edu.hk/rse/?p=63844)
