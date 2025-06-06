@@ -33,7 +33,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
   <img
     src="images/ww21.png"
     alt="Schematic of eddy diffusion across continental slopes under upwelling-favorable winds"
-    width="650"
+    width="680"
   />
 </div>
 *We found that, apart from the mean‐flow suppression effect, eddy anisotropy induced by steep topography shapes both the horizontal and vertical structures of cross‐shore eddy diffusion. Heuristically speaking, steep topography “squeezes” eddies, making them highly anisotropic and inefficient at stirring tracers cross‐shore ([Wei & Wang 2021](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021MS002498)).*
