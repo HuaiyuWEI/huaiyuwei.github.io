@@ -26,7 +26,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
   </video>
 </p>
 
-*My doctoral research focused on parameterizing mesoscale eddies over sloping seafloors across both prograde (left video) and retrograde fronts (right video). We developed slope‐aware parameterization schemes for both eddy advection and eddy diffusion, and some of these parameterizations have been implemented into MITgcm.*
+*My doctoral research focused on parameterizing mesoscale eddy flux over sloping seafloors across both prograde (left video) and retrograde fronts (right video). We developed slope-aware parameterization schemes for both eddy advection and eddy diffusion, and some of these parameterizations have been implemented into MITgcm.*
 
 <br />
 <div style="text-align: center;">
@@ -36,7 +36,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
     width="650"
   />
 </div>
-*We show that, apart from the mean‐flow suppression effect, the eddy anisotropy induced by steep topography shapes both the horizontal and vertical structures of cross‐shore eddy diffusivity. Heuristically speaking, steep topography “squeezes” eddies, making them highly anisotropic and inefficient at stirring tracers cross‐shore ([Wei & Wang 2021](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021MS002498)).*
+*We found that, apart from the mean‐flow suppression effect, the eddy anisotropy induced by steep topography shapes both the horizontal and vertical structures of cross‐shore eddy diffusion. Heuristically speaking, steep topography “squeezes” eddies, making them highly anisotropic and inefficient at stirring tracers cross‐shore ([Wei & Wang 2021](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021MS002498)).*
 
 <br />
 ![Slope‐aware GEOMETRIC scaling for eddy buoyancy flux](images/WWSM22.png)  
@@ -48,7 +48,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 ![Dual‐branch neural network architecture for MOC reconstruction](images/DBNN.png)
 
-*We developed a dual‐branch neural network that uses satellite‐measurable quantities—such as ocean bottom pressure, sea surface height, and wind stress—to reconstruct the oceanic meridional overturning circulation (MOC) ([Wei et al. 2024](https://doi.org/10.22541/essoar.173557395.51571776/v1)).*
+*We developed a dual‐branch neural network that uses satellite‐measurable quantities (such as ocean bottom pressure, sea surface height, and wind stress) to reconstruct the  meridional overturning circulation (MOC) in both the Atlantic Ocean and the Southern Ocean ([Wei et al. 2024](https://doi.org/10.22541/essoar.173557395.51571776/v1)).*
 
 <br />
 <video width="700" controls>
@@ -64,7 +64,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 ![Idealized simulation of abyssal prograde flows](images/Neptune_model.png)
 
-*Observations and simulations have revealed ubiquitous prograde mean flows (currents aligned with the direction of topographic Rossby wave propagation along isobaths) over sloping topography in the abyssal ocean. Using idealized simulations, we show that prograde flows (red shading in the bottom left panel) are driven by eddy momentum fluxes (black arrows) resulting from mesoscale eddy stirring of potential vorticity gradients induced by the sloping seafloor.*
+*Observations and simulations have revealed widespread prograde mean flows (currents aligned with the direction of topographic Rossby wave propagation along isobaths) over sloping topography in the abyssal ocean. Using idealized simulations, we show that prograde flows (red shading in the bottom left panel) are driven by eddy momentum fluxes (black arrows) resulting from mesoscale eddy stirring of potential vorticity (PV) gradients induced by the sloping seafloor. We found that eddy PV stirring becomes much less efficient over steeper slopes, resulting in reduced PV mixing and weaker prograde flows, despite larger background PV gradients induced by the steep seafloor.*
 
 ---
 
@@ -72,7 +72,7 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 
 ![Schematic of slope-adjacent upwelling in the abyssal overturning circulation](images/Neptune_Upwelling.png)
 
-*The modern view of the return pathway of the abyssal overturning circulation suggests that dense water rises primarily through diapycnal upwelling within thin bottom boundary layers along sloping ocean boundaries. We are investigating how mesoscale eddies and prograde flows influence this slope‐adjacent upwelling paradigm.*
+*The modern view of the abyssal overturning circulation return pathway suggests that dense water rises primarily through diapycnal upwelling within thin bottom boundary layers along sloping ocean boundaries. We are investigating how mesoscale eddies and prograde flows influence this slope‐adjacent upwelling paradigm.*
 
 ---
 
