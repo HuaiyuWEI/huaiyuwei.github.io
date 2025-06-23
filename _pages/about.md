@@ -7,7 +7,7 @@ redirect_from:
   - /about.html
 ---
 
-I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric and Oceanic Sciences, working with [Andrew Stewart](https://dept.atmos.ucla.edu/stewart/home). I am interested in a wide range of topics in geophysical fluid dynamics, including mesoscale eddies, topography-flow interaction, and overturning circulations. Before joining UCLA, I completed my Ph.D. at the Hong Kong University of Science and Technology under the guidance of [Yan Wang](https://yanwanghkust.github.io/).
+<!-- I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric and Oceanic Sciences, working with [Andrew Stewart](https://dept.atmos.ucla.edu/stewart/home). I am interested in a wide range of topics in geophysical fluid dynamics, including mesoscale eddies, topography-flow interaction, and overturning circulations. Before joining UCLA, I completed my Ph.D. at the Hong Kong University of Science and Technology under the guidance of [Yan Wang](https://yanwanghkust.github.io/). -->
 
 ---
 
