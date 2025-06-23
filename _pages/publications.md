@@ -15,7 +15,7 @@ author_profile: true
 ---
 ## 📚 Peer-Reviewed Publications
 
-{% assign publications = site.data.publications | reverse %}
+{% assign publications = site.data.publications %}
 {% for pub in publications %}
 {{ forloop.index }}. {{ pub.entry }}
 {% endfor %}
