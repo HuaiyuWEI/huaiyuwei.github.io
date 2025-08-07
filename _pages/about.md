@@ -79,4 +79,4 @@ I am currently a Postdoctoral Researcher at the UCLA Department of Atmospheric a
 ## 📫 Contact
 
 Feel free to reach out for discussion or collaboration!  
-📧 [huaiyu.wei@atmos.ucla.edu](mailto:huaiyu.wei@atmos.ucla.edu)  
+📧 [huaiyu.wei@atmos.ucla.edu](mailto:hywei@atmos.ucla.edu)  
