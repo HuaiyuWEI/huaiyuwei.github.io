@@ -10,7 +10,7 @@ author_profile: true
 {% endif %}
 
 ## 📝 In Preparation / Submitted
--<ins>***Wei, H.***</ins>, Stewart, A. L., McWilliams, J. C., Capó, E. Formation of abyssal downwelling-favorable prograde flows via mesoscale eddy potential vorticity mixing: dependence on environmental parameters. _In preparation_. (Preprint available upon request)
+-<ins>***Wei, H.***</ins>, Stewart, A. L., McWilliams, J. C., Capó, E. Formation of abyssal downwelling-favorable prograde flows via mesoscale eddy potential vorticity mixing. _Submitted_. (Preprint available upon request)
 
 ---
 ## 📚 Peer-Reviewed Publications
