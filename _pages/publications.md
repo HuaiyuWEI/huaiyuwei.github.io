@@ -11,6 +11,7 @@ author_profile: true
 
 ## 📝 In Preparation / Submitted
 -<ins>***Wei, H.***</ins>, Stewart, A. L., McWilliams, J. C., Capó, E. Formation of abyssal downwelling-favorable prograde flows via mesoscale eddy potential vorticity mixing. _Under review_. (Preprint available upon request)
+
 -<ins>***Wei, H.***</ins>, Stewart, A. L., et al. Machine learning-enabled satellite monitoring of
 ocean overturning circulation. _In preparation_. (Preprint available upon request)
 ---
