@@ -232,18 +232,21 @@ svg {
 }
 
 .speed-control {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .speed-option {
+  flex: 1 1 0;
+  width: auto;
   min-height: 38px;
   border-radius: 10px;
   border: 1px solid rgba(73, 67, 61, 0.18);
   background: rgba(255, 255, 255, 0.78);
   color: var(--ink);
   box-shadow: none;
+  padding: 0 10px;
 }
 
 .speed-option.is-active {
