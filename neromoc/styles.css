@@ -97,23 +97,6 @@ h2 {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(245, 236, 226, 0.9));
 }
 
-.summary-card {
-  position: relative;
-  overflow: hidden;
-  min-height: 116px;
-  padding: 20px 22px 18px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(248, 241, 231, 0.94));
-}
-
-.summary-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 5px;
-  background: linear-gradient(180deg, rgba(157, 77, 47, 0.92), rgba(212, 166, 121, 0.42));
-}
-
 .meta-link {
   color: var(--ink);
   text-decoration: none;
@@ -128,19 +111,11 @@ h2 {
 .meta-label,
 .summary-label {
   display: block;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
   color: var(--muted);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.summary-card strong {
-  display: block;
-  font-size: clamp(1.3rem, 1.4vw, 1.8rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  color: var(--ink);
+  letter-spacing: 0.08em;
 }
 
 .control-panel {
