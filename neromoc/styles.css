@@ -179,6 +179,7 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.7fr);
   gap: 18px;
+  align-items: stretch;
 }
 
 .panel {
@@ -219,13 +220,36 @@ svg {
 }
 
 .snapshot-controls {
-  align-self: start;
+  align-self: stretch;
   margin-top: 0;
   grid-template-columns: 1fr;
+  grid-auto-rows: min-content;
+  height: 100%;
 }
 
 .snapshot-controls button {
   width: 100%;
+}
+
+.speed-control {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.speed-option {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(73, 67, 61, 0.18);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.speed-option.is-active {
+  border-color: rgba(157, 77, 47, 0.4);
+  background: linear-gradient(135deg, rgba(126, 59, 34, 0.92), rgba(185, 102, 66, 0.92));
+  color: #fff;
 }
 
 @media (max-width: 960px) {

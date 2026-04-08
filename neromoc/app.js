@@ -7,6 +7,7 @@ const state = {
   latitudeIndex: 0,
   clim: 18,
   trendClim: 0.3,
+  playbackSpeed: "normal",
   playing: false,
   timer: null,
 };
@@ -18,12 +19,19 @@ const controls = {
   timeLabel: document.getElementById("time-label"),
   climLabel: document.getElementById("clim-label"),
   playButton: document.getElementById("play-button"),
+  speedControl: document.getElementById("speed-control"),
   sourceFile: document.getElementById("source-file"),
   timeAssumption: document.getElementById("time-assumption"),
   selectedPoint: document.getElementById("selected-point"),
   selectedValue: document.getElementById("selected-value"),
   selectedStd: document.getElementById("selected-std"),
   selectedTrend: document.getElementById("selected-trend"),
+};
+
+const PLAYBACK_INTERVALS = {
+  slow: 84,
+  normal: 42,
+  fast: 21,
 };
 
 const sectionCanvas = document.getElementById("section-canvas");
@@ -122,6 +130,21 @@ function meanOverTime(cube) {
     }
   }
   return out;
+}
+
+function restartPlayback() {
+  window.clearInterval(state.timer);
+  if (!state.playing) {
+    state.timer = null;
+    controls.playButton.textContent = "Play";
+    return;
+  }
+  controls.playButton.textContent = "Pause";
+  state.timer = window.setInterval(() => {
+    state.timeIndex = (state.timeIndex + 1) % state.data.time_labels.length;
+    controls.timeSlider.value = String(state.timeIndex);
+    render();
+  }, PLAYBACK_INTERVALS[state.playbackSpeed]);
 }
 
 function buildPath(xs, ys) {
@@ -708,15 +731,20 @@ function bindControls() {
 
   controls.playButton.addEventListener("click", () => {
     state.playing = !state.playing;
-    controls.playButton.textContent = state.playing ? "Pause" : "Play";
+    restartPlayback();
+  });
+
+  controls.speedControl.addEventListener("click", (event) => {
+    const button = event.target.closest(".speed-option");
+    if (!button) {
+      return;
+    }
+    state.playbackSpeed = button.dataset.speed || "normal";
+    controls.speedControl.querySelectorAll(".speed-option").forEach((item) => {
+      item.classList.toggle("is-active", item === button);
+    });
     if (state.playing) {
-      state.timer = window.setInterval(() => {
-        state.timeIndex = (state.timeIndex + 1) % state.data.time_labels.length;
-        controls.timeSlider.value = String(state.timeIndex);
-        render();
-      }, 280);
-    } else {
-      window.clearInterval(state.timer);
+      restartPlayback();
     }
   });
 }
