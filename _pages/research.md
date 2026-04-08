@@ -6,6 +6,25 @@ author_profile: true
 
 ## Research Projects
 
+### Reconstructing the Meridional Overturning Circulation Using Machine Learning
+
+![Dual-branch neural network architecture for MOC reconstruction](/images/DBNN.png)
+
+*We developed a dual-branch neural network that uses satellite-measurable quantities (such as ocean bottom pressure, sea surface height, and wind stress) to reconstruct the meridional overturning circulation (MOC) in both the Atlantic Ocean and the Southern Ocean ([Wei et al. 2025](https://doi.org/10.1029/2024MS004915)).*
+
+[Explore the interactive NeroMOC viewer](/neromoc/)
+
+<br />
+<video width="700" controls>
+  <source src="/videos/Truth_Vs_Reconstruction.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+*Animation comparing diagnosed vs. reconstructed MOC on decadal and longer timescales in the ACCESS-ESM1.5 preindustrial simulation.*
+
+---
+
+
 ### Mesoscale Eddy Parameterization over Sloping Topography
 
 <p style="display: flex; gap: 20px; flex-wrap: wrap;">
@@ -37,24 +56,6 @@ author_profile: true
 
 ---
 
-### Reconstructing the Meridional Overturning Circulation Using Machine Learning
-
-![Dual-branch neural network architecture for MOC reconstruction](/images/DBNN.png)
-
-*We developed a dual-branch neural network that uses satellite-measurable quantities (such as ocean bottom pressure, sea surface height, and wind stress) to reconstruct the meridional overturning circulation (MOC) in both the Atlantic Ocean and the Southern Ocean ([Wei et al. 2025](https://doi.org/10.1029/2024MS004915)).*
-
-[Explore the interactive NeroMOC viewer](/neromoc/)
-
-<br />
-<video width="700" controls>
-  <source src="/videos/Truth_Vs_Reconstruction.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
-
-*Animation comparing diagnosed vs. reconstructed MOC on decadal and longer timescales in the ACCESS-ESM1.5 preindustrial simulation.*
-
----
-
 ### Formation of Abyssal Prograde Flows via Eddy Potential Vorticity Mixing
 
 ![Idealized simulation of abyssal prograde flows](/images/Neptune_model.png)
@@ -63,7 +64,7 @@ author_profile: true
 
 ---
 
-### Influence of Abyssal Prograde Flows on Slope-Adjacent Upwelling
+### Mesoscale eddy-mediated diapycnal upwelling in the ocean’s sloping bottom boundary
 
 ![Schematic of slope-adjacent upwelling in the abyssal overturning circulation](/images/Neptune_Upwelling.png)
 

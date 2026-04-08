@@ -65,6 +65,10 @@ function roundValue(value, digits = 2) {
   return Number(value).toFixed(digits);
 }
 
+function formatColorbarTick(value, digits = 0) {
+  return Number(value).toFixed(digits);
+}
+
 function setupCanvasResolution(canvas) {
   const logicalWidth = Number(canvas.dataset.logicalWidth || canvas.getAttribute("width"));
   const logicalHeight = Number(canvas.dataset.logicalHeight || canvas.getAttribute("height"));
@@ -251,9 +255,10 @@ function drawHeatmap(canvas, values, xLabels, yLabels, options) {
   }
   ctx.strokeRect(cbX, cbY, 14, cbH);
   ctx.textAlign = "left";
-  ctx.fillText(options.clim.toFixed(1), cbX + 18, cbY + 10);
-  ctx.fillText("0.0", cbX + 18, cbY + cbH / 2 + 4);
-  ctx.fillText((-options.clim).toFixed(1), cbX + 18, cbY + cbH - 2);
+  const tickDigits = options.colorbarTickDigits ?? 0;
+  ctx.fillText(formatColorbarTick(options.clim, tickDigits), cbX + 18, cbY + 10);
+  ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
+  ctx.fillText(formatColorbarTick(-options.clim, tickDigits), cbX + 18, cbY + cbH - 2);
   if (options.colorbarTitle) {
     ctx.fillText(options.colorbarTitle, cbX - 2, cbY - 8);
   }
@@ -394,9 +399,10 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   }
   ctx.strokeRect(cbX, cbY, 14, cbH);
   ctx.textAlign = "left";
-  ctx.fillText(options.clim.toFixed(1), cbX + 18, cbY + 10);
-  ctx.fillText("0.0", cbX + 18, cbY + cbH / 2 + 4);
-  ctx.fillText((-options.clim).toFixed(1), cbX + 18, cbY + cbH - 2);
+  const tickDigits = options.colorbarTickDigits ?? 0;
+  ctx.fillText(formatColorbarTick(options.clim, tickDigits), cbX + 18, cbY + 10);
+  ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
+  ctx.fillText(formatColorbarTick(-options.clim, tickDigits), cbX + 18, cbY + cbH - 2);
   if (options.colorbarTitle) {
     ctx.fillText(options.colorbarTitle, cbX - 4, cbY - 8);
   }
@@ -552,7 +558,7 @@ function render() {
 
   controls.timeLabel.textContent = d.time_labels[state.timeIndex];
   controls.climLabel.textContent = `${state.clim} Sv`;
-  controls.selectedPoint.textContent = `${formatLatitude(d.latitudes[state.latitudeIndex])}, \u03C3\u2082 = ${formatDensity(d.densities[state.densityIndex])}`;
+  controls.selectedPoint.textContent = `${formatLatitude(d.latitudes[state.latitudeIndex])}, \u03C3\u2082 = ${formatDensity(d.densities[state.densityIndex])} kg m\u207B\u00B3`;
   controls.selectedValue.textContent = `${meanValue.toFixed(2)} Sv`;
   controls.selectedStd.textContent = selectedStd !== null ? `${selectedStd.toFixed(2)} Sv` : "Unavailable";
   controls.selectedTrend.textContent = significant
@@ -561,6 +567,7 @@ function render() {
 
   drawDualBasinHeatmap(snapshotCanvas, d.pred_yz[state.timeIndex], d.latitudes, d.densities, {
     clim: state.clim,
+    colorbarTickDigits: 0,
     yTitle: "Density \u03C3\u2082 (kg/m\u00B3)",
     title: d.time_labels[state.timeIndex],
     colorbarTitle: "Sv",
@@ -576,6 +583,7 @@ function render() {
   const meanValues = d.mean_yz ?? meanOverTime(d.pred_yz);
   drawDualBasinHeatmap(sectionCanvas, meanValues, d.latitudes, d.densities, {
     clim: state.clim,
+    colorbarTickDigits: 0,
     yTitle: "Density \u03C3\u2082 (kg/m\u00B3)",
     title: "Time mean",
     colorbarTitle: "Sv",
@@ -590,6 +598,7 @@ function render() {
 
   drawHeatmap(hovmollerCanvas, d.pred_yz.map((timeSlice) => timeSlice[state.densityIndex]), d.latitudes, d.time_labels, {
     clim: state.clim,
+    colorbarTickDigits: 0,
     flipY: true,
     xTitle: "Latitude",
     yTitle: "Time",
@@ -604,6 +613,7 @@ function render() {
 
   drawDualBasinHeatmap(trendCanvas, d.trend.slope_per_year, d.latitudes, d.densities, {
     clim: state.trendClim,
+    colorbarTickDigits: 1,
     yTitle: "Density \u03C3\u2082 (kg/m\u00B3)",
     title: "Linear trend",
     colorbarTitle: "Sv yr\u207B\u00B9",
