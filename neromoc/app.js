@@ -6,7 +6,7 @@ const state = {
   densityIndex: 0,
   latitudeIndex: 0,
   clim: 18,
-  trendClim: 0.3,
+  trendClim: 0.4,
   playbackSpeed: "normal",
   playing: false,
   timer: null,
@@ -251,9 +251,9 @@ function drawHeatmap(canvas, values, xLabels, yLabels, options) {
   }
   ctx.strokeRect(cbX, cbY, 14, cbH);
   ctx.textAlign = "left";
-  ctx.fillText(`${Math.round(options.clim)}`, cbX + 18, cbY + 10);
-  ctx.fillText("0", cbX + 18, cbY + cbH / 2 + 4);
-  ctx.fillText(`-${Math.round(options.clim)}`, cbX + 18, cbY + cbH - 2);
+  ctx.fillText(options.clim.toFixed(1), cbX + 18, cbY + 10);
+  ctx.fillText("0.0", cbX + 18, cbY + cbH / 2 + 4);
+  ctx.fillText((-options.clim).toFixed(1), cbX + 18, cbY + cbH - 2);
   if (options.colorbarTitle) {
     ctx.fillText(options.colorbarTitle, cbX - 2, cbY - 8);
   }
@@ -394,9 +394,9 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   }
   ctx.strokeRect(cbX, cbY, 14, cbH);
   ctx.textAlign = "left";
-  ctx.fillText(`${Math.round(options.clim)}`, cbX + 18, cbY + 10);
-  ctx.fillText("0", cbX + 18, cbY + cbH / 2 + 4);
-  ctx.fillText(`-${Math.round(options.clim)}`, cbX + 18, cbY + cbH - 2);
+  ctx.fillText(options.clim.toFixed(1), cbX + 18, cbY + 10);
+  ctx.fillText("0.0", cbX + 18, cbY + cbH / 2 + 4);
+  ctx.fillText((-options.clim).toFixed(1), cbX + 18, cbY + cbH - 2);
   if (options.colorbarTitle) {
     ctx.fillText(options.colorbarTitle, cbX - 4, cbY - 8);
   }
@@ -552,7 +552,7 @@ function render() {
 
   controls.timeLabel.textContent = d.time_labels[state.timeIndex];
   controls.climLabel.textContent = `${state.clim} Sv`;
-  controls.selectedPoint.textContent = `${formatLatitude(d.latitudes[state.latitudeIndex])}, ${sigmaText(d.densities[state.densityIndex])}`;
+  controls.selectedPoint.textContent = `${formatLatitude(d.latitudes[state.latitudeIndex])}, \u03C3\u2082 = ${formatDensity(d.densities[state.densityIndex])}`;
   controls.selectedValue.textContent = `${meanValue.toFixed(2)} Sv`;
   controls.selectedStd.textContent = selectedStd !== null ? `${selectedStd.toFixed(2)} Sv` : "Unavailable";
   controls.selectedTrend.textContent = significant
