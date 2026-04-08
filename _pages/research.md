@@ -6,7 +6,7 @@ author_profile: true
 
 <!-- ## Research Projects -->
 
-### Reconstructing the Meridional Overturning Circulation Using Machine Learning
+### 🎰 Reconstructing the Meridional Overturning Circulation Using Machine Learning
 
 ![Dual-branch neural network architecture for MOC reconstruction](/images/DBNN.png)
 
@@ -25,7 +25,7 @@ author_profile: true
 ---
 
 
-### Mesoscale Eddy Parameterization over Sloping Topography
+### 🌀 Mesoscale Eddy Parameterization over Sloping Topography
 
 <p style="display: flex; gap: 20px; flex-wrap: wrap;">
   <video width="360" controls>
@@ -56,7 +56,7 @@ author_profile: true
 
 ---
 
-### Formation of Abyssal Prograde Flows via Eddy Potential Vorticity Mixing
+### ♆ Formation of Abyssal Prograde Flows via Eddy Potential Vorticity Mixing
 
 ![Idealized simulation of abyssal prograde flows](/images/Neptune_model.png)
 
@@ -64,7 +64,7 @@ author_profile: true
 
 ---
 
-### Mesoscale eddy-mediated diapycnal upwelling in the ocean’s sloping bottom boundary
+### ♆ Mesoscale eddy-mediated diapycnal upwelling in the ocean’s sloping bottom boundary
 
 ![Schematic of slope-adjacent upwelling in the abyssal overturning circulation](/images/Neptune_Upwelling.png)
 
