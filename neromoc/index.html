@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NeroMOC Viewer</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Interactive visualization tool</p>
+        <h1>NeroMOC Viewer</h1>
+        <p class="hero-copy">
+          NeroMOC is a machine learning-enabled, satellite-based reconstruction of the Atlantic and Southern Ocean meridional overturning circulation in latitude-density space.
+          This viewer summarizes the reconstructed streamfunction, reconstruction uncertainty, and estimated trend over April 2003 to April 2024.
+        </p>
+      </div>
+      <div class="hero-meta">
+        <div class="meta-card">
+          <span class="meta-label">Source</span>
+          <span id="source-file">Loading...</span>
+        </div>
+        <div class="meta-card">
+          <span class="meta-label">More Information</span>
+          <span id="time-assumption">Loading...</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="summary-label">Selected point</span>
+        <strong id="selected-point">Waiting for selection</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">Trend estimate</span>
+        <strong id="selected-trend">-</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">Mean value estimate</span>
+        <strong id="selected-value">-</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">Uncertainty</span>
+        <strong id="selected-std">-</strong>
+      </article>
+    </section>
+
+    <section class="plot-grid">
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Local Reconstruction Time Series</h2>
+            <p>Reconstructed streamfunction at the selected latitude-density point, shown with reconstruction uncertainty, the estimated linear trend, and the GRACE/GRACE-FO gap shaded in cyan. Select latitude and density by clicking any latitude-density panel.</p>
+          </div>
+        </div>
+        <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Time-Mean Structure</h2>
+            <p>Time-mean reconstructed overturning streamfunction in latitude-density space, shown separately for the Southern Ocean and Atlantic basin.</p>
+          </div>
+        </div>
+        <canvas id="section-canvas" width="1200" height="520"></canvas>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Trend Structure</h2>
+            <p>Estimated linear trend of NeroMOC in latitude-density space, shown separately for the Southern Ocean and Atlantic basin. Stippling marks locations where the trend is not considered significant.</p>
+          </div>
+        </div>
+        <canvas id="trend-canvas" width="1200" height="520"></canvas>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Latitude-Time Evolution</h2>
+            <p>Hovmoller diagram of the reconstructed streamfunction at the selected density level, showing its evolution across latitude and time. Click to move the month and latitude together.</p>
+          </div>
+        </div>
+        <div class="plot-frame plot-frame-wide">
+          <canvas id="hovmoller-canvas" width="1200" height="360"></canvas>
+        </div>
+      </article>
+
+      <section class="snapshot-row">
+        <article class="panel snapshot-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Selected Snapshot</h2>
+              <p>Selected monthly reconstruction of NeroMOC in latitude-density space. Press Play to animate the month-to-month evolution of the reconstructed streamfunction.</p>
+            </div>
+          </div>
+          <canvas id="snapshot-canvas" width="1200" height="520"></canvas>
+        </article>
+
+        <aside class="control-panel snapshot-controls">
+          <label class="control-block">
+            <span>Month</span>
+            <input id="time-slider" type="range" min="0" max="0" value="0">
+            <strong id="time-label">Loading...</strong>
+          </label>
+          <label class="control-block">
+            <span>Density level for Hovmoller</span>
+            <select id="density-select"></select>
+          </label>
+          <label class="control-block">
+            <span>Color limit (|Sv|)</span>
+            <input id="clim-slider" type="range" min="5" max="30" value="18" step="1">
+            <strong id="clim-label">18 Sv</strong>
+          </label>
+          <button id="play-button" type="button">Play</button>
+        </aside>
+      </section>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

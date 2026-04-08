@@ -1,5 +1,7 @@
 # main links links
 main:
+  - title: "NeroMOC"
+    url: /neromoc/
   - title: "Publications"
     url: /publications/
 

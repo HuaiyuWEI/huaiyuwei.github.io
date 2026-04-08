@@ -50,6 +50,8 @@ I am a Postdoctoral Researcher in the Department of Atmospheric and Oceanic Scie
 
 *We developed a dual‐branch neural network that uses satellite‐measurable quantities (such as ocean bottom pressure, sea surface height, and wind stress) to reconstruct the  meridional overturning circulation (MOC) in both the Atlantic Ocean and the Southern Ocean ([Wei et al. 2025](https://doi.org/10.1029/2024MS004915)).*
 
+[Explore the interactive NeroMOC viewer](/neromoc/)
+
 <br />
 <video width="700" controls>
   <source src="/videos/Truth_Vs_Reconstruction.mp4" type="video/mp4">
