@@ -4,7 +4,7 @@ permalink: /research/
 author_profile: true
 ---
 
-## Research Projects
+<!-- ## Research Projects -->
 
 ### Reconstructing the Meridional Overturning Circulation Using Machine Learning
 
