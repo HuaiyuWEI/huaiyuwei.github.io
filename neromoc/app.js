@@ -311,14 +311,21 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
       }
     }
     if (options.stippleMask) {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.strokeStyle = "rgba(20, 20, 20, 0.8)";
+      ctx.lineWidth = 1.1;
       for (let j = 0; j < ny; j += 1) {
         for (let localX = 0; localX < indices.length; localX += 1) {
           const globalX = indices[localX];
           if (options.stippleMask[j][globalX] && ((localX + j) % 2 === 0)) {
+            const cx = x0 + (localX + 0.5) * cellW;
+            const cy = margins.top + (j + 0.5) * cellH;
+            const arm = Math.max(2.3, Math.min(cellW, cellH) * 0.16);
             ctx.beginPath();
-            ctx.arc(x0 + (localX + 0.5) * cellW, margins.top + (j + 0.5) * cellH, 1.8, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.moveTo(cx - arm, cy - arm);
+            ctx.lineTo(cx + arm, cy + arm);
+            ctx.moveTo(cx - arm, cy + arm);
+            ctx.lineTo(cx + arm, cy - arm);
+            ctx.stroke();
           }
         }
       }
@@ -422,6 +429,159 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
       const hy = margins.top + (options.highlightY + 0.5) * cellH;
       ctx.strokeStyle = "#111111";
       ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(hx, hy, 5.5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  return {
+    margins,
+    split,
+    plotHeight,
+    cellH,
+    leftX0,
+    leftWidth,
+    leftCellW,
+    rightX0,
+    rightWidth,
+    rightCellW,
+    ny,
+  };
+}
+
+function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) {
+  const { ctx, width, height } = setupCanvasResolution(canvas);
+  const split = getBasinSplitInfo(latitudes);
+  const margins = { left: 92, right: 76, top: 24, bottom: 54 };
+  const gap = 18;
+  const ny = timeLabels.length;
+  const plotHeight = height - margins.top - margins.bottom;
+  const cellH = plotHeight / ny;
+  const totalLatCount = split.leftIndices.length + split.rightIndices.length;
+  const availableWidth = width - margins.left - margins.right - gap;
+  const leftWidth = availableWidth * (split.leftIndices.length / totalLatCount);
+  const rightWidth = availableWidth * (split.rightIndices.length / totalLatCount);
+  const leftCellW = leftWidth / split.leftIndices.length;
+  const rightCellW = rightWidth / split.rightIndices.length;
+  const leftX0 = margins.left;
+  const rightX0 = margins.left + leftWidth + gap;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#fffdfa";
+  ctx.fillRect(0, 0, width, height);
+
+  function drawHalf(indices, x0, cellW) {
+    for (let j = 0; j < ny; j += 1) {
+      const rowIndex = options.flipY ? ny - 1 - j : j;
+      for (let localX = 0; localX < indices.length; localX += 1) {
+        const globalX = indices[localX];
+        ctx.fillStyle = valueToColor(values[rowIndex][globalX], options.clim);
+        ctx.fillRect(x0 + localX * cellW, margins.top + j * cellH, Math.ceil(cellW), Math.ceil(cellH));
+      }
+    }
+  }
+
+  drawHalf(split.leftIndices, leftX0, leftCellW);
+  drawHalf(split.rightIndices, rightX0, rightCellW);
+
+  ctx.strokeStyle = "rgba(31,36,48,0.45)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(leftX0, margins.top, leftWidth, plotHeight);
+  ctx.strokeRect(rightX0, margins.top, rightWidth, plotHeight);
+
+  ctx.fillStyle = "#20242d";
+  ctx.font = "bold 16px Segoe UI";
+  ctx.textAlign = "left";
+  ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28);
+  ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28);
+
+  ctx.fillStyle = "#5a534d";
+  ctx.font = "13px Segoe UI";
+  ctx.textAlign = "center";
+  const leftTicks = options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1];
+  leftTicks.forEach((localIdx) => {
+    if (localIdx < 0 || localIdx >= split.leftIndices.length) {
+      return;
+    }
+    const globalIdx = split.leftIndices[localIdx];
+    const x = leftX0 + (localIdx + 0.5) * leftCellW;
+    ctx.beginPath();
+    ctx.moveTo(x, margins.top + plotHeight);
+    ctx.lineTo(x, margins.top + plotHeight + 6);
+    ctx.stroke();
+    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22);
+  });
+  const rightTicks = options.rightTickIndices ?? [0, Math.floor(split.rightIndices.length / 2), split.rightIndices.length - 1];
+  rightTicks.forEach((localIdx) => {
+    if (localIdx < 0 || localIdx >= split.rightIndices.length) {
+      return;
+    }
+    const globalIdx = split.rightIndices[localIdx];
+    const x = rightX0 + (localIdx + 0.5) * rightCellW;
+    ctx.beginPath();
+    ctx.moveTo(x, margins.top + plotHeight);
+    ctx.lineTo(x, margins.top + plotHeight + 6);
+    ctx.stroke();
+    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22);
+  });
+
+  ctx.textAlign = "right";
+  const yTicks = options.yTickIndices ?? [0, Math.floor(ny / 2), ny - 1];
+  yTicks.forEach((idx) => {
+    if (idx < 0 || idx >= ny) {
+      return;
+    }
+    const plotIdx = options.flipY ? ny - 1 - idx : idx;
+    const y = margins.top + (plotIdx + 0.5) * cellH + 4;
+    const label = options.yTickFormatter ? options.yTickFormatter(timeLabels[idx]) : String(timeLabels[idx]);
+    ctx.beginPath();
+    ctx.moveTo(margins.left - 6, margins.top + (plotIdx + 0.5) * cellH);
+    ctx.lineTo(margins.left, margins.top + (plotIdx + 0.5) * cellH);
+    ctx.stroke();
+    ctx.fillText(label, margins.left - 10, y);
+  });
+
+  ctx.save();
+  ctx.translate(24, margins.top + plotHeight / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center";
+  ctx.fillText(options.yTitle, 0, 0);
+  ctx.restore();
+
+  ctx.textAlign = "center";
+  ctx.fillText(options.title, margins.left + (availableWidth + gap) / 2, 14);
+
+  const cbX = width - 44;
+  const cbY = margins.top;
+  const cbH = plotHeight;
+  for (let p = 0; p < cbH; p += 1) {
+    const value = options.clim - (2 * options.clim * p) / cbH;
+    ctx.fillStyle = valueToColor(value, options.clim);
+    ctx.fillRect(cbX, cbY + p, 14, 1);
+  }
+  ctx.strokeRect(cbX, cbY, 14, cbH);
+  ctx.textAlign = "left";
+  const tickDigits = options.colorbarTickDigits ?? 0;
+  ctx.fillText(formatColorbarTick(options.clim, tickDigits), cbX + 18, cbY + 10);
+  ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
+  ctx.fillText(formatColorbarTick(-options.clim, tickDigits), cbX + 18, cbY + cbH - 2);
+  if (options.colorbarTitle) {
+    ctx.fillText(options.colorbarTitle, cbX - 2, cbY - 8);
+  }
+
+  if (Number.isInteger(options.highlightX) && Number.isInteger(options.highlightY)) {
+    const isLeft = options.highlightX < split.rightIndices[0];
+    const indices = isLeft ? split.leftIndices : split.rightIndices;
+    const x0 = isLeft ? leftX0 : rightX0;
+    const cellW = isLeft ? leftCellW : rightCellW;
+    const localX = indices.indexOf(options.highlightX);
+    if (localX >= 0) {
+      const hx = x0 + (localX + 0.5) * cellW;
+      const hyIndex = options.flipY ? ny - 1 - options.highlightY : options.highlightY;
+      const hy = margins.top + (hyIndex + 0.5) * cellH;
+      ctx.strokeStyle = "#111111";
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(hx, hy, 5.5, 0, Math.PI * 2);
       ctx.stroke();
@@ -600,19 +760,21 @@ function render() {
     yTickIndices: [0, 4, 8, 12, 16],
   });
 
-  drawHeatmap(hovmollerCanvas, d.pred_yz.map((timeSlice) => timeSlice[state.densityIndex]), d.latitudes, d.time_labels, {
+  drawDualBasinHovmoller(hovmollerCanvas, d.pred_yz.map((timeSlice) => timeSlice[state.densityIndex]), d.latitudes, d.time_labels, {
     clim: state.clim,
     colorbarTickDigits: 0,
     flipY: true,
-    xTitle: "Latitude",
     yTitle: "Time",
     title: hovmollerDensityTitle(d.densities[state.densityIndex]),
     colorbarTitle: "Sv",
+    leftTitle: "SMOC",
+    rightTitle: "AMOC",
     highlightX: state.latitudeIndex,
     highlightY: state.timeIndex,
-    xTickIndices: [0, 35, 70, 105, d.latitudes.length - 1],
+    leftTickIndices: [4, 14, 24, 34],
+    rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
     yTickIndices: [0, Math.floor(d.time_labels.length / 2), d.time_labels.length - 1],
-    xTickFormatter: formatLatitude,
+    yTickFormatter: (label) => label,
   });
 
   drawDualBasinHeatmap(trendCanvas, d.trend.slope_per_year, d.latitudes, d.densities, {
@@ -708,19 +870,40 @@ function bindCanvasInteractions() {
 
   hovmollerCanvas.addEventListener("click", (event) => {
     const d = state.data;
-    const geom = drawHeatmap(hovmollerCanvas, d.pred_yz.map((timeSlice) => timeSlice[state.densityIndex]), d.latitudes, d.time_labels, {
+    const geom = drawDualBasinHovmoller(hovmollerCanvas, d.pred_yz.map((timeSlice) => timeSlice[state.densityIndex]), d.latitudes, d.time_labels, {
       clim: state.clim,
+      colorbarTickDigits: 0,
       flipY: true,
-      xTitle: "Latitude",
       yTitle: "Time",
       title: hovmollerDensityTitle(d.densities[state.densityIndex]),
+      leftTitle: "SMOC",
+      rightTitle: "AMOC",
+      leftTickIndices: [4, 14, 24, 34],
+      rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
+      yTickIndices: [0, Math.floor(d.time_labels.length / 2), d.time_labels.length - 1],
+      yTickFormatter: (label) => label,
     });
     const { x, y } = getCanvasPointer(hovmollerCanvas, event);
-    const latIdx = Math.floor((x - geom.margins.left) / geom.cellW);
     const plotY = Math.floor((y - geom.margins.top) / geom.cellH);
-    if (latIdx >= 0 && latIdx < geom.nx && plotY >= 0 && plotY < geom.ny) {
+    if (!(plotY >= 0 && plotY < geom.ny)) {
+      return;
+    }
+    const timeIdx = geom.ny - 1 - plotY;
+    let latIdx = -1;
+    if (x >= geom.leftX0 && x <= geom.leftX0 + geom.leftWidth) {
+      const localX = Math.floor((x - geom.leftX0) / geom.leftCellW);
+      if (localX >= 0 && localX < geom.split.leftIndices.length) {
+        latIdx = geom.split.leftIndices[localX];
+      }
+    } else if (x >= geom.rightX0 && x <= geom.rightX0 + geom.rightWidth) {
+      const localX = Math.floor((x - geom.rightX0) / geom.rightCellW);
+      if (localX >= 0 && localX < geom.split.rightIndices.length) {
+        latIdx = geom.split.rightIndices[localX];
+      }
+    }
+    if (latIdx >= 0) {
       state.latitudeIndex = latIdx;
-      state.timeIndex = geom.ny - 1 - plotY;
+      state.timeIndex = timeIdx;
       controls.timeSlider.value = String(state.timeIndex);
       render();
     }
