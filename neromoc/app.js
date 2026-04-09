@@ -61,6 +61,10 @@ function sigmaText(value) {
   return `\u03C3\u2082 ${formatDensity(value)}`;
 }
 
+function hovmollerDensityTitle(value) {
+  return `\u03C3\u2082 = ${formatDensity(value)} kg m\u207B\u00B3`;
+}
+
 function roundValue(value, digits = 2) {
   return Number(value).toFixed(digits);
 }
@@ -602,7 +606,7 @@ function render() {
     flipY: true,
     xTitle: "Latitude",
     yTitle: "Time",
-    title: sigmaText(d.densities[state.densityIndex]),
+    title: hovmollerDensityTitle(d.densities[state.densityIndex]),
     colorbarTitle: "Sv",
     highlightX: state.latitudeIndex,
     highlightY: state.timeIndex,
@@ -709,7 +713,7 @@ function bindCanvasInteractions() {
       flipY: true,
       xTitle: "Latitude",
       yTitle: "Time",
-      title: sigmaText(d.densities[state.densityIndex]),
+      title: hovmollerDensityTitle(d.densities[state.densityIndex]),
     });
     const { x, y } = getCanvasPointer(hovmollerCanvas, event);
     const latIdx = Math.floor((x - geom.margins.left) / geom.cellW);
@@ -774,7 +778,7 @@ async function init() {
   state.data.densities.forEach((density, idx) => {
     const option = document.createElement("option");
     option.value = String(idx);
-    option.textContent = `${sigmaText(density)} kg m\u207B\u00B3`;
+    option.textContent = hovmollerDensityTitle(density);
     controls.densitySelect.appendChild(option);
   });
   controls.densitySelect.value = String(state.densityIndex);
