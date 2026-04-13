@@ -1,4 +1,4 @@
-﻿const DATA_PATH = "./data/neromoc_data.json?v=2026-04-13b";
+﻿const DATA_PATH = "./data/neromoc_data.json?v=2026-04-13c";
 
 const state = {
   data: null,
@@ -8,13 +8,11 @@ const state = {
   clim: 18,
   trendClim: 0.4,
   playbackSpeed: "normal",
-  theme: "ocean",
   playing: false,
   timer: null,
 };
 
 const controls = {
-  themeSwitcher: document.getElementById("theme-switcher"),
   timeSlider: document.getElementById("time-slider"),
   densitySelect: document.getElementById("density-select"),
   climSlider: document.getElementById("clim-slider"),
@@ -35,8 +33,6 @@ const PLAYBACK_INTERVALS = {
   normal: 42,
   fast: 21,
 };
-
-const THEMES = ["ocean", "teal", "navy"];
 
 const sectionCanvas = document.getElementById("section-canvas");
 const snapshotCanvas = document.getElementById("snapshot-canvas");
@@ -157,19 +153,6 @@ function restartPlayback() {
     controls.timeSlider.value = String(state.timeIndex);
     render();
   }, PLAYBACK_INTERVALS[state.playbackSpeed]);
-}
-
-function applyTheme(themeName) {
-  const theme = THEMES.includes(themeName) ? themeName : "ocean";
-  state.theme = theme;
-  document.body.dataset.theme = theme;
-  controls.themeSwitcher.querySelectorAll(".theme-option").forEach((item) => {
-    item.classList.toggle("is-active", item.dataset.theme === theme);
-  });
-  try {
-    window.localStorage.setItem("neromoc-theme", theme);
-  } catch (_error) {
-  }
 }
 
 function buildPath(xs, ys) {
@@ -928,14 +911,6 @@ function bindCanvasInteractions() {
 }
 
 function bindControls() {
-  controls.themeSwitcher.addEventListener("click", (event) => {
-    const button = event.target.closest(".theme-option");
-    if (!button) {
-      return;
-    }
-    applyTheme(button.dataset.theme || "ocean");
-  });
-
   controls.timeSlider.addEventListener("input", (event) => {
     state.timeIndex = Number(event.target.value);
     render();
@@ -972,12 +947,6 @@ function bindControls() {
 }
 
 async function init() {
-  try {
-    applyTheme(window.localStorage.getItem("neromoc-theme") || "ocean");
-  } catch (_error) {
-    applyTheme("ocean");
-  }
-
   const response = await fetch(DATA_PATH);
   state.data = await response.json();
   state.timeIndex = state.data.time_labels.length - 1;
@@ -1006,4 +975,5 @@ async function init() {
 init().catch((error) => {
   document.body.innerHTML = `<main class="app-shell"><section class="panel"><h1>Viewer failed to load</h1><p>${error.message}</p><p>Start the viewer through a local server so the browser can fetch <code>data/neromoc_data.json</code>.</p></section></main>`;
 });
+
 
