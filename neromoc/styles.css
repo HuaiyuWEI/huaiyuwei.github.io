@@ -1,15 +1,62 @@
 :root {
   --bg: #f3efe4;
+  --bg-top-left: rgba(208, 169, 110, 0.35);
+  --bg-top-right: rgba(99, 146, 165, 0.28);
+  --bg-start: #fbf8f2;
   --panel: rgba(255, 252, 246, 0.92);
   --panel-border: rgba(97, 76, 53, 0.18);
   --ink: #1f2430;
   --muted: #6f665f;
-  --accent: #9d4d2f;
-  --accent-soft: #e7c9ad;
+  --accent: #1f5f8b;
+  --accent-soft: #dcebf3;
+  --button-start: #1d5f88;
+  --button-end: #3d8db1;
+  --button-border: rgba(29, 95, 136, 0.28);
+  --field-border: rgba(73, 67, 61, 0.18);
+  --toggle-bg: rgba(255, 255, 255, 0.78);
+  --toggle-active-text: #ffffff;
   --shadow: 0 20px 40px rgba(58, 39, 20, 0.09);
   --radius: 18px;
   --font-display: Georgia, "Times New Roman", serif;
   --font-body: "Segoe UI", Tahoma, sans-serif;
+}
+
+body[data-theme="teal"] {
+  --bg: #eaf1f0;
+  --bg-top-left: rgba(98, 140, 148, 0.30);
+  --bg-top-right: rgba(138, 177, 171, 0.24);
+  --bg-start: #f7fbfa;
+  --panel: rgba(252, 255, 254, 0.92);
+  --panel-border: rgba(57, 86, 90, 0.16);
+  --ink: #22333b;
+  --muted: #587079;
+  --accent: #3f7c85;
+  --accent-soft: #d7e9ea;
+  --button-start: #356b73;
+  --button-end: #4f9497;
+  --button-border: rgba(53, 107, 115, 0.26);
+  --field-border: rgba(57, 86, 90, 0.18);
+  --toggle-bg: rgba(250, 255, 254, 0.82);
+  --shadow: 0 20px 40px rgba(39, 63, 68, 0.09);
+}
+
+body[data-theme="navy"] {
+  --bg: #f2efe6;
+  --bg-top-left: rgba(194, 169, 106, 0.26);
+  --bg-top-right: rgba(79, 105, 145, 0.24);
+  --bg-start: #faf8f1;
+  --panel: rgba(255, 253, 248, 0.93);
+  --panel-border: rgba(56, 71, 99, 0.16);
+  --ink: #1d2a44;
+  --muted: #6a6e78;
+  --accent: #1d3557;
+  --accent-soft: #e8dcc0;
+  --button-start: #1d3557;
+  --button-end: #355c8a;
+  --button-border: rgba(29, 53, 87, 0.26);
+  --field-border: rgba(56, 71, 99, 0.18);
+  --toggle-bg: rgba(255, 252, 245, 0.82);
+  --shadow: 0 20px 40px rgba(41, 45, 58, 0.09);
 }
 
 * {
@@ -21,9 +68,9 @@ body {
   color: var(--ink);
   font-family: var(--font-body);
   background:
-    radial-gradient(circle at top left, rgba(208, 169, 110, 0.35), transparent 30%),
-    radial-gradient(circle at top right, rgba(99, 146, 165, 0.28), transparent 26%),
-    linear-gradient(180deg, #fbf8f2 0%, var(--bg) 100%);
+    radial-gradient(circle at top left, var(--bg-top-left), transparent 30%),
+    radial-gradient(circle at top right, var(--bg-top-right), transparent 26%),
+    linear-gradient(180deg, var(--bg-start) 0%, var(--bg) 100%);
 }
 
 .app-shell {
@@ -97,6 +144,12 @@ h2 {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(245, 236, 226, 0.9));
 }
 
+.theme-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .meta-link {
   color: var(--ink);
   text-decoration: none;
@@ -148,7 +201,7 @@ select,
 button {
   min-height: 42px;
   border-radius: 12px;
-  border: 1px solid rgba(73, 67, 61, 0.18);
+  border: 1px solid var(--field-border);
   padding: 0 12px;
   font: inherit;
 }
@@ -156,8 +209,29 @@ button {
 button {
   width: 120px;
   color: #fff;
-  background: linear-gradient(135deg, #7e3b22, #b96642);
+  background: linear-gradient(135deg, var(--button-start), var(--button-end));
   cursor: pointer;
+}
+
+.theme-option,
+.speed-option {
+  width: auto;
+  color: var(--ink);
+  background: var(--toggle-bg);
+  border: 1px solid var(--field-border);
+  box-shadow: none;
+}
+
+.theme-option {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.theme-option.is-active,
+.speed-option.is-active {
+  color: var(--toggle-active-text);
+  background: linear-gradient(135deg, var(--button-start), var(--button-end));
+  border-color: var(--button-border);
 }
 
 .summary-grid,
@@ -242,17 +316,7 @@ svg {
   width: auto;
   min-height: 38px;
   border-radius: 10px;
-  border: 1px solid rgba(73, 67, 61, 0.18);
-  background: rgba(255, 255, 255, 0.78);
-  color: var(--ink);
-  box-shadow: none;
   padding: 0 10px;
-}
-
-.speed-option.is-active {
-  border-color: rgba(157, 77, 47, 0.4);
-  background: linear-gradient(135deg, rgba(126, 59, 34, 0.92), rgba(185, 102, 66, 0.92));
-  color: #fff;
 }
 
 @media (max-width: 960px) {
