@@ -1,4 +1,4 @@
-const DATA_PATH = "./data/neromoc_data.json";
+﻿const DATA_PATH = "./data/neromoc_data.json?v=2026-04-13b";
 
 const state = {
   data: null,
@@ -1006,3 +1006,4 @@ async function init() {
 init().catch((error) => {
   document.body.innerHTML = `<main class="app-shell"><section class="panel"><h1>Viewer failed to load</h1><p>${error.message}</p><p>Start the viewer through a local server so the browser can fetch <code>data/neromoc_data.json</code>.</p></section></main>`;
 });
+
