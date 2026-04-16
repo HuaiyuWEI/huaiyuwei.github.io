@@ -34,6 +34,11 @@ const PLAYBACK_INTERVALS = {
   fast: 21,
 };
 
+const PLOT_TICK_FONT = "15px Segoe UI";
+const PLOT_TITLE_FONT = "16px Segoe UI";
+const PLOT_PANEL_FONT = "bold 18px Segoe UI";
+const PLOT_COLORBAR_FONT = "14px Segoe UI";
+
 const sectionCanvas = document.getElementById("section-canvas");
 const snapshotCanvas = document.getElementById("snapshot-canvas");
 const hovmollerCanvas = document.getElementById("hovmoller-canvas");
@@ -212,7 +217,7 @@ function drawHeatmap(canvas, values, xLabels, yLabels, options) {
   ctx.strokeRect(margins.left, margins.top, plotWidth, plotHeight);
 
   ctx.fillStyle = "#5a534d";
-  ctx.font = "13px Segoe UI";
+  ctx.font = PLOT_TICK_FONT;
   ctx.textAlign = "center";
   const xticks = options.xTickIndices ?? [0, Math.floor(nx / 4), Math.floor(nx / 2), Math.floor((3 * nx) / 4), nx - 1];
   xticks.forEach((idx) => {
@@ -242,10 +247,12 @@ function drawHeatmap(canvas, values, xLabels, yLabels, options) {
   ctx.translate(22, margins.top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
+  ctx.font = PLOT_TITLE_FONT;
   ctx.fillText(options.yTitle, 0, 0);
   ctx.restore();
 
   ctx.textAlign = "center";
+  ctx.font = PLOT_TITLE_FONT;
   ctx.fillText(options.xTitle, margins.left + plotWidth / 2, height - 2);
   ctx.fillText(options.title, margins.left + plotWidth / 2, 14);
 
@@ -259,6 +266,7 @@ function drawHeatmap(canvas, values, xLabels, yLabels, options) {
   }
   ctx.strokeRect(cbX, cbY, 14, cbH);
   ctx.textAlign = "left";
+  ctx.font = PLOT_COLORBAR_FONT;
   const tickDigits = options.colorbarTickDigits ?? 0;
   ctx.fillText(formatColorbarTick(options.clim, tickDigits), cbX + 18, cbY + 10);
   ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
@@ -341,13 +349,13 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   ctx.strokeRect(rightX0, margins.top, rightWidth, plotHeight);
 
   ctx.fillStyle = "#20242d";
-  ctx.font = "bold 16px Segoe UI";
+  ctx.font = PLOT_PANEL_FONT;
   ctx.textAlign = "left";
   ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28);
   ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28);
 
   ctx.fillStyle = "#5a534d";
-  ctx.font = "13px Segoe UI";
+  ctx.font = PLOT_TICK_FONT;
   ctx.textAlign = "center";
   const leftTicks = options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1];
   leftTicks.forEach((localIdx) => {
@@ -394,10 +402,12 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   ctx.translate(24, margins.top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
+  ctx.font = PLOT_TITLE_FONT;
   ctx.fillText(options.yTitle, 0, 0);
   ctx.restore();
 
   ctx.textAlign = "center";
+  ctx.font = PLOT_TITLE_FONT;
   ctx.fillText(options.title, margins.left + (availableWidth + gap) / 2, 14);
 
   const cbX = width - 44;
@@ -410,6 +420,7 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   }
   ctx.strokeRect(cbX, cbY, 14, cbH);
   ctx.textAlign = "left";
+  ctx.font = PLOT_COLORBAR_FONT;
   const tickDigits = options.colorbarTickDigits ?? 0;
   ctx.fillText(formatColorbarTick(options.clim, tickDigits), cbX + 18, cbY + 10);
   ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
@@ -491,13 +502,13 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   ctx.strokeRect(rightX0, margins.top, rightWidth, plotHeight);
 
   ctx.fillStyle = "#20242d";
-  ctx.font = "bold 16px Segoe UI";
+  ctx.font = PLOT_PANEL_FONT;
   ctx.textAlign = "left";
   ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28);
   ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28);
 
   ctx.fillStyle = "#5a534d";
-  ctx.font = "13px Segoe UI";
+  ctx.font = PLOT_TICK_FONT;
   ctx.textAlign = "center";
   const leftTicks = options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1];
   leftTicks.forEach((localIdx) => {
@@ -546,10 +557,12 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   ctx.translate(24, margins.top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
+  ctx.font = PLOT_TITLE_FONT;
   ctx.fillText(options.yTitle, 0, 0);
   ctx.restore();
 
   ctx.textAlign = "center";
+  ctx.font = PLOT_TITLE_FONT;
   ctx.fillText(options.title, margins.left + (availableWidth + gap) / 2, 14);
 
   const cbX = width - 44;
@@ -562,6 +575,7 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   }
   ctx.strokeRect(cbX, cbY, 14, cbH);
   ctx.textAlign = "left";
+  ctx.font = PLOT_COLORBAR_FONT;
   const tickDigits = options.colorbarTickDigits ?? 0;
   ctx.fillText(formatColorbarTick(options.clim, tickDigits), cbX + 18, cbY + 10);
   ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
@@ -677,7 +691,7 @@ function drawTimeSeries() {
         return `<g>
           <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="rgba(31,36,48,0.12)"></line>
           <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="rgba(31,36,48,0.35)"></line>
-          <text x="${margins.left - 8}" y="${y + 4}" text-anchor="end" font-size="12" fill="#5a534d">${tick.toFixed(2)}</text>
+          <text x="${margins.left - 8}" y="${y + 5}" text-anchor="end" font-size="14" fill="#5a534d">${tick.toFixed(2)}</text>
         </g>`;
       })
       .join("")}
@@ -694,7 +708,7 @@ function drawTimeSeries() {
         const x = xToSvg(year, xYears[0], xYears[xYears.length - 1], margins, plotWidth);
         return `<g>
           <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 8}" stroke="rgba(31,36,48,0.45)"></line>
-          <text x="${x}" y="${height - 12}" text-anchor="middle" font-size="12" fill="#5a534d">${year}</text>
+          <text x="${x}" y="${height - 12}" text-anchor="middle" font-size="14" fill="#5a534d">${year}</text>
         </g>`;
       })
       .join("")}
@@ -702,10 +716,10 @@ function drawTimeSeries() {
     <path d="${linePath}" fill="none" stroke="#8f2d1b" stroke-width="3"></path>
     <path d="${trendPath}" fill="none" stroke="${significant ? "#0f6a8b" : "#7f8b92"}" stroke-width="2.5" stroke-dasharray="9 6"></path>
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="#162238" stroke-width="1.5" stroke-dasharray="6 4"></line>
-    <text x="${width / 2}" y="18" text-anchor="middle" font-size="14" fill="#5a534d">Overturning strength (Sv)</text>
-    <text x="${width / 2}" y="${height - 2}" text-anchor="middle" font-size="13" fill="#5a534d">Time</text>
-    <text x="20" y="${height / 2}" text-anchor="middle" font-size="13" fill="#5a534d" transform="rotate(-90 20 ${height / 2})">Sv</text>
-    <text x="${width - 20}" y="18" text-anchor="end" font-size="12" fill="${significant ? "#0f6a8b" : "#7f8b92"}">
+    <text x="${width / 2}" y="18" text-anchor="middle" font-size="16" fill="#5a534d">Overturning strength (Sv)</text>
+    <text x="${width / 2}" y="${height - 2}" text-anchor="middle" font-size="15" fill="#5a534d">Time</text>
+    <text x="20" y="${height / 2}" text-anchor="middle" font-size="15" fill="#5a534d" transform="rotate(-90 20 ${height / 2})">Sv</text>
+    <text x="${width - 20}" y="18" text-anchor="end" font-size="14" fill="${significant ? "#0f6a8b" : "#7f8b92"}">
       ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr\u207B\u00B9` : "Trend not significant at p < 0.05"}
     </text>
   `;
