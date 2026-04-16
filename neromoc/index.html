@@ -29,69 +29,71 @@
       </div>
     </section>
 
-    <section class="summary-grid">
-      <article class="summary-card">
-        <span class="summary-label">Selected point</span>
-        <strong id="selected-point">Waiting for selection</strong>
-      </article>
-      <article class="summary-card">
-        <span class="summary-label">Trend estimate</span>
-        <strong id="selected-trend">-</strong>
-      </article>
-      <article class="summary-card">
-        <span class="summary-label">Mean value estimate</span>
-        <strong id="selected-value">-</strong>
-      </article>
-      <article class="summary-card">
-        <span class="summary-label">Uncertainty</span>
-        <strong id="selected-std">-</strong>
-      </article>
-    </section>
+    <section class="dashboard-layout">
+      <div class="dashboard-main">
+        <section class="summary-grid">
+          <article class="summary-card">
+            <span class="summary-label">Selected point</span>
+            <strong id="selected-point">Waiting for selection</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-label">Trend estimate</span>
+            <strong id="selected-trend">-</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-label">Mean value estimate</span>
+            <strong id="selected-value">-</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-label">Uncertainty</span>
+            <strong id="selected-std">-</strong>
+          </article>
+        </section>
 
-    <section class="plot-grid">
-      <article class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Local Reconstruction Time Series</h2>
-            <p>Reconstructed streamfunction at the selected latitude-density point, shown with reconstruction uncertainty, the estimated linear trend, and the GRACE/GRACE-FO gap shaded in cyan. Select latitude and density by clicking any latitude-density panel.</p>
+        <section class="plot-grid">
+          <div class="panel-header">
+            <div>
+              <h2>Local Reconstruction Time Series</h2>
+              <p>Reconstructed streamfunction at the selected latitude-density point, shown with reconstruction uncertainty, the estimated linear trend, and the GRACE/GRACE-FO gap shaded in cyan. Select latitude and density by clicking any latitude-density panel.</p>
+            </div>
           </div>
-        </div>
-        <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
-      </article>
+          <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
+        </article>
 
-      <article class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Time-Mean Structure</h2>
-            <p>Time-mean reconstructed overturning streamfunction in latitude-density space, shown separately for the Southern Ocean and Atlantic basin.</p>
+        <section class="structure-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Time-Mean Structure</h2>
+                <p>Time-mean reconstructed overturning streamfunction in latitude-density space, shown separately for the Southern Ocean and Atlantic basin.</p>
+              </div>
+            </div>
+            <canvas id="section-canvas" width="1200" height="520"></canvas>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Trend Structure</h2>
+                <p>Estimated linear trend of NeroMOC in latitude-density space, shown separately for the Southern Ocean and Atlantic basin. Black crosses mark locations where the trend is not considered significant.</p>
+              </div>
+            </div>
+            <canvas id="trend-canvas" width="1200" height="520"></canvas>
+          </article>
+        </section>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Latitude-Time Evolution</h2>
+              <p>Hovmoller diagram of the reconstructed streamfunction at the selected density level, showing its evolution across latitude and time. Click to move the month and latitude together.</p>
+            </div>
           </div>
-        </div>
-        <canvas id="section-canvas" width="1200" height="520"></canvas>
-      </article>
-
-      <article class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Trend Structure</h2>
-            <p>Estimated linear trend of NeroMOC in latitude-density space, shown separately for the Southern Ocean and Atlantic basin. Black crosses mark locations where the trend is not considered significant.</p>
+          <div class="plot-frame plot-frame-wide">
+            <canvas id="hovmoller-canvas" width="1200" height="460"></canvas>
           </div>
-        </div>
-        <canvas id="trend-canvas" width="1200" height="520"></canvas>
-      </article>
+        </article>
 
-      <article class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Latitude-Time Evolution</h2>
-            <p>Hovmoller diagram of the reconstructed streamfunction at the selected density level, showing its evolution across latitude and time. Click to move the month and latitude together.</p>
-          </div>
-        </div>
-        <div class="plot-frame plot-frame-wide">
-          <canvas id="hovmoller-canvas" width="1200" height="460"></canvas>
-        </div>
-      </article>
-
-      <section class="snapshot-row">
         <article class="panel snapshot-panel">
           <div class="panel-header">
             <div>
@@ -101,37 +103,37 @@
           </div>
           <canvas id="snapshot-canvas" width="1200" height="520"></canvas>
         </article>
+      </div>
 
-        <aside class="control-panel snapshot-controls">
-          <label class="control-block">
-            <span>Month</span>
-            <input id="time-slider" type="range" min="0" max="0" value="0">
-            <strong id="time-label">Loading...</strong>
-          </label>
-          <label class="control-block">
-            <span>Density level for Hovmoller</span>
-            <select id="density-select"></select>
-          </label>
-          <label class="control-block">
-            <span>Color limit (|Sv|)</span>
-            <input id="clim-slider" type="range" min="5" max="30" value="18" step="1">
-            <strong id="clim-label">18 Sv</strong>
-          </label>
-          <div class="control-block">
-            <span>Playback speed</span>
-            <div class="speed-control" id="speed-control" role="group" aria-label="Playback speed">
-              <button class="speed-option" data-speed="slow" type="button">Slow</button>
-              <button class="speed-option is-active" data-speed="normal" type="button">Normal</button>
-              <button class="speed-option" data-speed="fast" type="button">Fast</button>
-            </div>
+      <aside class="control-panel sticky-controls">
+        <label class="control-block">
+          <span>Month</span>
+          <input id="time-slider" type="range" min="0" max="0" value="0">
+          <strong id="time-label">Loading...</strong>
+        </label>
+        <label class="control-block">
+          <span>Density level for Hovmoller</span>
+          <select id="density-select"></select>
+        </label>
+        <label class="control-block">
+          <span>Color limit (|Sv|)</span>
+          <input id="clim-slider" type="range" min="5" max="30" value="18" step="1">
+          <strong id="clim-label">18 Sv</strong>
+        </label>
+        <div class="control-block">
+          <span>Playback speed</span>
+          <div class="speed-control" id="speed-control" role="group" aria-label="Playback speed">
+            <button class="speed-option" data-speed="slow" type="button">Slow</button>
+            <button class="speed-option is-active" data-speed="normal" type="button">Normal</button>
+            <button class="speed-option" data-speed="fast" type="button">Fast</button>
           </div>
-          <button id="play-button" type="button">Play</button>
-        </aside>
-      </section>
+        </div>
+        <button id="play-button" type="button">Play</button>
+      </aside>
     </section>
   </main>
 
-  <script src="./app.js?v=2026-04-13c"></script>
+  <script src="./app.js?v=2026-04-16a"></script>
 </body>
 </html>
 
