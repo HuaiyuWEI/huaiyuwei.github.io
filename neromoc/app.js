@@ -961,7 +961,7 @@ function bindControls() {
 }
 
 async function init() {
-  const response = await fetch(DATA_PATH);
+  const response = await fetch("./data/neromoc_data.json?v=2026-04-16g");
   state.data = await response.json();
   state.timeIndex = state.data.time_labels.length - 1;
   state.densityIndex = Math.floor(state.data.densities.length / 2);

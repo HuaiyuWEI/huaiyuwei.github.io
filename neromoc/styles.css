@@ -96,8 +96,17 @@ h2 {
 
 .hero-meta {
   display: grid;
-  grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.28fr);
+  grid-template-columns: minmax(0, 1.28fr) minmax(220px, 0.52fr);
   gap: 12px;
+}
+
+.meta-card-info {
+  min-width: 0;
+}
+
+.meta-card-source {
+  width: min(100%, 320px);
+  justify-self: end;
 }
 
 .meta-card,
@@ -188,8 +197,7 @@ button {
   border-color: var(--button-border);
 }
 
-.summary-grid,
-.plot-grid {
+.summary-grid {
   display: grid;
   gap: 14px;
   margin-top: 14px;
@@ -224,33 +232,25 @@ button {
   line-height: 1.28;
 }
 
-.plot-grid {
-  grid-template-columns: 1fr;
-}
-
 .dashboard-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(440px, 1.08fr);
-  gap: 18px;
-  align-items: start;
+  gap: 16px;
   margin-top: 14px;
 }
 
-.dashboard-main {
+.top-panels-grid {
   display: grid;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
 }
 
-.dashboard-side {
-  display: grid;
-  gap: 14px;
+.top-panels-grid .panel {
+  height: 100%;
 }
 
-.structure-sticky {
-  position: sticky;
-  top: 16px;
-  display: grid;
-  gap: 14px;
+.snapshot-panel {
+  margin: 0;
 }
 
 .panel {
@@ -286,17 +286,30 @@ svg {
   max-width: 1200px;
 }
 
-.snapshot-panel {
-  margin: 0;
+.snapshot-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.62fr) minmax(300px, 0.68fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.snapshot-visual {
+  min-width: 0;
 }
 
 .snapshot-controls {
-  grid-template-columns: 2fr 1fr 1fr 1.05fr auto;
-  margin-bottom: 12px;
+  grid-template-columns: 1fr;
+  align-content: start;
+  margin: 0;
   background: rgba(244, 251, 250, 0.84);
   box-shadow: none;
-  gap: 10px;
-  padding: 12px;
+  gap: 12px;
+  padding: 14px;
+  height: 100%;
+}
+
+.snapshot-controls > button {
+  width: 100%;
 }
 
 .speed-control {
@@ -307,7 +320,7 @@ svg {
 
 .speed-option {
   flex: 1 1 0;
-  width: auto;
+  width: 100%;
   min-height: 38px;
   border-radius: 10px;
   padding: 0 10px;
@@ -316,7 +329,9 @@ svg {
 @media (max-width: 960px) {
   .hero,
   .summary-grid,
-  .dashboard-layout {
+  .top-panels-grid,
+  .dashboard-layout,
+  .snapshot-body {
     grid-template-columns: 1fr;
   }
 
@@ -324,12 +339,13 @@ svg {
     grid-template-columns: 1fr;
   }
 
-  .control-panel {
-    grid-template-columns: 1fr;
+  .meta-card-source {
+    width: 100%;
+    justify-self: stretch;
   }
 
-  .structure-sticky {
-    position: static;
+  .control-panel {
+    grid-template-columns: 1fr;
   }
 
   button {
