@@ -58,8 +58,15 @@ body {
   border-radius: 24px;
 }
 
+.hero-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.42fr) minmax(220px, 0.46fr);
+  gap: 12px;
+  align-items: start;
+}
+
 .hero-main {
-  max-width: 1180px;
+  max-width: none;
 }
 
 .eyebrow {
@@ -96,8 +103,8 @@ h2 {
 
 .hero-meta {
   display: grid;
-  grid-template-columns: minmax(0, 1.28fr) minmax(220px, 0.52fr);
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 0;
 }
 
 .meta-card-info {
@@ -105,8 +112,9 @@ h2 {
 }
 
 .meta-card-source {
-  width: min(100%, 320px);
+  width: min(100%, 280px);
   justify-self: end;
+  align-self: start;
 }
 
 .meta-card,
@@ -216,20 +224,20 @@ button {
 }
 
 .embedded-summary-grid .summary-card {
-  padding: 10px 12px;
+  padding: 9px 11px;
   align-self: start;
 }
 
 .embedded-summary-grid .summary-label {
-  margin-bottom: 5px;
-  font-size: 0.72rem;
+  margin-bottom: 4px;
+  font-size: 0.67rem;
   letter-spacing: 0.07em;
 }
 
 .embedded-summary-grid strong {
   display: block;
-  font-size: clamp(0.94rem, 1.1vw, 1.22rem);
-  line-height: 1.28;
+  font-size: clamp(0.82rem, 0.96vw, 1.02rem);
+  line-height: 1.22;
 }
 
 .dashboard-layout {
@@ -332,6 +340,10 @@ svg {
   .top-panels-grid,
   .dashboard-layout,
   .snapshot-body {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-top {
     grid-template-columns: 1fr;
   }
 

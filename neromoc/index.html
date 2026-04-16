@@ -4,33 +4,45 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NeroMOC Viewer</title>
-  <link rel="stylesheet" href="./styles.css?v=2026-04-16g">
+  <link rel="stylesheet" href="./styles.css?v=2026-04-16h">
 </head>
 <body>
   <main class="app-shell">
     <section class="hero">
-      <div class="hero-main">
-        <p class="eyebrow">Interactive visualization tool</p>
-        <h1>NeroMOC Viewer</h1>
-        <p class="hero-copy">
-          NeroMOC is a machine learning-enabled, satellite-based reconstruction of the Atlantic and Southern Ocean meridional overturning circulation in latitude-density space.
-          This viewer summarizes the reconstructed streamfunction, reconstruction uncertainty, and estimated trend over April 2003 to April 2024.
-        </p>
-      </div>
-      <div class="hero-meta">
-        <div class="meta-card meta-card-info">
-          <span class="meta-label">More Information</span>
-          <span id="time-assumption">Loading...</span>
+      <div class="hero-top">
+        <div class="hero-main">
+          <p class="eyebrow">Interactive visualization tool</p>
+          <h1>NeroMOC Viewer</h1>
+          <p class="hero-copy">
+            NeroMOC is a machine learning-enabled, satellite-based reconstruction of the Atlantic and Southern Ocean meridional overturning circulation in latitude-density space.
+            This viewer summarizes the reconstructed streamfunction, reconstruction uncertainty, and estimated trend over April 2003 to April 2024.
+          </p>
         </div>
         <div class="meta-card meta-card-source">
           <span class="meta-label">Source</span>
           <span id="source-file">Loading...</span>
         </div>
       </div>
+      <div class="hero-meta">
+        <div class="meta-card meta-card-info">
+          <span class="meta-label">More Information</span>
+          <span id="time-assumption">Loading...</span>
+        </div>
+      </div>
     </section>
 
     <section class="dashboard-layout">
       <section class="top-panels-grid">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Time-Mean Structure</h2>
+              <p>Time-mean reconstructed overturning streamfunction in latitude-density space, shown separately for the Southern Ocean and Atlantic basin.</p>
+            </div>
+          </div>
+          <canvas id="section-canvas" width="1200" height="520"></canvas>
+        </article>
+
         <article class="panel">
           <div class="panel-header">
             <div>
@@ -62,11 +74,11 @@
         <article class="panel">
           <div class="panel-header">
             <div>
-              <h2>Time-Mean Structure</h2>
-              <p>Time-mean reconstructed overturning streamfunction in latitude-density space, shown separately for the Southern Ocean and Atlantic basin.</p>
+              <h2>Trend Structure</h2>
+              <p>Estimated linear trend of NeroMOC in latitude-density space, shown separately for the Southern Ocean and Atlantic basin. Black crosses mark locations where the trend is not considered significant.</p>
             </div>
           </div>
-          <canvas id="section-canvas" width="1200" height="520"></canvas>
+          <canvas id="trend-canvas" width="1200" height="520"></canvas>
         </article>
 
         <article class="panel">
@@ -79,16 +91,6 @@
           <div class="plot-frame plot-frame-wide">
             <canvas id="hovmoller-canvas" width="1200" height="460"></canvas>
           </div>
-        </article>
-
-        <article class="panel">
-          <div class="panel-header">
-            <div>
-              <h2>Trend Structure</h2>
-              <p>Estimated linear trend of NeroMOC in latitude-density space, shown separately for the Southern Ocean and Atlantic basin. Black crosses mark locations where the trend is not considered significant.</p>
-            </div>
-          </div>
-          <canvas id="trend-canvas" width="1200" height="520"></canvas>
         </article>
       </section>
 
@@ -133,7 +135,7 @@
     </section>
   </main>
 
-  <script src="./app.js?v=2026-04-16g"></script>
+  <script src="./app.js?v=2026-04-16h"></script>
 </body>
 </html>
 

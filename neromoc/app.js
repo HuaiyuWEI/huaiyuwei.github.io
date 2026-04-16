@@ -1,4 +1,4 @@
-﻿const DATA_PATH = "./data/neromoc_data.json?v=2026-04-13c";
+const DATA_PATH = "./data/neromoc_data.json?v=2026-04-16h";
 
 const state = {
   data: null,
@@ -34,10 +34,10 @@ const PLAYBACK_INTERVALS = {
   fast: 21,
 };
 
-const PLOT_TICK_FONT = "15px Segoe UI";
-const PLOT_TITLE_FONT = "16px Segoe UI";
-const PLOT_PANEL_FONT = "bold 18px Segoe UI";
-const PLOT_COLORBAR_FONT = "14px Segoe UI";
+const PLOT_TICK_FONT = "17px Segoe UI";
+const PLOT_TITLE_FONT = "19px Segoe UI";
+const PLOT_PANEL_FONT = "bold 21px Segoe UI";
+const PLOT_COLORBAR_FONT = "16px Segoe UI";
 
 const sectionCanvas = document.getElementById("section-canvas");
 const snapshotCanvas = document.getElementById("snapshot-canvas");
@@ -691,7 +691,7 @@ function drawTimeSeries() {
         return `<g>
           <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="rgba(31,36,48,0.12)"></line>
           <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="rgba(31,36,48,0.35)"></line>
-          <text x="${margins.left - 8}" y="${y + 5}" text-anchor="end" font-size="14" fill="#5a534d">${tick.toFixed(2)}</text>
+          <text x="${margins.left - 8}" y="${y + 5}" text-anchor="end" font-size="16" fill="#5a534d">${tick.toFixed(2)}</text>
         </g>`;
       })
       .join("")}
@@ -708,7 +708,7 @@ function drawTimeSeries() {
         const x = xToSvg(year, xYears[0], xYears[xYears.length - 1], margins, plotWidth);
         return `<g>
           <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 8}" stroke="rgba(31,36,48,0.45)"></line>
-          <text x="${x}" y="${height - 12}" text-anchor="middle" font-size="14" fill="#5a534d">${year}</text>
+          <text x="${x}" y="${height - 12}" text-anchor="middle" font-size="16" fill="#5a534d">${year}</text>
         </g>`;
       })
       .join("")}
@@ -716,10 +716,10 @@ function drawTimeSeries() {
     <path d="${linePath}" fill="none" stroke="#8f2d1b" stroke-width="3"></path>
     <path d="${trendPath}" fill="none" stroke="${significant ? "#0f6a8b" : "#7f8b92"}" stroke-width="2.5" stroke-dasharray="9 6"></path>
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="#162238" stroke-width="1.5" stroke-dasharray="6 4"></line>
-    <text x="${width / 2}" y="18" text-anchor="middle" font-size="16" fill="#5a534d">Overturning strength (Sv)</text>
-    <text x="${width / 2}" y="${height - 2}" text-anchor="middle" font-size="15" fill="#5a534d">Time</text>
-    <text x="20" y="${height / 2}" text-anchor="middle" font-size="15" fill="#5a534d" transform="rotate(-90 20 ${height / 2})">Sv</text>
-    <text x="${width - 20}" y="18" text-anchor="end" font-size="14" fill="${significant ? "#0f6a8b" : "#7f8b92"}">
+    <text x="${width / 2}" y="18" text-anchor="middle" font-size="18" fill="#5a534d">Overturning strength (Sv)</text>
+    <text x="${width / 2}" y="${height - 2}" text-anchor="middle" font-size="17" fill="#5a534d">Time</text>
+    <text x="20" y="${height / 2}" text-anchor="middle" font-size="17" fill="#5a534d" transform="rotate(-90 20 ${height / 2})">Sv</text>
+    <text x="${width - 20}" y="18" text-anchor="end" font-size="16" fill="${significant ? "#0f6a8b" : "#7f8b92"}">
       ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr\u207B\u00B9` : "Trend not significant at p < 0.05"}
     </text>
   `;
@@ -989,5 +989,6 @@ async function init() {
 init().catch((error) => {
   document.body.innerHTML = `<main class="app-shell"><section class="panel"><h1>Viewer failed to load</h1><p>${error.message}</p><p>Start the viewer through a local server so the browser can fetch <code>data/neromoc_data.json</code>.</p></section></main>`;
 });
+
 
 
