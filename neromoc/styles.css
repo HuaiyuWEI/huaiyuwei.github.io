@@ -53,10 +53,13 @@ body {
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
-  gap: 16px;
-  padding: 20px 22px;
+  gap: 14px;
+  padding: 18px 20px;
   border-radius: 24px;
+}
+
+.hero-main {
+  max-width: 1180px;
 }
 
 .eyebrow {
@@ -93,7 +96,8 @@ h2 {
 
 .hero-meta {
   display: grid;
-  gap: 10px;
+  grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.28fr);
+  gap: 12px;
 }
 
 .meta-card,
@@ -313,6 +317,10 @@ svg {
   .hero,
   .summary-grid,
   .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-meta {
     grid-template-columns: 1fr;
   }
 
