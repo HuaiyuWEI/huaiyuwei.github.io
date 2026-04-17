@@ -298,7 +298,8 @@ canvas,
 svg {
   width: 100%;
   display: block;
-  background: #fbfeff;
+  background: rgba(247, 251, 255, 0.98);
+  border: 1px solid rgba(95, 140, 176, 0.12);
   border-radius: 16px;
 }
 
