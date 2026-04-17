@@ -1,21 +1,21 @@
 :root {
-  --bg: #eaf1f0;
-  --bg-top-left: rgba(98, 140, 148, 0.30);
-  --bg-top-right: rgba(138, 177, 171, 0.24);
-  --bg-start: #f7fbfa;
-  --panel: rgba(252, 255, 254, 0.92);
-  --panel-border: rgba(57, 86, 90, 0.16);
-  --ink: #22333b;
-  --muted: #587079;
-  --accent: #3f7c85;
-  --accent-soft: #d7e9ea;
-  --button-start: #356b73;
-  --button-end: #4f9497;
-  --button-border: rgba(53, 107, 115, 0.26);
-  --field-border: rgba(57, 86, 90, 0.18);
-  --toggle-bg: rgba(250, 255, 254, 0.82);
+  --bg: #ecf6ff;
+  --bg-top-left: rgba(133, 182, 225, 0.30);
+  --bg-top-right: rgba(170, 214, 242, 0.26);
+  --bg-start: #f8fcff;
+  --panel: rgba(252, 255, 255, 0.94);
+  --panel-border: rgba(95, 140, 176, 0.16);
+  --ink: #203344;
+  --muted: #5f7f96;
+  --accent: #5b9dcf;
+  --accent-soft: #d9ebf8;
+  --button-start: #4d90c2;
+  --button-end: #78b7df;
+  --button-border: rgba(77, 144, 194, 0.26);
+  --field-border: rgba(95, 140, 176, 0.18);
+  --toggle-bg: rgba(249, 253, 255, 0.88);
   --toggle-active-text: #ffffff;
-  --shadow: 0 20px 40px rgba(39, 63, 68, 0.09);
+  --shadow: 0 20px 40px rgba(53, 88, 122, 0.09);
   --radius: 18px;
   --font-display: Georgia, "Times New Roman", serif;
   --font-body: "Segoe UI", Tahoma, sans-serif;
@@ -132,7 +132,7 @@ h2 {
 .meta-link {
   color: var(--ink);
   text-decoration: none;
-  border-bottom: 1px solid rgba(157, 77, 47, 0.35);
+  border-bottom: 1px solid rgba(91, 157, 207, 0.45);
 }
 
 .meta-link:hover {
@@ -298,7 +298,7 @@ canvas,
 svg {
   width: 100%;
   display: block;
-  background: #fffdfa;
+  background: #fbfeff;
   border-radius: 16px;
 }
 
@@ -330,7 +330,7 @@ svg {
   grid-template-columns: 1fr;
   align-content: start;
   margin: 0;
-  background: rgba(244, 251, 250, 0.84);
+  background: rgba(241, 248, 255, 0.9);
   box-shadow: none;
   gap: 12px;
   padding: 14px;
