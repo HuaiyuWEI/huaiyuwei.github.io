@@ -219,8 +219,13 @@ button {
   margin-top: 0;
   margin-bottom: 12px;
   gap: 10px;
-  grid-template-columns: 1.1fr 1.35fr 1fr 0.9fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: start;
+}
+
+.plot-summary-grid {
+  margin-top: 12px;
+  margin-bottom: 0;
 }
 
 .embedded-summary-grid .summary-card {

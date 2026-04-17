@@ -1,4 +1,4 @@
-const DATA_PATH = "./data/neromoc_data.json?v=2026-04-16h";
+const DATA_PATH = "./data/neromoc_data.json?v=2026-04-16i";
 
 const state = {
   data: null,
@@ -22,10 +22,10 @@ const controls = {
   speedControl: document.getElementById("speed-control"),
   sourceFile: document.getElementById("source-file"),
   timeAssumption: document.getElementById("time-assumption"),
-  selectedPoint: document.getElementById("selected-point"),
+  selectedLatitude: document.getElementById("selected-latitude"),
+  selectedDensity: document.getElementById("selected-density"),
   selectedValue: document.getElementById("selected-value"),
   selectedStd: document.getElementById("selected-std"),
-  selectedTrend: document.getElementById("selected-trend"),
 };
 
 const PLAYBACK_INTERVALS = {
@@ -729,19 +729,14 @@ function render() {
   const d = state.data;
   const selectedValue = d.pred_yz[state.timeIndex][state.densityIndex][state.latitudeIndex];
   const selectedStd = d.pred_yz_std ? d.pred_yz_std[state.timeIndex][state.densityIndex][state.latitudeIndex] : null;
-  const slope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
-  const ci = d.trend.ci95.map((bound) => bound[state.densityIndex][state.latitudeIndex]);
-  const significant = d.trend.significant[state.densityIndex][state.latitudeIndex];
   const meanValue = (d.mean_yz ?? meanOverTime(d.pred_yz))[state.densityIndex][state.latitudeIndex];
 
   controls.timeLabel.textContent = d.time_labels[state.timeIndex];
   controls.climLabel.textContent = `${state.clim} Sv`;
-  controls.selectedPoint.textContent = `${formatLatitude(d.latitudes[state.latitudeIndex])}, \u03C3\u2082 = ${formatDensity(d.densities[state.densityIndex])} kg m\u207B\u00B3`;
+  controls.selectedLatitude.textContent = formatLatitude(d.latitudes[state.latitudeIndex]);
+  controls.selectedDensity.textContent = `\u03C3\u2082 = ${formatDensity(d.densities[state.densityIndex])} kg m\u207B\u00B3`;
   controls.selectedValue.textContent = `${meanValue.toFixed(2)} Sv`;
   controls.selectedStd.textContent = selectedStd !== null ? `${selectedStd.toFixed(2)} Sv` : "Unavailable";
-  controls.selectedTrend.textContent = significant
-    ? `[${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr\u207B\u00B9`
-    : `${slope.toFixed(3)} Sv yr\u207B\u00B9 (not significant)`;
 
   drawDualBasinHeatmap(snapshotCanvas, d.pred_yz[state.timeIndex], d.latitudes, d.densities, {
     clim: state.clim,

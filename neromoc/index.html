@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NeroMOC Viewer</title>
-  <link rel="stylesheet" href="./styles.css?v=2026-04-16h">
+  <link rel="stylesheet" href="./styles.css?v=2026-04-16i">
 </head>
 <body>
   <main class="app-shell">
@@ -50,17 +50,18 @@
               <p>Reconstructed streamfunction at the selected latitude-density point, shown with reconstruction uncertainty, the estimated linear trend, and the GRACE/GRACE-FO gap shaded in cyan. Select latitude and density by clicking any latitude-density panel.</p>
             </div>
           </div>
-          <section class="summary-grid embedded-summary-grid">
+          <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
+          <section class="summary-grid embedded-summary-grid plot-summary-grid">
             <article class="summary-card">
-              <span class="summary-label">Selected point</span>
-              <strong id="selected-point">Waiting for selection</strong>
+              <span class="summary-label">Selected latitude</span>
+              <strong id="selected-latitude">Waiting for selection</strong>
             </article>
             <article class="summary-card">
-              <span class="summary-label">Trend estimate</span>
-              <strong id="selected-trend">-</strong>
+              <span class="summary-label">Selected density</span>
+              <strong id="selected-density">-</strong>
             </article>
             <article class="summary-card">
-              <span class="summary-label">Mean value estimate</span>
+              <span class="summary-label">Mean value</span>
               <strong id="selected-value">-</strong>
             </article>
             <article class="summary-card">
@@ -68,7 +69,6 @@
               <strong id="selected-std">-</strong>
             </article>
           </section>
-          <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
         </article>
 
         <article class="panel">
@@ -135,7 +135,7 @@
     </section>
   </main>
 
-  <script src="./app.js?v=2026-04-16h"></script>
+  <script src="./app.js?v=2026-04-16i"></script>
 </body>
 </html>
 
