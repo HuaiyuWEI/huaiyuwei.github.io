@@ -1,4 +1,4 @@
-const DATA_PATH = "./data/neromoc_data.json?v=2026-04-16i";
+const DATA_PATH = "./data/neromoc_data.json?v=2026-04-16k";
 
 const state = {
   data: null,
@@ -272,7 +272,8 @@ function drawHeatmap(canvas, values, xLabels, yLabels, options) {
   ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
   ctx.fillText(formatColorbarTick(-options.clim, tickDigits), cbX + 18, cbY + cbH - 2);
   if (options.colorbarTitle) {
-    ctx.fillText(options.colorbarTitle, cbX - 2, cbY - 8);
+    ctx.textAlign = "center";
+    ctx.fillText(options.colorbarTitle, cbX + 7, cbY - 6);
   }
 
   if (Number.isInteger(options.highlightX) && Number.isInteger(options.highlightY)) {
@@ -292,7 +293,7 @@ function drawHeatmap(canvas, values, xLabels, yLabels, options) {
 function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   const { ctx, width, height } = setupCanvasResolution(canvas);
   const split = getBasinSplitInfo(latitudes);
-  const margins = { left: 92, right: 76, top: 24, bottom: 54 };
+  const margins = { left: 92, right: 76, top: 26, bottom: 54 };
   const gap = 18;
   const plotHeight = height - margins.top - margins.bottom;
   const ny = densities.length;
@@ -399,7 +400,7 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   });
 
   ctx.save();
-  ctx.translate(24, margins.top + plotHeight / 2);
+  ctx.translate(28, margins.top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
   ctx.font = PLOT_TITLE_FONT;
@@ -426,7 +427,8 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
   ctx.fillText(formatColorbarTick(-options.clim, tickDigits), cbX + 18, cbY + cbH - 2);
   if (options.colorbarTitle) {
-    ctx.fillText(options.colorbarTitle, cbX - 4, cbY - 8);
+    ctx.textAlign = "center";
+    ctx.fillText(options.colorbarTitle, cbX + 7, cbY - 6);
   }
 
   if (Number.isInteger(options.highlightX) && Number.isInteger(options.highlightY)) {
@@ -464,7 +466,7 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
 function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) {
   const { ctx, width, height } = setupCanvasResolution(canvas);
   const split = getBasinSplitInfo(latitudes);
-  const margins = { left: 92, right: 76, top: 24, bottom: 54 };
+  const margins = { left: 128, right: 76, top: 26, bottom: 54 };
   const gap = 18;
   const ny = timeLabels.length;
   const plotHeight = height - margins.top - margins.bottom;
@@ -554,7 +556,7 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   });
 
   ctx.save();
-  ctx.translate(24, margins.top + plotHeight / 2);
+  ctx.translate(30, margins.top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
   ctx.font = PLOT_TITLE_FONT;
@@ -581,7 +583,8 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
   ctx.fillText(formatColorbarTick(-options.clim, tickDigits), cbX + 18, cbY + cbH - 2);
   if (options.colorbarTitle) {
-    ctx.fillText(options.colorbarTitle, cbX - 2, cbY - 8);
+    ctx.textAlign = "center";
+    ctx.fillText(options.colorbarTitle, cbX + 7, cbY - 6);
   }
 
   if (Number.isInteger(options.highlightX) && Number.isInteger(options.highlightY)) {
@@ -633,7 +636,7 @@ function drawTimeSeries() {
 
   const width = 900;
   const height = 320;
-  const margins = { left: 60, right: 24, top: 24, bottom: 40 };
+  const margins = { left: 82, right: 24, top: 24, bottom: 40 };
   const plotWidth = width - margins.left - margins.right;
   const plotHeight = height - margins.top - margins.bottom;
   const ymin = Math.min(...values.map((v, i) => v - stdValues[i]), ...trendValues);
@@ -691,7 +694,7 @@ function drawTimeSeries() {
         return `<g>
           <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="rgba(31,36,48,0.12)"></line>
           <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="rgba(31,36,48,0.35)"></line>
-          <text x="${margins.left - 8}" y="${y + 5}" text-anchor="end" font-size="16" fill="#5a534d">${tick.toFixed(2)}</text>
+          <text x="${margins.left - 10}" y="${y + 5}" text-anchor="end" font-size="16" fill="#5a534d">${tick.toFixed(2)}</text>
         </g>`;
       })
       .join("")}
@@ -718,7 +721,7 @@ function drawTimeSeries() {
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="#162238" stroke-width="1.5" stroke-dasharray="6 4"></line>
     <text x="${width / 2}" y="18" text-anchor="middle" font-size="18" fill="#5a534d">Overturning strength (Sv)</text>
     <text x="${width / 2}" y="${height - 2}" text-anchor="middle" font-size="17" fill="#5a534d">Time</text>
-    <text x="20" y="${height / 2}" text-anchor="middle" font-size="17" fill="#5a534d" transform="rotate(-90 20 ${height / 2})">Sv</text>
+    <text x="28" y="${height / 2}" text-anchor="middle" font-size="17" fill="#5a534d" transform="rotate(-90 28 ${height / 2})">Sv</text>
     <text x="${width - 20}" y="18" text-anchor="end" font-size="16" fill="${significant ? "#0f6a8b" : "#7f8b92"}">
       ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr\u207B\u00B9` : "Trend not significant at p < 0.05"}
     </text>
