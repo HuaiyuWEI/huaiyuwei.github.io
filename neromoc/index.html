@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NeroMOC Viewer</title>
-  <link rel="stylesheet" href="./styles.css?v=2026-04-16i">
+  <link rel="stylesheet" href="./styles.css?v=2026-04-16j">
 </head>
 <body>
   <main class="app-shell">
@@ -33,7 +33,7 @@
 
     <section class="dashboard-layout">
       <section class="top-panels-grid">
-        <article class="panel">
+        <article class="panel panel-center-figure">
           <div class="panel-header">
             <div>
               <h2>Time-Mean Structure</h2>
@@ -53,11 +53,11 @@
           <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
           <section class="summary-grid embedded-summary-grid plot-summary-grid">
             <article class="summary-card">
-              <span class="summary-label">Selected latitude</span>
+              <span class="summary-label">Latitude</span>
               <strong id="selected-latitude">Waiting for selection</strong>
             </article>
             <article class="summary-card">
-              <span class="summary-label">Selected density</span>
+              <span class="summary-label">Density</span>
               <strong id="selected-density">-</strong>
             </article>
             <article class="summary-card">
@@ -89,7 +89,7 @@
             </div>
           </div>
           <div class="plot-frame plot-frame-wide">
-            <canvas id="hovmoller-canvas" width="1200" height="460"></canvas>
+            <canvas id="hovmoller-canvas" width="1200" height="520"></canvas>
           </div>
         </article>
       </section>

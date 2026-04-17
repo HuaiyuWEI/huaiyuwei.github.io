@@ -228,6 +228,12 @@ button {
   margin-bottom: 0;
 }
 
+.plot-summary-grid .summary-card,
+.plot-summary-grid .summary-label,
+.plot-summary-grid strong {
+  text-align: center;
+}
+
 .embedded-summary-grid .summary-card {
   padding: 9px 11px;
   align-self: start;
@@ -260,6 +266,16 @@ button {
 
 .top-panels-grid .panel {
   height: 100%;
+}
+
+.panel-center-figure {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-center-figure canvas {
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .snapshot-panel {
