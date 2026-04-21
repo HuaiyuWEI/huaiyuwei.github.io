@@ -70,6 +70,59 @@ function hovmollerDensityTitle(value) {
   return `\u03C3\u2082 = ${formatDensity(value)} kg m\u207B\u00B3`;
 }
 
+function buildYearAxisTicks(timeYears) {
+  const years = timeYears.map((value) => Number(value));
+  const startYear = Math.ceil(years[0]);
+  const endYear = Math.floor(years[years.length - 1]);
+  const firstMajor = Math.ceil(years[0] / 4) * 4;
+  const majorYears = [];
+  for (let year = firstMajor; year <= endYear; year += 4) {
+    majorYears.push(year);
+  }
+  const majorSet = new Set(majorYears);
+  const minorYears = [];
+  for (let year = startYear; year <= endYear; year += 1) {
+    if (!majorSet.has(year)) {
+      minorYears.push(year);
+    }
+  }
+
+  function nearestIndex(target) {
+    let bestIndex = 0;
+    let bestDiff = Number.POSITIVE_INFINITY;
+    years.forEach((value, idx) => {
+      const diff = Math.abs(value - target);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestIndex = idx;
+      }
+    });
+    return bestIndex;
+  }
+
+  const majorTicks = [];
+  const majorIndexSet = new Set();
+  majorYears.forEach((year) => {
+    const index = nearestIndex(year);
+    if (!majorIndexSet.has(index)) {
+      majorIndexSet.add(index);
+      majorTicks.push({ index, label: String(year) });
+    }
+  });
+
+  const minorTickIndices = [];
+  const minorIndexSet = new Set();
+  minorYears.forEach((year) => {
+    const index = nearestIndex(year);
+    if (!majorIndexSet.has(index) && !minorIndexSet.has(index)) {
+      minorIndexSet.add(index);
+      minorTickIndices.push(index);
+    }
+  });
+
+  return { majorTicks, minorTickIndices };
+}
+
 function roundValue(value, digits = 2) {
   return Number(value).toFixed(digits);
 }
@@ -540,16 +593,35 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   });
 
   ctx.textAlign = "right";
+  const minorTickIndices = options.yMinorTickIndices ?? [];
+  minorTickIndices.forEach((idx) => {
+    if (idx < 0 || idx >= ny) {
+      return;
+    }
+    const plotIdx = options.flipY ? ny - 1 - idx : idx;
+    const y = margins.top + (plotIdx + 0.5) * cellH;
+    ctx.beginPath();
+    ctx.moveTo(margins.left - 4, y);
+    ctx.lineTo(margins.left, y);
+    ctx.stroke();
+  });
+
   const yTicks = options.yTickIndices ?? [0, Math.floor(ny / 2), ny - 1];
-  yTicks.forEach((idx) => {
+  yTicks.forEach((tick) => {
+    const idx = typeof tick === "object" ? tick.index : tick;
     if (idx < 0 || idx >= ny) {
       return;
     }
     const plotIdx = options.flipY ? ny - 1 - idx : idx;
     const y = margins.top + (plotIdx + 0.5) * cellH + 4;
-    const label = options.yTickFormatter ? options.yTickFormatter(timeLabels[idx]) : String(timeLabels[idx]);
+    const label =
+      typeof tick === "object"
+        ? tick.label
+        : options.yTickFormatter
+          ? options.yTickFormatter(timeLabels[idx])
+          : String(timeLabels[idx]);
     ctx.beginPath();
-    ctx.moveTo(margins.left - 6, margins.top + (plotIdx + 0.5) * cellH);
+    ctx.moveTo(margins.left - 8, margins.top + (plotIdx + 0.5) * cellH);
     ctx.lineTo(margins.left, margins.top + (plotIdx + 0.5) * cellH);
     ctx.stroke();
     ctx.fillText(label, margins.left - 10, y);
@@ -736,6 +808,7 @@ function drawTimeSeries() {
 
 function render() {
   const d = state.data;
+  const hovmollerYearTicks = buildYearAxisTicks(d.time_years);
   const selectedValue = d.pred_yz[state.timeIndex][state.densityIndex][state.latitudeIndex];
   const selectedStd = d.pred_yz_std ? d.pred_yz_std[state.timeIndex][state.densityIndex][state.latitudeIndex] : null;
   const meanValue = (d.mean_yz ?? meanOverTime(d.pred_yz))[state.densityIndex][state.latitudeIndex];
@@ -791,8 +864,8 @@ function render() {
     highlightY: state.timeIndex,
     leftTickIndices: [4, 14, 24, 34],
     rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
-    yTickIndices: [0, Math.floor(d.time_labels.length / 2), d.time_labels.length - 1],
-    yTickFormatter: (label) => label,
+    yTickIndices: hovmollerYearTicks.majorTicks,
+    yMinorTickIndices: hovmollerYearTicks.minorTickIndices,
   });
 
   drawDualBasinHeatmap(trendCanvas, d.trend.slope_per_year, d.latitudes, d.densities, {
@@ -888,6 +961,7 @@ function bindCanvasInteractions() {
 
   hovmollerCanvas.addEventListener("click", (event) => {
     const d = state.data;
+    const hovmollerYearTicks = buildYearAxisTicks(d.time_years);
     const geom = drawDualBasinHovmoller(hovmollerCanvas, d.pred_yz.map((timeSlice) => timeSlice[state.densityIndex]), d.latitudes, d.time_labels, {
       clim: state.clim,
       colorbarTickDigits: 0,
@@ -898,8 +972,8 @@ function bindCanvasInteractions() {
       rightTitle: "AMOC",
       leftTickIndices: [4, 14, 24, 34],
       rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
-      yTickIndices: [0, Math.floor(d.time_labels.length / 2), d.time_labels.length - 1],
-      yTickFormatter: (label) => label,
+      yTickIndices: hovmollerYearTicks.majorTicks,
+      yMinorTickIndices: hovmollerYearTicks.minorTickIndices,
     });
     const { x, y } = getCanvasPointer(hovmollerCanvas, event);
     const plotY = Math.floor((y - geom.margins.top) / geom.cellH);
