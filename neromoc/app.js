@@ -639,8 +639,14 @@ function drawTimeSeries() {
   const margins = { left: 82, right: 24, top: 24, bottom: 40 };
   const plotWidth = width - margins.left - margins.right;
   const plotHeight = height - margins.top - margins.bottom;
-  const ymin = Math.min(...values.map((v, i) => v - stdValues[i]), ...trendValues);
-  const ymax = Math.max(...values.map((v, i) => v + stdValues[i]), ...trendValues);
+  const yMinRaw = Math.min(...values.map((v, i) => v - stdValues[i]), ...trendValues);
+  const yMaxRaw = Math.max(...values.map((v, i) => v + stdValues[i]), ...trendValues);
+  let ymin = Math.floor(yMinRaw);
+  let ymax = Math.ceil(yMaxRaw);
+  if (ymin === ymax) {
+    ymin -= 1;
+    ymax += 1;
+  }
   const yrange = ymax - ymin || 1;
   const xs = values.map((_, i) => margins.left + (i / (values.length - 1)) * plotWidth);
   const ys = values.map((v) => margins.top + ((ymax - v) / yrange) * plotHeight);
@@ -661,7 +667,7 @@ function drawTimeSeries() {
   const linePath = buildPath(xs, ys);
   const trendPath = buildPath(xs, trendYs);
   const currentX = xs[state.timeIndex];
-  const yTicks = [ymin, (ymin + ymax) / 2, ymax];
+  const yTicks = Array.from({ length: ymax - ymin + 1 }, (_, idx) => ymin + idx);
   const significant = d.trend.significant[state.densityIndex][state.latitudeIndex];
   const gapStart = d.gap_time_range ? d.gap_time_range[0] : null;
   const gapEnd = d.gap_time_range ? d.gap_time_range[1] : null;
@@ -694,7 +700,7 @@ function drawTimeSeries() {
         return `<g>
           <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="rgba(31,36,48,0.12)"></line>
           <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="rgba(31,36,48,0.35)"></line>
-          <text x="${margins.left - 10}" y="${y + 5}" text-anchor="end" font-size="16" fill="#5a534d">${tick.toFixed(2)}</text>
+          <text x="${margins.left - 10}" y="${y + 5}" text-anchor="end" font-size="16" fill="#5a534d">${tick}</text>
         </g>`;
       })
       .join("")}
