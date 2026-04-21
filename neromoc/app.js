@@ -321,9 +321,12 @@ function drawHeatmap(canvas, values, xLabels, yLabels, options) {
   ctx.textAlign = "left";
   ctx.font = PLOT_COLORBAR_FONT;
   const tickDigits = options.colorbarTickDigits ?? 0;
-  ctx.fillText(formatColorbarTick(options.clim, tickDigits), cbX + 18, cbY + 10);
-  ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
-  ctx.fillText(formatColorbarTick(-options.clim, tickDigits), cbX + 18, cbY + cbH - 2);
+  const colorbarTicks = [options.clim, options.clim / 2, 0, -options.clim / 2, -options.clim];
+  colorbarTicks.forEach((tickValue, idx) => {
+    const y = cbY + (idx / (colorbarTicks.length - 1)) * cbH;
+    const baselineOffset = idx === 0 ? 10 : idx === colorbarTicks.length - 1 ? -2 : 4;
+    ctx.fillText(formatColorbarTick(tickValue, tickDigits), cbX + 18, y + baselineOffset);
+  });
   if (options.colorbarTitle) {
     ctx.textAlign = "center";
     ctx.fillText(options.colorbarTitle, cbX + 7, cbY - 6);
@@ -476,9 +479,12 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   ctx.textAlign = "left";
   ctx.font = PLOT_COLORBAR_FONT;
   const tickDigits = options.colorbarTickDigits ?? 0;
-  ctx.fillText(formatColorbarTick(options.clim, tickDigits), cbX + 18, cbY + 10);
-  ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
-  ctx.fillText(formatColorbarTick(-options.clim, tickDigits), cbX + 18, cbY + cbH - 2);
+  const colorbarTicks = [options.clim, options.clim / 2, 0, -options.clim / 2, -options.clim];
+  colorbarTicks.forEach((tickValue, idx) => {
+    const y = cbY + (idx / (colorbarTicks.length - 1)) * cbH;
+    const baselineOffset = idx === 0 ? 10 : idx === colorbarTicks.length - 1 ? -2 : 4;
+    ctx.fillText(formatColorbarTick(tickValue, tickDigits), cbX + 18, y + baselineOffset);
+  });
   if (options.colorbarTitle) {
     ctx.textAlign = "center";
     ctx.fillText(options.colorbarTitle, cbX + 7, cbY - 6);
@@ -651,9 +657,12 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   ctx.textAlign = "left";
   ctx.font = PLOT_COLORBAR_FONT;
   const tickDigits = options.colorbarTickDigits ?? 0;
-  ctx.fillText(formatColorbarTick(options.clim, tickDigits), cbX + 18, cbY + 10);
-  ctx.fillText(formatColorbarTick(0, tickDigits), cbX + 18, cbY + cbH / 2 + 4);
-  ctx.fillText(formatColorbarTick(-options.clim, tickDigits), cbX + 18, cbY + cbH - 2);
+  const colorbarTicks = [options.clim, options.clim / 2, 0, -options.clim / 2, -options.clim];
+  colorbarTicks.forEach((tickValue, idx) => {
+    const y = cbY + (idx / (colorbarTicks.length - 1)) * cbH;
+    const baselineOffset = idx === 0 ? 10 : idx === colorbarTicks.length - 1 ? -2 : 4;
+    ctx.fillText(formatColorbarTick(tickValue, tickDigits), cbX + 18, y + baselineOffset);
+  });
   if (options.colorbarTitle) {
     ctx.textAlign = "center";
     ctx.fillText(options.colorbarTitle, cbX + 7, cbY - 6);
