@@ -2,7 +2,7 @@
 main:
   - title: "Research"
     url: /research/
-  - title: "NeroMOC"
+  - title: "NeurMOC"
     url: /neromoc/
   - title: "Publications"
     url: /publications/
