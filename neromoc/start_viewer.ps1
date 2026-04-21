@@ -26,7 +26,7 @@ if (-not (Test-Path $servedMatPath) -or ((Get-Item $servedMatPath).LastWriteTime
     Copy-Item -LiteralPath $matPath -Destination $servedMatPath -Force
 }
 
-Write-Host "Starting NeroMOC viewer at http://localhost:8000"
+Write-Host "Starting NeurMOC viewer at http://localhost:8000"
 Write-Host "Press Ctrl+C to stop the server."
 Push-Location $viewerDir
 try {

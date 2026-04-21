@@ -1,6 +1,6 @@
-# NeroMOC Interactive Viewer
+# NeurMOC Interactive Viewer
 
-This folder contains a lightweight browser-based visualization tool for `NeroMOC_data.mat`.
+This folder contains a lightweight browser-based visualization tool for `NeroMOC_data.mat`, presented publicly as NeurMOC.
 
 ## What it shows
 

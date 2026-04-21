@@ -1,4 +1,4 @@
-const DATA_PATH = "./data/neromoc_data.json?v=2026-04-16k";
+const DATA_PATH = "./data/neromoc_data.json?v=2026-04-21c";
 
 const state = {
   data: null,
@@ -1048,13 +1048,14 @@ function bindControls() {
 }
 
 async function init() {
-  const response = await fetch("./data/neromoc_data.json?v=2026-04-16g");
+  const response = await fetch(DATA_PATH);
   state.data = await response.json();
   state.timeIndex = state.data.time_labels.length - 1;
   state.densityIndex = Math.floor(state.data.densities.length / 2);
   state.latitudeIndex = Math.floor(state.data.latitudes.length / 2);
 
-  controls.sourceFile.innerHTML = `<a class="meta-link" href="./data/${state.data.metadata.source_file}" download="${state.data.metadata.source_file}">${state.data.metadata.source_file}</a>`;
+  const displaySourceFile = state.data.metadata.source_file.replace(/^NeroMOC/i, "NeurMOC");
+  controls.sourceFile.innerHTML = `<a class="meta-link" href="./data/${state.data.metadata.source_file}" download="${displaySourceFile}">${displaySourceFile}</a>`;
   controls.timeAssumption.innerHTML = 'For more information, refer to the manuscript <strong>"Machine learning-enabled satellite monitoring of ocean overturning circulation"</strong> by Huaiyu Wei, Andrew L. Stewart, Andrei Medvedev, Kaushik Srinivasan, Aviv Solodoch, Georgy E. Manucharyan, and Andrew McC. Hogg.';
   controls.timeSlider.max = String(state.data.time_labels.length - 1);
   controls.timeSlider.value = String(state.timeIndex);

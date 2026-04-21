@@ -88,7 +88,7 @@ def build_payload(cfg: Config) -> dict:
     time_labels = [decimal_year_to_label(float(value)) for value in time_years]
 
     return {
-        "title": "NeroMOC interactive viewer",
+        "title": "NeurMOC interactive viewer",
         "description": "Meridional overturning circulation reconstruction in latitude-density space.",
         "units": "Sv",
         "dimensions": {
@@ -121,7 +121,7 @@ def build_payload(cfg: Config) -> dict:
 
 
 def parse_args() -> Config:
-    parser = argparse.ArgumentParser(description="Convert NeroMOC_data.mat to JSON for the NeroMOC viewer.")
+    parser = argparse.ArgumentParser(description="Convert NeroMOC_data.mat to JSON for the NeurMOC viewer.")
     parser.add_argument("--mat", dest="mat_path", default="NeroMOC_data.mat", help="Path to input MAT file.")
     parser.add_argument("--out", dest="output_path", default="viewer/data/neromoc_data.json", help="Path to output JSON file.")
     parser.add_argument("--decimals", type=int, default=4, help="Number of decimals to store in JSON.")
