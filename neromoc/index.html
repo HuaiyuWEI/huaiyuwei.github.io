@@ -1,142 +1,16 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NeurMOC Viewer</title>
-  <link rel="stylesheet" href="./styles.css?v=2026-04-17b">
+  <meta http-equiv="refresh" content="0; url=/neurmoc/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="canonical" href="https://huaiyuwei.github.io/neurmoc/">
+  <script>
+    window.location.replace("/neurmoc/" + window.location.search + window.location.hash);
+  </script>
 </head>
 <body>
-  <main class="app-shell">
-    <section class="hero">
-      <div class="hero-top">
-        <div class="hero-main">
-          <p class="eyebrow">Interactive visualization tool</p>
-          <h1>NeurMOC Viewer</h1>
-          <p class="hero-copy">
-            NeurMOC is a machine learning-enabled, satellite-based reconstruction of the Atlantic and Southern Ocean meridional overturning circulation in latitude-density space.
-            This viewer summarizes the reconstructed streamfunction, reconstruction uncertainty, and estimated trend over April 2003 to April 2024.
-            The reconstruction retains only interannual and longer-timescale variability.
-          </p>
-        </div>
-        <div class="meta-card meta-card-source">
-          <span class="meta-label">Source</span>
-          <span id="source-file">Loading...</span>
-        </div>
-      </div>
-      <div class="hero-meta">
-        <div class="meta-card meta-card-info">
-          <span class="meta-label">More Information</span>
-          <span id="time-assumption">Loading...</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="dashboard-layout">
-      <section class="top-panels-grid">
-        <article class="panel panel-center-figure">
-          <div class="panel-header">
-            <div>
-              <h2>Reconstructed Mean MOC</h2>
-              <p>Time-mean reconstructed overturning streamfunction in latitude-density space, shown separately for the Southern Ocean and Atlantic basin.</p>
-            </div>
-          </div>
-          <canvas id="section-canvas" width="1200" height="520"></canvas>
-        </article>
-
-        <article class="panel">
-          <div class="panel-header">
-            <div>
-              <h2>Reconstructed MOC Time Series</h2>
-              <p>Reconstructed streamfunction at the selected latitude-density point, shown with reconstruction uncertainty, the estimated linear trend, and the GRACE/GRACE-FO gap shaded in cyan. Select latitude and density by clicking any latitude-density panel.</p>
-            </div>
-          </div>
-          <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
-          <section class="summary-grid embedded-summary-grid plot-summary-grid">
-            <article class="summary-card">
-              <span class="summary-label">Latitude</span>
-              <strong id="selected-latitude">Waiting for selection</strong>
-            </article>
-            <article class="summary-card">
-              <span class="summary-label">Density</span>
-              <strong id="selected-density">-</strong>
-            </article>
-            <article class="summary-card">
-              <span class="summary-label">Mean value</span>
-              <strong id="selected-value">-</strong>
-            </article>
-            <article class="summary-card">
-              <span class="summary-label">Uncertainty</span>
-              <strong id="selected-std">-</strong>
-            </article>
-          </section>
-        </article>
-
-        <article class="panel">
-          <div class="panel-header">
-            <div>
-              <h2>Reconstructed MOC trend</h2>
-              <p>Estimated linear trend of NeurMOC in latitude-density space, shown separately for the Southern Ocean and Atlantic basin. Black crosses mark locations where the trend is not considered significant.</p>
-            </div>
-          </div>
-          <canvas id="trend-canvas" width="1200" height="520"></canvas>
-        </article>
-
-        <article class="panel">
-          <div class="panel-header">
-            <div>
-              <h2>Latitude-Time Evolution</h2>
-              <p>Hovmoller diagram of the reconstructed streamfunction at the selected density level, showing its evolution across latitude and time. Click to move the month and latitude together.</p>
-            </div>
-          </div>
-          <div class="plot-frame plot-frame-wide">
-            <canvas id="hovmoller-canvas" width="1200" height="520"></canvas>
-          </div>
-        </article>
-      </section>
-
-      <article class="panel snapshot-panel">
-        <div class="panel-header">
-          <div>
-            <h2>Snapshot &amp; Animation</h2>
-            <p>Press Play to animate the month-to-month evolution of the reconstructed streamfunction.</p>
-          </div>
-        </div>
-        <div class="snapshot-body">
-          <div class="snapshot-visual">
-            <canvas id="snapshot-canvas" width="1200" height="520"></canvas>
-          </div>
-          <aside class="control-panel snapshot-controls">
-            <label class="control-block">
-              <span>Month</span>
-              <input id="time-slider" type="range" min="0" max="0" value="0">
-              <strong id="time-label">Loading...</strong>
-            </label>
-            <label class="control-block">
-              <span>Density level for Hovmoller</span>
-              <select id="density-select"></select>
-            </label>
-            <label class="control-block">
-              <span>Color limit (|Sv|)</span>
-              <input id="clim-slider" type="range" min="5" max="30" value="18" step="1">
-              <strong id="clim-label">18 Sv</strong>
-            </label>
-            <div class="control-block">
-              <span>Playback speed</span>
-              <div class="speed-control" id="speed-control" role="group" aria-label="Playback speed">
-                <button class="speed-option" data-speed="slow" type="button">Slow</button>
-                <button class="speed-option is-active" data-speed="normal" type="button">Normal</button>
-                <button class="speed-option" data-speed="fast" type="button">Fast</button>
-              </div>
-            </div>
-            <button id="play-button" type="button">Play</button>
-          </aside>
-        </div>
-      </article>
-    </section>
-  </main>
-
-  <script src="./app.js?v=2026-04-21c"></script>
+  <p>Redirecting to the <a href="/neurmoc/">NeurMOC Viewer</a>...</p>
 </body>
 </html>
-

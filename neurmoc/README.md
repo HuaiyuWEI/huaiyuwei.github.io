@@ -11,21 +11,21 @@ This folder contains a lightweight browser-based visualization tool for `NeroMOC
 
 ## Files
 
-- `convert_mat_to_json.py`: converts `NeroMOC_data.mat` into `viewer/data/neromoc_data.json`.
+- `convert_mat_to_json.py`: converts `data/NeroMOC_data.mat` into `data/neromoc_data.json`.
 - `index.html`, `app.js`, `styles.css`: the static viewer.
 
 ## First-time setup
 
-From the `RealWorld` directory:
+From the `neurmoc` directory:
 
 ```powershell
-py -3 viewer/convert_mat_to_json.py
+py -3 .\convert_mat_to_json.py
 ```
 The converter reads `NeroMOC_time` directly, so no synthetic time axis or edge trimming is applied during export.
 
 ## Launch locally
 
-From the `RealWorld/viewer` directory:
+From the `neurmoc` directory:
 
 ```powershell
 py -3 -m http.server 8000
@@ -38,7 +38,7 @@ Then open:
 Or use the helper launcher:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File viewer/start_viewer.ps1
+powershell -ExecutionPolicy Bypass -File .\start_viewer.ps1
 ```
 
 ## Interaction tips

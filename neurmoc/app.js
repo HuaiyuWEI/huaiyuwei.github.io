@@ -1,4 +1,4 @@
-const DATA_PATH = "./data/neromoc_data.json?v=2026-04-21c";
+const DATA_PATH = "./data/neromoc_data.json?v=2026-04-23a";
 
 const state = {
   data: null,
