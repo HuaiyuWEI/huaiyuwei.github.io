@@ -1056,7 +1056,7 @@ async function init() {
 
   const displaySourceFile = state.data.metadata.source_file.replace(/^NeroMOC/i, "NeurMOC");
   controls.sourceFile.innerHTML = `<a class="meta-link" href="./data/${state.data.metadata.source_file}" download="${displaySourceFile}">${displaySourceFile}</a>`;
-  controls.timeAssumption.innerHTML = 'For more information, refer to the manuscript <strong>"Machine learning-enabled satellite monitoring of ocean overturning circulation"</strong> by Huaiyu Wei, Andrew L. Stewart, Andrei Medvedev, Kaushik Srinivasan, Aviv Solodoch, Georgy E. Manucharyan, and Andrew McC. Hogg.';
+  controls.timeAssumption.innerHTML = 'For more information, refer to the manuscript <strong>"Satellite monitoring of global ocean overturning circulation enabled by deep learning"</strong> by Huaiyu Wei, Andrew L. Stewart, Andrei Medvedev, Kaushik Srinivasan, Aviv Solodoch, Georgy E. Manucharyan, and Andrew McC. Hogg.';
   controls.timeSlider.max = String(state.data.time_labels.length - 1);
   controls.timeSlider.value = String(state.timeIndex);
 
