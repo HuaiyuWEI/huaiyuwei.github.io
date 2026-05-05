@@ -9,10 +9,10 @@ author_profile: true
   <div class="wordwrap">You can also find my publications on <a href="{{site.author.googlescholar}}">my Google Scholar profile</a>.</div>
 {% endif %}
 
-## 📝 In Preparation / Submitted
+## 📝 Preprints
 
 
-- <ins>***Wei, H.***</ins>, Stewart, A. L., et al. Satellite monitoring of global ocean overturning circulation enabled by deep learning. _In preparation_. (Preprint available upon request)
+- <ins>***Wei, H.***</ins>, Stewart, A. L., et al. Satellite monitoring of global ocean overturning circulation enabled by deep learning. _Submitted_. (Preprint available upon request)
 
 - Medvedev, A., <ins>***Wei, H.***</ins>, Armour, K. C., et al. Basin-wide sea-surface observations reveal post-2000 emergence of AMOC weakening. _ESS Open Archive_. [(DOI)](https://doi.org/10.22541/essoar.15002298/v1)
 
