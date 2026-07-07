@@ -223,10 +223,12 @@ function thinTicks(indices, fs) {
 function valueToColor(value, clim) {
   const clamped = Math.max(-clim, Math.min(clim, value));
   const t = (clamped + clim) / (2 * clim);
+  // RdBu-style diverging ramp (matches the manuscript figures) with a
+  // neutral midpoint so zero reads as "no signal", not as a warm hue
   const anchors = [
     { t: 0.0, rgb: [33, 74, 135] },
     { t: 0.18, rgb: [89, 141, 196] },
-    { t: 0.5, rgb: [250, 247, 239] },
+    { t: 0.5, rgb: [247, 248, 250] },
     { t: 0.82, rgb: [214, 113, 80] },
     { t: 1.0, rgb: [132, 34, 25] },
   ];
@@ -294,7 +296,7 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   const rightX0 = margins.left + leftWidth + gap;
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#fffdfa";
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
   function drawHalf(indices, x0, cellW) {
@@ -330,18 +332,18 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   drawHalf(split.leftIndices, leftX0, leftCellW);
   drawHalf(split.rightIndices, rightX0, rightCellW);
 
-  ctx.strokeStyle = "rgba(31,36,48,0.45)";
+  ctx.strokeStyle = "rgba(27,44,62,0.45)";
   ctx.lineWidth = 1;
   ctx.strokeRect(leftX0, margins.top, leftWidth, plotHeight);
   ctx.strokeRect(rightX0, margins.top, rightWidth, plotHeight);
 
-  ctx.fillStyle = "#20242d";
+  ctx.fillStyle = "#1b2c3e";
   ctx.font = fonts.panel;
   ctx.textAlign = "left";
   ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28 * fs);
   ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28 * fs);
 
-  ctx.fillStyle = "#5a534d";
+  ctx.fillStyle = "#5c7186";
   ctx.font = fonts.tick;
   ctx.textAlign = "center";
   const leftTicks = thinTicks(options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1], fs);
@@ -430,6 +432,11 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
     if (localX >= 0) {
       const hx = x0 + (localX + 0.5) * cellW;
       const hy = margins.top + (options.highlightY + 0.5) * cellH;
+      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.lineWidth = 3.6 * fs;
+      ctx.beginPath();
+      ctx.arc(hx, hy, 5.5 * fs, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.strokeStyle = "#111111";
       ctx.lineWidth = 1.6 * fs;
       ctx.beginPath();
@@ -474,7 +481,7 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   const rightX0 = margins.left + leftWidth + gap;
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#fffdfa";
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
   function drawHalf(indices, x0, cellW) {
@@ -491,18 +498,18 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   drawHalf(split.leftIndices, leftX0, leftCellW);
   drawHalf(split.rightIndices, rightX0, rightCellW);
 
-  ctx.strokeStyle = "rgba(31,36,48,0.45)";
+  ctx.strokeStyle = "rgba(27,44,62,0.45)";
   ctx.lineWidth = 1;
   ctx.strokeRect(leftX0, margins.top, leftWidth, plotHeight);
   ctx.strokeRect(rightX0, margins.top, rightWidth, plotHeight);
 
-  ctx.fillStyle = "#20242d";
+  ctx.fillStyle = "#1b2c3e";
   ctx.font = fonts.panel;
   ctx.textAlign = "left";
   ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28 * fs);
   ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28 * fs);
 
-  ctx.fillStyle = "#5a534d";
+  ctx.fillStyle = "#5c7186";
   ctx.font = fonts.tick;
   ctx.textAlign = "center";
   const leftTicks = thinTicks(options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1], fs);
@@ -613,6 +620,11 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
       const hx = x0 + (localX + 0.5) * cellW;
       const hyIndex = options.flipY ? ny - 1 - options.highlightY : options.highlightY;
       const hy = margins.top + (hyIndex + 0.5) * cellH;
+      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.lineWidth = 3.6 * fs;
+      ctx.beginPath();
+      ctx.arc(hx, hy, 5.5 * fs, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.strokeStyle = "#111111";
       ctx.lineWidth = 1.5 * fs;
       ctx.beginPath();
@@ -720,17 +732,18 @@ function drawTimeSeries() {
   const fTitle = Math.round(18 * fs);
 
   timeseriesSvg.innerHTML = `
-    <rect x="0" y="0" width="${width}" height="${height}" fill="#fffdfa"></rect>
-    <rect x="${margins.left}" y="${margins.top}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="rgba(31,36,48,0.35)"></rect>
-    ${gapX1 !== null && gapX2 !== null ? `<rect x="${gapX1}" y="${margins.top}" width="${Math.max(0, gapX2 - gapX1)}" height="${plotHeight}" fill="rgba(0, 255, 255, 0.12)"></rect>` : ""}
-    ${crossesZero ? `<line x1="${margins.left}" y1="${zeroY}" x2="${width - margins.right}" y2="${zeroY}" stroke="rgba(31,36,48,0.55)" stroke-width="1"></line>` : ""}
+    <rect x="0" y="0" width="${width}" height="${height}" fill="#ffffff"></rect>
+    <rect x="${margins.left}" y="${margins.top}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="rgba(27,44,62,0.35)"></rect>
+    ${gapX1 !== null && gapX2 !== null ? `<rect x="${gapX1}" y="${margins.top}" width="${Math.max(0, gapX2 - gapX1)}" height="${plotHeight}" fill="rgba(100, 116, 139, 0.12)"></rect>` : ""}
+    ${gapX1 !== null && gapX2 !== null && gapX2 - gapX1 > 34 * fs ? `<text x="${(gapX1 + gapX2) / 2}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${Math.round(13 * fs)}" fill="#7b8a99" transform="rotate(-90 ${(gapX1 + gapX2) / 2} ${margins.top + plotHeight / 2})">GRACE gap</text>` : ""}
+    ${crossesZero ? `<line x1="${margins.left}" y1="${zeroY}" x2="${width - margins.right}" y2="${zeroY}" stroke="rgba(27,44,62,0.55)" stroke-width="1"></line>` : ""}
     ${yTicks
       .map((tick) => {
         const y = margins.top + ((ymax - tick) / yrange) * plotHeight;
         return `<g>
-          <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="rgba(31,36,48,0.12)"></line>
-          <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="rgba(31,36,48,0.35)"></line>
-          <text x="${margins.left - 10}" y="${y + 5}" text-anchor="end" font-size="${fTick}" fill="#5a534d">${tick}</text>
+          <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="rgba(27,44,62,0.12)"></line>
+          <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="rgba(27,44,62,0.35)"></line>
+          <text x="${margins.left - 10}" y="${y + 5}" text-anchor="end" font-size="${fTick}" fill="#5c7186">${tick}</text>
         </g>`;
       })
       .join("")}
@@ -738,7 +751,7 @@ function drawTimeSeries() {
       .map((year) => {
         const x = xToSvg(year, xYears[0], xYears[xYears.length - 1], margins, plotWidth);
         return `<g>
-          <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 4}" stroke="rgba(31,36,48,0.35)"></line>
+          <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 4}" stroke="rgba(27,44,62,0.35)"></line>
         </g>`;
       })
       .join("")}
@@ -746,17 +759,17 @@ function drawTimeSeries() {
       .map((year) => {
         const x = xToSvg(year, xYears[0], xYears[xYears.length - 1], margins, plotWidth);
         return `<g>
-          <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 8}" stroke="rgba(31,36,48,0.45)"></line>
-          <text x="${x}" y="${height - margins.bottom + 8 + fTick}" text-anchor="middle" font-size="${fTick}" fill="#5a534d">${year}</text>
+          <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 8}" stroke="rgba(27,44,62,0.45)"></line>
+          <text x="${x}" y="${height - margins.bottom + 8 + fTick}" text-anchor="middle" font-size="${fTick}" fill="#5c7186">${year}</text>
         </g>`;
       })
       .join("")}
-    <path d="${areaPath}" fill="rgba(157,77,47,0.18)"></path>
+    <path d="${areaPath}" fill="rgba(143,45,27,0.15)"></path>
     <path d="${linePath}" fill="none" stroke="#8f2d1b" stroke-width="3"></path>
-    <path d="${trendPath}" fill="none" stroke="${significant ? "#0f6a8b" : "#7f8b92"}" stroke-width="2.5" stroke-dasharray="9 6"></path>
+    <path d="${trendPath}" fill="none" stroke="${significant ? "#0d6fa4" : "#7f8b92"}" stroke-width="2.5" stroke-dasharray="9 6"></path>
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="#162238" stroke-width="1.5" stroke-dasharray="6 4"></line>
-    <text x="${width / 2}" y="${fTitle}" text-anchor="middle" font-size="${fTitle}" fill="#5a534d">Overturning strength (Sv)</text>
-    <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${significant ? "#0f6a8b" : "#7f8b92"}">
+    <text x="${24 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="#5c7186" transform="rotate(-90 ${24 * fs} ${margins.top + plotHeight / 2})">Ψ (Sv)</text>
+    <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${significant ? "#0d6fa4" : "#7f8b92"}">
       ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹` : "Trend not significant at p < 0.05"}
     </text>
   `;

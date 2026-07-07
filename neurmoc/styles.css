@@ -5,8 +5,8 @@
   --bg-start: #f8fcff;
   --panel: rgba(252, 255, 255, 0.94);
   --panel-border: rgba(95, 140, 176, 0.16);
-  --ink: #203344;
-  --muted: #5f7f96;
+  --ink: #1b2c3e;
+  --muted: #5c7186;
   --accent: #5b9dcf;
   --accent-deep: #2f6f9f;
   --accent-soft: #d9ebf8;
@@ -16,7 +16,10 @@
   --field-border: rgba(95, 140, 176, 0.18);
   --toggle-bg: rgba(249, 253, 255, 0.88);
   --toggle-active-text: #ffffff;
-  --shadow: 0 20px 40px rgba(53, 88, 122, 0.09);
+  --hairline: rgba(95, 140, 176, 0.14);
+  --shadow: 0 10px 30px rgba(45, 80, 115, 0.08);
+  --pole-blue: #214a87;
+  --pole-red: #842219;
   --radius: 18px;
   --font-display: Georgia, "Times New Roman", serif;
   --font-body: "Segoe UI", Tahoma, sans-serif;
@@ -24,6 +27,27 @@
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+}
+
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent-deep);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 body {
@@ -53,10 +77,21 @@ body {
 }
 
 .hero {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: 14px;
-  padding: 22px 24px;
+  padding: 24px;
   border-radius: 24px;
+}
+
+/* a nod to the diverging streamfunction colormap */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--pole-blue), #f7f8fa 50%, var(--pole-red));
 }
 
 .hero-top {
@@ -288,6 +323,61 @@ button {
   background: #cce4f6;
 }
 
+/* ---- time-series legend ---- */
+
+.ts-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.swatch {
+  display: inline-block;
+  flex: none;
+}
+
+.swatch-recon {
+  width: 18px;
+  height: 10px;
+  border-radius: 3px;
+  background: rgba(143, 45, 27, 0.15);
+  position: relative;
+}
+
+.swatch-recon::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 2px;
+  background: #8f2d1b;
+}
+
+.swatch-trend {
+  width: 18px;
+  height: 0;
+  border-top: 3px dashed #0d6fa4;
+}
+
+.swatch-gap {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: rgba(100, 116, 139, 0.22);
+}
+
 .summary-grid {
   display: grid;
   gap: 14px;
@@ -331,6 +421,12 @@ button {
   line-height: 1.22;
 }
 
+.summary-card strong,
+#time-label,
+#clim-label {
+  font-variant-numeric: tabular-nums;
+}
+
 .dashboard-layout {
   display: grid;
   gap: 16px;
@@ -371,15 +467,17 @@ button {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--hairline);
 }
 
 canvas,
 svg {
   width: 100%;
   display: block;
-  background: rgba(247, 251, 255, 0.98);
-  border: 1px solid rgba(95, 140, 176, 0.12);
+  background: #ffffff;
+  border: 1px solid rgba(95, 140, 176, 0.16);
   border-radius: 16px;
 }
 
@@ -389,6 +487,10 @@ canvas {
 
 #timeseries-svg {
   height: 290px;
+}
+
+#timeseries-svg text {
+  font-family: var(--font-body);
 }
 
 .plot-frame {
