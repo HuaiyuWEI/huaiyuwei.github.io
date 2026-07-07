@@ -1,58 +1,64 @@
 # NeurMOC Interactive Viewer
 
-This folder contains a lightweight browser-based visualization tool for `NeroMOC_data.mat`, presented publicly as NeurMOC.
+Browser-based viewer for the NeurMOC reconstruction (published at
+https://huaiyuwei.github.io/neurmoc/). Vanilla HTML/CSS/JS, no build step.
 
 ## What it shows
 
-- A time-mean latitude-density section split into Southern Ocean and Atlantic basins.
-- A latitude-density trend map split into Southern Ocean and Atlantic basins.
-- A time series plus `pred_yz_std` uncertainty and a fitted linear trend at the clicked latitude-density point.
-- A time-latitude Hovmoller diagram at a selected density level.
+- Time-mean overturning streamfunction in latitude–density space, split into
+  Southern Ocean (SMOC) and Atlantic (AMOC) sectors.
+- Local time series with the uncertainty envelope and linear trend at the
+  clicked latitude–density cell, plus location presets (RAPID 26.5°N, 45°N,
+  abyssal 60°S).
+- 21-year linear-trend map with significance stippling.
+- Latitude–time Hovmöller diagram at a selected density level.
+- Month-by-month snapshot with animation.
+
+Hovering over any heatmap shows a value readout; clicking selects the cell.
 
 ## Files
 
-- `convert_mat_to_json.py`: converts `data/NeroMOC_data.mat` into `data/neromoc_data.json`.
-- `index.html`, `app.js`, `styles.css`: the static viewer.
+- `index.html`, `app.js`, `styles.css` — the static viewer.
+- `prepare_viewer_data.py` — converts `data/NeroMOC_data.mat` into the two
+  files the viewer loads:
+  - `data/neurmoc_meta.json` (~100 KB): axes, labels, time-mean field, trend
+    statistics, and the binary descriptor.
+  - `data/neurmoc_series.bin` (~2.5 MB): the monthly reconstruction and its
+    uncertainty as int16 quantized at 0.005 Sv (max round-trip error
+    0.0025 Sv). This replaced a 23.7 MB full-precision JSON.
+- `data/NeroMOC_data.mat` — the source data, also offered for download on
+  the page (as `NeurMOC_data.mat`; variables inside keep the legacy
+  `NeroMOC_*` names).
 
-## First-time setup
+## Updating the data
 
-From the `neurmoc` directory:
+Drop a new `NeroMOC_data.mat` into `data/`, then from this directory:
 
 ```powershell
-py -3 .\convert_mat_to_json.py
+py -3 .\prepare_viewer_data.py
 ```
-The converter reads `NeroMOC_time` directly, so no synthetic time axis or edge trimming is applied during export.
+
+Bump the `?v=` query strings in `index.html` (stylesheet + script) when
+changing `app.js`/`styles.css` so GitHub Pages visitors get the new files.
+The series binary is cache-busted automatically by its generation date.
 
 ## Launch locally
 
-From the `neurmoc` directory:
-
 ```powershell
-py -3 -m http.server 8000
+py -3 -m http.server 8000     # from this directory, then open localhost:8000
 ```
 
-Then open:
-
-`http://localhost:8000`
-
-Or use the helper launcher:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\start_viewer.ps1
-```
-
-## Interaction tips
-
-- Drag the month slider or press `Play`.
-- Click on the latitude-density section to inspect a feature.
-- Click on the Hovmoller panel to jump to a month-latitude pair.
-- Adjust the color limit to emphasize weak or strong circulation features.
+or `powershell -ExecutionPolicy Bypass -File .\start_viewer.ps1`, which also
+regenerates the data files if the .mat is newer.
 
 ## Notes
 
-- The viewer assumes `NeroMOC` is stored as `[time, density, latitude]`.
-- Density is displayed from `NeroMOC_density` and increases downward.
-- Trend and significance are read directly from `NeroMOC_trend` and `NeroMOC_trend_significant`.
-- The local time series uses `GRACE_Gap_TimeRang` for cyan gap shading.
-- Units are displayed as Sv.
-- The exported JSON stores rounded values for lighter browser loading.
+- Array order in the .mat is `[time, density, latitude]`; density is σ₂ and
+  increases downward in the plots.
+- Trend, its 95% CI, and significance are read directly from
+  `NeroMOC_trend_*` (no recomputation in the browser).
+- The GRACE/GRACE-FO gap window comes from `GRACE_Gap_TimeRang` and is
+  shaded in the time-series panel.
+- Plot fonts auto-enlarge (and ticks thin out) when panels are displayed
+  much narrower than their 1200 px drawing resolution, so phones stay
+  readable.

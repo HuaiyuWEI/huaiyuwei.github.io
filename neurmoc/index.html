@@ -1,34 +1,70 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NeurMOC Viewer</title>
-  <link rel="stylesheet" href="./styles.css?v=2026-04-24a">
+  <title>NeurMOC — Satellite-based reconstruction of the ocean overturning circulation</title>
+  <meta name="description" content="NeurMOC is a neural-network reconstruction of the Atlantic and Southern Ocean meridional overturning circulation from GRACE, satellite altimetry, and satellite winds, April 2003 to April 2024. Explore the streamfunction, uncertainty, and trends interactively.">
+  <link rel="canonical" href="https://huaiyuwei.github.io/neurmoc/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="NeurMOC — satellite-based monitoring of the ocean overturning circulation">
+  <meta property="og:description" content="Interactive viewer for the NeurMOC reconstruction: monthly overturning streamfunction in latitude–density space, with uncertainty and 21-year trends.">
+  <meta property="og:url" content="https://huaiyuwei.github.io/neurmoc/">
+  <meta name="twitter:card" content="summary">
+  <meta name="theme-color" content="#4d90c2">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css?v=2026-07-07a">
 </head>
 <body>
+  <div id="loading-overlay" role="status" aria-live="polite">
+    <div class="loading-card">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <strong>Loading the NeurMOC reconstruction</strong>
+      <div class="loading-bar"><div id="loading-bar-fill"></div></div>
+      <span id="loading-status">Fetching metadata…</span>
+    </div>
+  </div>
+
   <main class="app-shell">
     <section class="hero">
       <div class="hero-top">
         <div class="hero-main">
-          <p class="eyebrow">Interactive visualization tool</p>
-          <h1>NeurMOC Viewer</h1>
+          <p class="eyebrow">Interactive data viewer</p>
+          <h1>NeurMOC</h1>
+          <p class="hero-subtitle">Satellite-based monitoring of the ocean overturning circulation with deep learning</p>
           <p class="hero-copy">
-            NeurMOC is a deep learning-enabled, satellite-based reconstruction of the Atlantic and Southern Ocean meridional overturning circulation in latitude-density space.
-            This viewer summarizes the reconstructed streamfunction, reconstruction uncertainty, and estimated trend over April 2003 to April 2024.
-            The reconstruction retains only interannual and longer-timescale variability.
+            NeurMOC reconstructs the Atlantic and Southern Ocean meridional overturning circulation (MOC)
+            in latitude&ndash;density space from satellite observations of ocean bottom pressure (GRACE/GRACE-FO),
+            sea surface height (altimetry), and surface winds, using neural networks trained on a large
+            climate-model ensemble. This viewer presents the monthly reconstruction, its uncertainty, and the
+            estimated trend over April 2003 &ndash; April 2024. The reconstruction retains interannual and
+            longer-timescale variability.
           </p>
+          <div class="hero-actions">
+            <a class="action-button action-primary" href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm8 1.5V8h4.5L14 3.5zM8 12h8v1.6H8V12zm0 4h8v1.6H8V16z"/></svg>
+              Read the preprint
+            </a>
+            <a class="action-button" id="download-data-link" href="./data/NeroMOC_data.mat" download="NeurMOC_data.mat">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.2l3.6-3.6 1.4 1.4-6 6-6-6 1.4-1.4L10 13.2V3h2zM4 19h16v2H4v-2z"/></svg>
+              Download the data (.mat)
+            </a>
+            <a class="action-button" href="#cite">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5C7 5 5 7 5 9.5c0 2.3 1.7 4.2 4 4.5-.3 1.5-1.2 2.7-2.7 3.6l1.1 1.6C10.2 17.7 11.7 15 11.7 12V9.5C11.7 7 10.7 5 9.5 5zm9 0C16 5 14 7 14 9.5c0 2.3 1.7 4.2 4 4.5-.3 1.5-1.2 2.7-2.7 3.6l1.1 1.6c2.8-1.5 4.3-4.2 4.3-7.2V9.5C20.7 7 19.7 5 18.5 5z"/></svg>
+              How to cite
+            </a>
+            <a class="action-button" href="https://huaiyuwei.github.io/" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7c0 2.9-1.8 5.4-4.3 6.5L15 22H9l.3-6.5A7 7 0 0 1 5 9a7 7 0 0 1 7-7zm0 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+              Author site
+            </a>
+          </div>
         </div>
-        <div class="meta-card meta-card-source">
-          <span class="meta-label">Source</span>
-          <span id="source-file">Loading...</span>
-        </div>
-      </div>
-      <div class="hero-meta">
-        <div class="meta-card meta-card-info">
-          <span class="meta-label">More Information</span>
-          <span id="time-assumption">Loading...</span>
-        </div>
+        <aside class="fact-stack" aria-label="Key facts">
+          <div class="fact-chip"><span class="fact-label">Period</span><strong>Apr 2003 – Apr 2024, monthly</strong></div>
+          <div class="fact-chip"><span class="fact-label">Coverage</span><strong>74.5°S – 64.5°N, Atlantic + Southern Ocean</strong></div>
+          <div class="fact-chip"><span class="fact-label">Vertical coordinate</span><strong>18 density (σ₂) levels</strong></div>
+          <div class="fact-chip"><span class="fact-label">Timescales</span><strong>2-year low-pass filtered</strong></div>
+        </aside>
       </div>
     </section>
 
@@ -37,21 +73,27 @@
         <article class="panel panel-center-figure">
           <div class="panel-header">
             <div>
-              <h2>Reconstructed Mean MOC</h2>
-              <p>Time-mean reconstructed overturning streamfunction in latitude-density space, shown separately for the Southern Ocean and Atlantic basin.</p>
+              <h2>Time-mean overturning</h2>
+              <p>Time-mean reconstructed streamfunction in latitude&ndash;density space, split into the Southern Ocean (SMOC) and Atlantic (AMOC) sectors. Click any cell to inspect its time series.</p>
             </div>
           </div>
-          <canvas id="section-canvas" width="1200" height="520"></canvas>
+          <canvas id="section-canvas" width="1200" height="520" role="img" aria-label="Time-mean overturning streamfunction heatmap"></canvas>
         </article>
 
         <article class="panel">
           <div class="panel-header">
             <div>
-              <h2>Reconstructed MOC Time Series</h2>
-              <p>Reconstructed streamfunction at the selected latitude-density point, shown with reconstruction uncertainty, the estimated linear trend, and the GRACE/GRACE-FO gap shaded in cyan. Select latitude and density by clicking any latitude-density panel.</p>
+              <h2>Local time series</h2>
+              <p>Reconstruction at the selected latitude&ndash;density cell with its uncertainty envelope and linear trend. The GRACE/GRACE-FO gap is shaded. Choose a preset or click any map cell.</p>
             </div>
           </div>
-          <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="preset-row" id="preset-row" role="group" aria-label="Location presets">
+            <span class="preset-caption">Jump to:</span>
+            <button class="preset-option" type="button" data-preset="rapid">AMOC 26.5°N (RAPID)</button>
+            <button class="preset-option" type="button" data-preset="spna">AMOC 45°N</button>
+            <button class="preset-option" type="button" data-preset="abyssal">Abyssal cell 60°S</button>
+          </div>
+          <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Time series of the reconstruction at the selected point"></svg>
           <section class="summary-grid embedded-summary-grid plot-summary-grid">
             <article class="summary-card">
               <span class="summary-label">Latitude</span>
@@ -75,22 +117,22 @@
         <article class="panel">
           <div class="panel-header">
             <div>
-              <h2>Reconstructed MOC trend</h2>
-              <p>Estimated linear trend of NeurMOC in latitude-density space, shown separately for the Southern Ocean and Atlantic basin. Black crosses mark locations where the trend is not considered significant.</p>
+              <h2>21-year trend</h2>
+              <p>Linear trend of the reconstruction in latitude&ndash;density space. Crosses mark cells where the trend is not significant at the 95% level.</p>
             </div>
           </div>
-          <canvas id="trend-canvas" width="1200" height="520"></canvas>
+          <canvas id="trend-canvas" width="1200" height="520" role="img" aria-label="Linear trend heatmap"></canvas>
         </article>
 
         <article class="panel">
           <div class="panel-header">
             <div>
-              <h2>Latitude-Time Evolution</h2>
-              <p>Hovmoller diagram of the reconstructed streamfunction at the selected density level, showing its evolution across latitude and time. Click to move the month and latitude together.</p>
+              <h2>Latitude&ndash;time evolution</h2>
+              <p>Hovm&ouml;ller diagram of the reconstruction at the selected density level. Click to move the month and latitude together.</p>
             </div>
           </div>
           <div class="plot-frame plot-frame-wide">
-            <canvas id="hovmoller-canvas" width="1200" height="520"></canvas>
+            <canvas id="hovmoller-canvas" width="1200" height="520" role="img" aria-label="Latitude-time Hovmoller diagram"></canvas>
           </div>
         </article>
       </section>
@@ -98,13 +140,13 @@
       <article class="panel snapshot-panel">
         <div class="panel-header">
           <div>
-            <h2>Snapshot &amp; Animation</h2>
+            <h2>Monthly snapshot &amp; animation</h2>
             <p>Press Play to animate the month-to-month evolution of the reconstructed streamfunction.</p>
           </div>
         </div>
         <div class="snapshot-body">
           <div class="snapshot-visual">
-            <canvas id="snapshot-canvas" width="1200" height="520"></canvas>
+            <canvas id="snapshot-canvas" width="1200" height="520" role="img" aria-label="Monthly snapshot of the overturning streamfunction"></canvas>
           </div>
           <aside class="control-panel snapshot-controls">
             <label class="control-block">
@@ -113,7 +155,7 @@
               <strong id="time-label">Loading...</strong>
             </label>
             <label class="control-block">
-              <span>Density level for Hovmoller</span>
+              <span>Density level for Hovm&ouml;ller</span>
               <select id="density-select"></select>
             </label>
             <label class="control-block">
@@ -133,10 +175,80 @@
           </aside>
         </div>
       </article>
+
+      <section class="info-grid">
+        <article class="panel" id="about">
+          <div class="panel-header">
+            <div>
+              <h2>About NeurMOC</h2>
+            </div>
+          </div>
+          <div class="prose">
+            <p>
+              The MOC moves heat, carbon, and nutrients around the globe, but direct measurements exist at only a
+              few latitudes (e.g. the RAPID array at 26.5°N). NeurMOC closes this gap with neural networks that
+              learn the relationship between sea-surface and sea-floor observables and the overturning circulation
+              from a large ensemble of climate-model simulations, then apply it to two decades of satellite
+              observations.
+            </p>
+            <ul>
+              <li><strong>Inputs</strong> &mdash; GRACE/GRACE-FO ocean bottom pressure, satellite-altimetry sea surface height, and satellite surface winds, all on the JPL mascon grid.</li>
+              <li><strong>Output</strong> &mdash; the monthly overturning streamfunction in latitude&ndash;density (σ₂) space for the Atlantic and Southern Ocean, with per-cell uncertainty estimates.</li>
+              <li><strong>Validation</strong> &mdash; the approach is validated on withheld climate-model ensembles, on independent climate models, and against the RAPID moored array.</li>
+            </ul>
+            <p class="prose-note">
+              The uncertainty shown is the ensemble spread of the neural-network reconstruction accounting for
+              observational noise. See the manuscript for the full method, validation, and caveats.
+            </p>
+          </div>
+        </article>
+
+        <article class="panel" id="cite">
+          <div class="panel-header">
+            <div>
+              <h2>How to cite</h2>
+            </div>
+          </div>
+          <div class="prose">
+            <p class="citation-text">
+              Wei, H., Stewart, A. L., Medvedev, A., Srinivasan, K., Solodoch, A., Manucharyan, G. E., &amp; Hogg, A. McC. (2026).
+              <em>Deep learning unlocks satellite-based monitoring of the global ocean overturning circulation.</em>
+              ESS Open Archive. <a class="meta-link" href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">doi:10.22541/essoar.15004679/v1</a>
+            </p>
+            <div class="bibtex-block">
+              <button class="copy-button" id="copy-bibtex" type="button">Copy BibTeX</button>
+<pre id="bibtex-source">@article{wei2026neurmoc,
+  title   = {Deep learning unlocks satellite-based monitoring of
+             the global ocean overturning circulation},
+  author  = {Wei, Huaiyu and Stewart, Andrew L. and Medvedev, Andrei
+             and Srinivasan, Kaushik and Solodoch, Aviv and
+             Manucharyan, Georgy E. and Hogg, Andrew McC.},
+  year    = {2026},
+  journal = {ESS Open Archive},
+  doi     = {10.22541/essoar.15004679/v1}
+}</pre>
+            </div>
+            <p class="prose-note">
+              The reconstruction is provided as-is for research use. Please cite the manuscript when using the
+              data, and <a class="meta-link" href="mailto:huaiyu.ocean@gmail.com">get in touch</a> with questions.
+            </p>
+          </div>
+        </article>
+      </section>
     </section>
+
+    <footer class="site-footer">
+      <span>&copy; 2026 Huaiyu Wei &middot; Atmospheric and Oceanic Sciences, UCLA</span>
+      <span class="footer-links">
+        <a class="meta-link" href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">Preprint</a>
+        &middot; <a class="meta-link" href="./data/NeroMOC_data.mat" download="NeurMOC_data.mat">Data</a>
+        &middot; <a class="meta-link" href="https://huaiyuwei.github.io/" target="_blank" rel="noopener">huaiyuwei.github.io</a>
+      </span>
+    </footer>
   </main>
 
-  <script src="./app.js?v=2026-06-25a"></script>
+  <div id="plot-tooltip" role="presentation" hidden></div>
+
+  <script src="./app.js?v=2026-07-07a"></script>
 </body>
 </html>
-

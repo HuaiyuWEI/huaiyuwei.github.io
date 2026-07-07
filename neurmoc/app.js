@@ -1,4 +1,5 @@
-const DATA_PATH = "./data/neromoc_data.json?v=2026-04-23a";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-07-07a";
+const DATA_DIR = "./data/";
 
 const state = {
   data: null,
@@ -20,12 +21,16 @@ const controls = {
   climLabel: document.getElementById("clim-label"),
   playButton: document.getElementById("play-button"),
   speedControl: document.getElementById("speed-control"),
-  sourceFile: document.getElementById("source-file"),
-  timeAssumption: document.getElementById("time-assumption"),
+  presetRow: document.getElementById("preset-row"),
+  copyBibtex: document.getElementById("copy-bibtex"),
   selectedLatitude: document.getElementById("selected-latitude"),
   selectedDensity: document.getElementById("selected-density"),
   selectedValue: document.getElementById("selected-value"),
   selectedStd: document.getElementById("selected-std"),
+  loadingOverlay: document.getElementById("loading-overlay"),
+  loadingBarFill: document.getElementById("loading-bar-fill"),
+  loadingStatus: document.getElementById("loading-status"),
+  tooltip: document.getElementById("plot-tooltip"),
 };
 
 const PLAYBACK_INTERVALS = {
@@ -34,40 +39,40 @@ const PLAYBACK_INTERVALS = {
   fast: 21,
 };
 
-const PLOT_TICK_FONT = "17px Segoe UI";
-const PLOT_TITLE_FONT = "19px Segoe UI";
-const PLOT_PANEL_FONT = "bold 21px Segoe UI";
-const PLOT_COLORBAR_FONT = "16px Segoe UI";
-
 const sectionCanvas = document.getElementById("section-canvas");
 const snapshotCanvas = document.getElementById("snapshot-canvas");
 const hovmollerCanvas = document.getElementById("hovmoller-canvas");
 const trendCanvas = document.getElementById("trend-canvas");
 const timeseriesSvg = document.getElementById("timeseries-svg");
-const CANVASES = [sectionCanvas, snapshotCanvas, hovmollerCanvas, trendCanvas];
 const BASIN_BOUNDARY = -34;
+
+/* ---------------- formatting helpers ---------------- */
 
 function formatLatitude(value) {
   const deg = Math.abs(value).toFixed(1).replace(".0", "");
   if (value < 0) {
-    return `${deg}\u00B0S`;
+    return `${deg}°S`;
   }
   if (value > 0) {
-    return `${deg}\u00B0N`;
+    return `${deg}°N`;
   }
-  return "0\u00B0";
+  return "0°";
 }
 
 function formatDensity(value) {
   return `${value.toFixed(1)}`;
 }
 
-function sigmaText(value) {
-  return `\u03C3\u2082 ${formatDensity(value)}`;
+function hovmollerDensityTitle(value) {
+  return `σ₂ = ${formatDensity(value)} kg m⁻³`;
 }
 
-function hovmollerDensityTitle(value) {
-  return `\u03C3\u2082 = ${formatDensity(value)} kg m\u207B\u00B3`;
+function roundValue(value, digits = 2) {
+  return Number(value).toFixed(digits);
+}
+
+function formatColorbarTick(value, digits = 0) {
+  return Number(value).toFixed(digits);
 }
 
 function buildYearAxisTicks(timeYears) {
@@ -123,13 +128,45 @@ function buildYearAxisTicks(timeYears) {
   return { majorTicks, minorTickIndices };
 }
 
-function roundValue(value, digits = 2) {
-  return Number(value).toFixed(digits);
+/* ---------------- data access (flat typed arrays) ---------------- */
+
+function predAt(t, k, j) {
+  const { nk, nj } = state.data.dims;
+  return state.data.pred[(t * nk + k) * nj + j];
 }
 
-function formatColorbarTick(value, digits = 0) {
-  return Number(value).toFixed(digits);
+function stdAt(t, k, j) {
+  const { nk, nj } = state.data.dims;
+  return state.data.std[(t * nk + k) * nj + j];
 }
+
+function sliceKJ(t) {
+  const { nk, nj } = state.data.dims;
+  const out = [];
+  for (let k = 0; k < nk; k += 1) {
+    const row = new Array(nj);
+    for (let j = 0; j < nj; j += 1) {
+      row[j] = predAt(t, k, j);
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+function sliceTJ(k) {
+  const { nt, nj } = state.data.dims;
+  const out = [];
+  for (let t = 0; t < nt; t += 1) {
+    const row = new Array(nj);
+    for (let j = 0; j < nj; j += 1) {
+      row[j] = predAt(t, k, j);
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+/* ---------------- canvas plumbing ---------------- */
 
 function setupCanvasResolution(canvas) {
   const logicalWidth = Number(canvas.dataset.logicalWidth || canvas.getAttribute("width"));
@@ -142,7 +179,12 @@ function setupCanvasResolution(canvas) {
   canvas.style.aspectRatio = `${logicalWidth} / ${logicalHeight}`;
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return { ctx, width: logicalWidth, height: logicalHeight };
+  // when the canvas is displayed much smaller than its logical size (narrow
+  // screens), scale fonts/margins up so text stays readable after CSS
+  // downscaling; the 0.68 comfort factor keeps desktop layouts unchanged
+  const cssWidth = canvas.clientWidth || logicalWidth;
+  const fs = Math.min(2.4, Math.max(1, 0.68 * (logicalWidth / Math.max(cssWidth, 1))));
+  return { ctx, width: logicalWidth, height: logicalHeight, fs };
 }
 
 function getCanvasLogicalSize(canvas) {
@@ -159,6 +201,23 @@ function getCanvasPointer(canvas, event) {
     x: ((event.clientX - rect.left) / rect.width) * logical.width,
     y: ((event.clientY - rect.top) / rect.height) * logical.height,
   };
+}
+
+function plotFonts(fs) {
+  return {
+    tick: `${Math.round(17 * fs)}px Segoe UI`,
+    title: `${Math.round(19 * fs)}px Segoe UI`,
+    panel: `bold ${Math.round(21 * fs)}px Segoe UI`,
+    colorbar: `${Math.round(16 * fs)}px Segoe UI`,
+  };
+}
+
+function thinTicks(indices, fs) {
+  const step = fs > 2 ? 3 : fs > 1.6 ? 2 : 1;
+  if (step === 1) {
+    return indices;
+  }
+  return indices.filter((_, i) => i % step === 0);
 }
 
 function valueToColor(value, clim) {
@@ -181,21 +240,6 @@ function valueToColor(value, clim) {
     }
   }
   return "rgb(0,0,0)";
-}
-
-function meanOverTime(cube) {
-  const nt = cube.length;
-  const nk = cube[0].length;
-  const nj = cube[0][0].length;
-  const out = Array.from({ length: nk }, () => Array.from({ length: nj }, () => 0));
-  for (let t = 0; t < nt; t += 1) {
-    for (let k = 0; k < nk; k += 1) {
-      for (let j = 0; j < nj; j += 1) {
-        out[k][j] += cube[t][k][j] / nt;
-      }
-    }
-  }
-  return out;
 }
 
 function restartPlayback() {
@@ -229,127 +273,13 @@ function getBasinSplitInfo(latitudes) {
   };
 }
 
-function drawHeatmap(canvas, values, xLabels, yLabels, options) {
-  const { ctx, width, height } = setupCanvasResolution(canvas);
-  const margins = { left: 84, right: 74, top: 26, bottom: 48 };
-  const plotWidth = width - margins.left - margins.right;
-  const plotHeight = height - margins.top - margins.bottom;
-  const nx = xLabels.length;
-  const ny = yLabels.length;
-  const cellW = plotWidth / nx;
-  const cellH = plotHeight / ny;
-
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#fffdfa";
-  ctx.fillRect(0, 0, width, height);
-
-  for (let j = 0; j < ny; j += 1) {
-    for (let i = 0; i < nx; i += 1) {
-      const rowIndex = options.flipY ? ny - 1 - j : j;
-      ctx.fillStyle = valueToColor(values[rowIndex][i], options.clim);
-      ctx.fillRect(margins.left + i * cellW, margins.top + j * cellH, Math.ceil(cellW), Math.ceil(cellH));
-    }
-  }
-
-  if (options.stippleMask) {
-    ctx.fillStyle = "rgba(30, 30, 30, 0.45)";
-    for (let j = 0; j < ny; j += 1) {
-      for (let i = 0; i < nx; i += 1) {
-        const rowIndex = options.flipY ? ny - 1 - j : j;
-        if (options.stippleMask[rowIndex][i] && ((i + j) % 2 === 0)) {
-          ctx.beginPath();
-          ctx.arc(margins.left + (i + 0.5) * cellW, margins.top + (j + 0.5) * cellH, 1.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
-  }
-
-  ctx.strokeStyle = "rgba(31,36,48,0.35)";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(margins.left, margins.top, plotWidth, plotHeight);
-
-  ctx.fillStyle = "#5a534d";
-  ctx.font = PLOT_TICK_FONT;
-  ctx.textAlign = "center";
-  const xticks = options.xTickIndices ?? [0, Math.floor(nx / 4), Math.floor(nx / 2), Math.floor((3 * nx) / 4), nx - 1];
-  xticks.forEach((idx) => {
-    const x = margins.left + (idx + 0.5) * cellW;
-    const label = options.xTickFormatter ? options.xTickFormatter(xLabels[idx]) : String(xLabels[idx]);
-    ctx.beginPath();
-    ctx.moveTo(x, margins.top + plotHeight);
-    ctx.lineTo(x, margins.top + plotHeight + 6);
-    ctx.stroke();
-    ctx.fillText(label, x, height - 18);
-  });
-
-  ctx.textAlign = "right";
-  const yticks = options.yTickIndices ?? [0, Math.floor(ny / 2), ny - 1];
-  yticks.forEach((idx) => {
-    const plotIdx = options.flipY ? ny - 1 - idx : idx;
-    const y = margins.top + (plotIdx + 0.5) * cellH + 4;
-    const label = options.yTickFormatter ? options.yTickFormatter(yLabels[idx]) : String(yLabels[idx]);
-    ctx.beginPath();
-    ctx.moveTo(margins.left - 6, margins.top + (plotIdx + 0.5) * cellH);
-    ctx.lineTo(margins.left, margins.top + (plotIdx + 0.5) * cellH);
-    ctx.stroke();
-    ctx.fillText(label, margins.left - 10, y);
-  });
-
-  ctx.save();
-  ctx.translate(22, margins.top + plotHeight / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.textAlign = "center";
-  ctx.font = PLOT_TITLE_FONT;
-  ctx.fillText(options.yTitle, 0, 0);
-  ctx.restore();
-
-  ctx.textAlign = "center";
-  ctx.font = PLOT_TITLE_FONT;
-  ctx.fillText(options.xTitle, margins.left + plotWidth / 2, height - 2);
-  ctx.fillText(options.title, margins.left + plotWidth / 2, 14);
-
-  const cbX = width - 44;
-  const cbY = margins.top;
-  const cbH = plotHeight;
-  for (let p = 0; p < cbH; p += 1) {
-    const value = options.clim - (2 * options.clim * p) / cbH;
-    ctx.fillStyle = valueToColor(value, options.clim);
-    ctx.fillRect(cbX, cbY + p, 14, 1);
-  }
-  ctx.strokeRect(cbX, cbY, 14, cbH);
-  ctx.textAlign = "left";
-  ctx.font = PLOT_COLORBAR_FONT;
-  const tickDigits = options.colorbarTickDigits ?? 0;
-  const colorbarTicks = [options.clim, options.clim / 2, 0, -options.clim / 2, -options.clim];
-  colorbarTicks.forEach((tickValue, idx) => {
-    const y = cbY + (idx / (colorbarTicks.length - 1)) * cbH;
-    const baselineOffset = idx === 0 ? 10 : idx === colorbarTicks.length - 1 ? -2 : 4;
-    ctx.fillText(formatColorbarTick(tickValue, tickDigits), cbX + 18, y + baselineOffset);
-  });
-  if (options.colorbarTitle) {
-    ctx.textAlign = "center";
-    ctx.fillText(options.colorbarTitle, cbX + 7, cbY - 6);
-  }
-
-  if (Number.isInteger(options.highlightX) && Number.isInteger(options.highlightY)) {
-    const hx = margins.left + (options.highlightX + 0.5) * cellW;
-    const hyIndex = options.flipY ? ny - 1 - options.highlightY : options.highlightY;
-    const hy = margins.top + (hyIndex + 0.5) * cellH;
-    ctx.strokeStyle = "#111111";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(hx, hy, 5.5, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-
-  return { margins, plotWidth, plotHeight, cellW, cellH, nx, ny };
-}
+/* ---------------- dual-basin heatmap ---------------- */
 
 function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
-  const { ctx, width, height } = setupCanvasResolution(canvas);
+  const { ctx, width, height, fs } = setupCanvasResolution(canvas);
+  const fonts = plotFonts(fs);
   const split = getBasinSplitInfo(latitudes);
-  const margins = { left: 92, right: 76, top: 26, bottom: 54 };
+  const margins = { left: 92 * fs, right: 76 * fs, top: 26 * fs, bottom: 54 * fs };
   const gap = 18;
   const plotHeight = height - margins.top - margins.bottom;
   const ny = densities.length;
@@ -377,7 +307,7 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
     }
     if (options.stippleMask) {
       ctx.strokeStyle = "rgba(20, 20, 20, 0.8)";
-      ctx.lineWidth = 1.1;
+      ctx.lineWidth = 1.1 * fs;
       for (let j = 0; j < ny; j += 1) {
         for (let localX = 0; localX < indices.length; localX += 1) {
           const globalX = indices[localX];
@@ -406,15 +336,15 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   ctx.strokeRect(rightX0, margins.top, rightWidth, plotHeight);
 
   ctx.fillStyle = "#20242d";
-  ctx.font = PLOT_PANEL_FONT;
+  ctx.font = fonts.panel;
   ctx.textAlign = "left";
-  ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28);
-  ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28);
+  ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28 * fs);
+  ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28 * fs);
 
   ctx.fillStyle = "#5a534d";
-  ctx.font = PLOT_TICK_FONT;
+  ctx.font = fonts.tick;
   ctx.textAlign = "center";
-  const leftTicks = options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1];
+  const leftTicks = thinTicks(options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1], fs);
   leftTicks.forEach((localIdx) => {
     if (localIdx < 0 || localIdx >= split.leftIndices.length) {
       return;
@@ -425,9 +355,9 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
     ctx.moveTo(x, margins.top + plotHeight);
     ctx.lineTo(x, margins.top + plotHeight + 6);
     ctx.stroke();
-    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22);
+    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22 * fs);
   });
-  const rightTicks = options.rightTickIndices ?? [0, Math.floor(split.rightIndices.length / 2), split.rightIndices.length - 1];
+  const rightTicks = thinTicks(options.rightTickIndices ?? [0, Math.floor(split.rightIndices.length / 2), split.rightIndices.length - 1], fs);
   rightTicks.forEach((localIdx) => {
     if (localIdx < 0 || localIdx >= split.rightIndices.length) {
       return;
@@ -438,11 +368,11 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
     ctx.moveTo(x, margins.top + plotHeight);
     ctx.lineTo(x, margins.top + plotHeight + 6);
     ctx.stroke();
-    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22);
+    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22 * fs);
   });
 
   ctx.textAlign = "right";
-  const yTicks = options.yTickIndices ?? [0, 4, 8, 12, 16, ny - 1];
+  const yTicks = thinTicks(options.yTickIndices ?? [0, 4, 8, 12, 16, ny - 1], fs);
   yTicks.forEach((idx) => {
     if (idx < 0 || idx >= ny) {
       return;
@@ -456,38 +386,39 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   });
 
   ctx.save();
-  ctx.translate(28, margins.top + plotHeight / 2);
+  ctx.translate(28 * fs * 0.8, margins.top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
-  ctx.font = PLOT_TITLE_FONT;
+  ctx.font = fonts.title;
   ctx.fillText(options.yTitle, 0, 0);
   ctx.restore();
 
   ctx.textAlign = "center";
-  ctx.font = PLOT_TITLE_FONT;
-  ctx.fillText(options.title, margins.left + (availableWidth + gap) / 2, 14);
+  ctx.font = fonts.title;
+  ctx.fillText(options.title, margins.left + (availableWidth + gap) / 2, 14 * fs);
 
-  const cbX = width - 44;
+  const cbW = 14 * fs;
+  const cbX = width - margins.right + 30 * fs;
   const cbY = margins.top;
   const cbH = plotHeight;
   for (let p = 0; p < cbH; p += 1) {
     const value = options.clim - (2 * options.clim * p) / cbH;
     ctx.fillStyle = valueToColor(value, options.clim);
-    ctx.fillRect(cbX, cbY + p, 14, 1);
+    ctx.fillRect(cbX, cbY + p, cbW, 1);
   }
-  ctx.strokeRect(cbX, cbY, 14, cbH);
+  ctx.strokeRect(cbX, cbY, cbW, cbH);
   ctx.textAlign = "left";
-  ctx.font = PLOT_COLORBAR_FONT;
+  ctx.font = fonts.colorbar;
   const tickDigits = options.colorbarTickDigits ?? 0;
   const colorbarTicks = [options.clim, options.clim / 2, 0, -options.clim / 2, -options.clim];
   colorbarTicks.forEach((tickValue, idx) => {
     const y = cbY + (idx / (colorbarTicks.length - 1)) * cbH;
     const baselineOffset = idx === 0 ? 10 : idx === colorbarTicks.length - 1 ? -2 : 4;
-    ctx.fillText(formatColorbarTick(tickValue, tickDigits), cbX + 18, y + baselineOffset);
+    ctx.fillText(formatColorbarTick(tickValue, tickDigits), cbX + cbW + 4, y + baselineOffset);
   });
   if (options.colorbarTitle) {
     ctx.textAlign = "center";
-    ctx.fillText(options.colorbarTitle, cbX + 7, cbY - 6);
+    ctx.fillText(options.colorbarTitle, cbX + cbW / 2, cbY - 6);
   }
 
   if (Number.isInteger(options.highlightX) && Number.isInteger(options.highlightY)) {
@@ -500,9 +431,9 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
       const hx = x0 + (localX + 0.5) * cellW;
       const hy = margins.top + (options.highlightY + 0.5) * cellH;
       ctx.strokeStyle = "#111111";
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 1.6 * fs;
       ctx.beginPath();
-      ctx.arc(hx, hy, 5.5, 0, Math.PI * 2);
+      ctx.arc(hx, hy, 5.5 * fs, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
@@ -522,10 +453,13 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   };
 }
 
+/* ---------------- dual-basin Hovmoller ---------------- */
+
 function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) {
-  const { ctx, width, height } = setupCanvasResolution(canvas);
+  const { ctx, width, height, fs } = setupCanvasResolution(canvas);
+  const fonts = plotFonts(fs);
   const split = getBasinSplitInfo(latitudes);
-  const margins = { left: 128, right: 76, top: 26, bottom: 54 };
+  const margins = { left: 128 * fs, right: 76 * fs, top: 26 * fs, bottom: 54 * fs };
   const gap = 18;
   const ny = timeLabels.length;
   const plotHeight = height - margins.top - margins.bottom;
@@ -563,15 +497,15 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   ctx.strokeRect(rightX0, margins.top, rightWidth, plotHeight);
 
   ctx.fillStyle = "#20242d";
-  ctx.font = PLOT_PANEL_FONT;
+  ctx.font = fonts.panel;
   ctx.textAlign = "left";
-  ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28);
-  ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28);
+  ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28 * fs);
+  ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28 * fs);
 
   ctx.fillStyle = "#5a534d";
-  ctx.font = PLOT_TICK_FONT;
+  ctx.font = fonts.tick;
   ctx.textAlign = "center";
-  const leftTicks = options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1];
+  const leftTicks = thinTicks(options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1], fs);
   leftTicks.forEach((localIdx) => {
     if (localIdx < 0 || localIdx >= split.leftIndices.length) {
       return;
@@ -582,9 +516,9 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
     ctx.moveTo(x, margins.top + plotHeight);
     ctx.lineTo(x, margins.top + plotHeight + 6);
     ctx.stroke();
-    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22);
+    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22 * fs);
   });
-  const rightTicks = options.rightTickIndices ?? [0, Math.floor(split.rightIndices.length / 2), split.rightIndices.length - 1];
+  const rightTicks = thinTicks(options.rightTickIndices ?? [0, Math.floor(split.rightIndices.length / 2), split.rightIndices.length - 1], fs);
   rightTicks.forEach((localIdx) => {
     if (localIdx < 0 || localIdx >= split.rightIndices.length) {
       return;
@@ -595,11 +529,11 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
     ctx.moveTo(x, margins.top + plotHeight);
     ctx.lineTo(x, margins.top + plotHeight + 6);
     ctx.stroke();
-    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22);
+    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22 * fs);
   });
 
   ctx.textAlign = "right";
-  const minorTickIndices = options.yMinorTickIndices ?? [];
+  const minorTickIndices = fs > 1.6 ? [] : (options.yMinorTickIndices ?? []);
   minorTickIndices.forEach((idx) => {
     if (idx < 0 || idx >= ny) {
       return;
@@ -612,7 +546,7 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
     ctx.stroke();
   });
 
-  const yTicks = options.yTickIndices ?? [0, Math.floor(ny / 2), ny - 1];
+  const yTicks = thinTicks(options.yTickIndices ?? [0, Math.floor(ny / 2), ny - 1], fs);
   yTicks.forEach((tick) => {
     const idx = typeof tick === "object" ? tick.index : tick;
     if (idx < 0 || idx >= ny) {
@@ -634,38 +568,39 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   });
 
   ctx.save();
-  ctx.translate(30, margins.top + plotHeight / 2);
+  ctx.translate(30 * fs * 0.8, margins.top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
-  ctx.font = PLOT_TITLE_FONT;
+  ctx.font = fonts.title;
   ctx.fillText(options.yTitle, 0, 0);
   ctx.restore();
 
   ctx.textAlign = "center";
-  ctx.font = PLOT_TITLE_FONT;
-  ctx.fillText(options.title, margins.left + (availableWidth + gap) / 2, 14);
+  ctx.font = fonts.title;
+  ctx.fillText(options.title, margins.left + (availableWidth + gap) / 2, 14 * fs);
 
-  const cbX = width - 44;
+  const cbW = 14 * fs;
+  const cbX = width - margins.right + 30 * fs;
   const cbY = margins.top;
   const cbH = plotHeight;
   for (let p = 0; p < cbH; p += 1) {
     const value = options.clim - (2 * options.clim * p) / cbH;
     ctx.fillStyle = valueToColor(value, options.clim);
-    ctx.fillRect(cbX, cbY + p, 14, 1);
+    ctx.fillRect(cbX, cbY + p, cbW, 1);
   }
-  ctx.strokeRect(cbX, cbY, 14, cbH);
+  ctx.strokeRect(cbX, cbY, cbW, cbH);
   ctx.textAlign = "left";
-  ctx.font = PLOT_COLORBAR_FONT;
+  ctx.font = fonts.colorbar;
   const tickDigits = options.colorbarTickDigits ?? 0;
   const colorbarTicks = [options.clim, options.clim / 2, 0, -options.clim / 2, -options.clim];
   colorbarTicks.forEach((tickValue, idx) => {
     const y = cbY + (idx / (colorbarTicks.length - 1)) * cbH;
     const baselineOffset = idx === 0 ? 10 : idx === colorbarTicks.length - 1 ? -2 : 4;
-    ctx.fillText(formatColorbarTick(tickValue, tickDigits), cbX + 18, y + baselineOffset);
+    ctx.fillText(formatColorbarTick(tickValue, tickDigits), cbX + cbW + 4, y + baselineOffset);
   });
   if (options.colorbarTitle) {
     ctx.textAlign = "center";
-    ctx.fillText(options.colorbarTitle, cbX + 7, cbY - 6);
+    ctx.fillText(options.colorbarTitle, cbX + cbW / 2, cbY - 6);
   }
 
   if (Number.isInteger(options.highlightX) && Number.isInteger(options.highlightY)) {
@@ -679,9 +614,9 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
       const hyIndex = options.flipY ? ny - 1 - options.highlightY : options.highlightY;
       const hy = margins.top + (hyIndex + 0.5) * cellH;
       ctx.strokeStyle = "#111111";
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.5 * fs;
       ctx.beginPath();
-      ctx.arc(hx, hy, 5.5, 0, Math.PI * 2);
+      ctx.arc(hx, hy, 5.5 * fs, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
@@ -701,12 +636,17 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   };
 }
 
+/* ---------------- time series (SVG) ---------------- */
+
 function drawTimeSeries() {
   const d = state.data;
-  const values = d.pred_yz.map((slice) => slice[state.densityIndex][state.latitudeIndex]);
-  const stdValues = d.pred_yz_std
-    ? d.pred_yz_std.map((slice) => slice[state.densityIndex][state.latitudeIndex])
-    : values.map(() => 0);
+  const nt = d.dims.nt;
+  const values = [];
+  const stdValues = [];
+  for (let t = 0; t < nt; t += 1) {
+    values.push(predAt(t, state.densityIndex, state.latitudeIndex));
+    stdValues.push(stdAt(t, state.densityIndex, state.latitudeIndex));
+  }
   const xYears = d.time_years;
   const slope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
   const ci = d.trend.ci95.map((bound) => bound[state.densityIndex][state.latitudeIndex]);
@@ -717,7 +657,9 @@ function drawTimeSeries() {
 
   const width = 900;
   const height = 320;
-  const margins = { left: 82, right: 24, top: 24, bottom: 40 };
+  const cssWidth = timeseriesSvg.clientWidth || width;
+  const fs = Math.min(2.2, Math.max(1, 0.68 * (width / Math.max(cssWidth, 1))));
+  const margins = { left: 82 * fs, right: 24, top: 24 * fs, bottom: 40 * fs };
   const plotWidth = width - margins.left - margins.right;
   const plotHeight = height - margins.top - margins.bottom;
   const yMinRaw = Math.min(...values.map((v, i) => v - stdValues[i]), ...trendValues);
@@ -748,7 +690,11 @@ function drawTimeSeries() {
   const linePath = buildPath(xs, ys);
   const trendPath = buildPath(xs, trendYs);
   const currentX = xs[state.timeIndex];
-  const yTicks = Array.from({ length: ymax - ymin + 1 }, (_, idx) => ymin + idx);
+  const yTickStep = Math.max(1, Math.ceil(((ymax - ymin) / 8) * (fs > 1.6 ? 2 : 1)));
+  const yTicks = [];
+  for (let tick = ymin; tick <= ymax; tick += yTickStep) {
+    yTicks.push(tick);
+  }
   const significant = d.trend.significant[state.densityIndex][state.latitudeIndex];
   const gapStart = d.gap_time_range ? d.gap_time_range[0] : null;
   const gapEnd = d.gap_time_range ? d.gap_time_range[1] : null;
@@ -756,9 +702,10 @@ function drawTimeSeries() {
   const gapX2 = gapEnd !== null ? margins.left + ((gapEnd - xYears[0]) / (xYears[xYears.length - 1] - xYears[0])) * plotWidth : null;
   const xminYear = Math.floor(xYears[0]);
   const xmaxYear = Math.ceil(xYears[xYears.length - 1]);
+  const majorStep = fs > 1.6 ? 8 : 4;
   const majorYears = [];
-  const firstMajor = Math.ceil(xYears[0] / 4) * 4;
-  for (let year = firstMajor; year <= Math.floor(xYears[xYears.length - 1]); year += 4) {
+  const firstMajor = Math.ceil(xYears[0] / majorStep) * majorStep;
+  for (let year = firstMajor; year <= Math.floor(xYears[xYears.length - 1]); year += majorStep) {
     majorYears.push(year);
   }
   const minorYears = [];
@@ -769,6 +716,8 @@ function drawTimeSeries() {
   }
   const crossesZero = ymin < 0 && ymax > 0;
   const zeroY = crossesZero ? margins.top + ((ymax - 0) / yrange) * plotHeight : null;
+  const fTick = Math.round(16 * fs);
+  const fTitle = Math.round(18 * fs);
 
   timeseriesSvg.innerHTML = `
     <rect x="0" y="0" width="${width}" height="${height}" fill="#fffdfa"></rect>
@@ -781,7 +730,7 @@ function drawTimeSeries() {
         return `<g>
           <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="rgba(31,36,48,0.12)"></line>
           <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="rgba(31,36,48,0.35)"></line>
-          <text x="${margins.left - 10}" y="${y + 5}" text-anchor="end" font-size="16" fill="#5a534d">${tick}</text>
+          <text x="${margins.left - 10}" y="${y + 5}" text-anchor="end" font-size="${fTick}" fill="#5a534d">${tick}</text>
         </g>`;
       })
       .join("")}
@@ -798,7 +747,7 @@ function drawTimeSeries() {
         const x = xToSvg(year, xYears[0], xYears[xYears.length - 1], margins, plotWidth);
         return `<g>
           <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 8}" stroke="rgba(31,36,48,0.45)"></line>
-          <text x="${x}" y="${height - 12}" text-anchor="middle" font-size="16" fill="#5a534d">${year}</text>
+          <text x="${x}" y="${height - margins.bottom + 8 + fTick}" text-anchor="middle" font-size="${fTick}" fill="#5a534d">${year}</text>
         </g>`;
       })
       .join("")}
@@ -806,33 +755,109 @@ function drawTimeSeries() {
     <path d="${linePath}" fill="none" stroke="#8f2d1b" stroke-width="3"></path>
     <path d="${trendPath}" fill="none" stroke="${significant ? "#0f6a8b" : "#7f8b92"}" stroke-width="2.5" stroke-dasharray="9 6"></path>
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="#162238" stroke-width="1.5" stroke-dasharray="6 4"></line>
-    <text x="${width / 2}" y="18" text-anchor="middle" font-size="18" fill="#5a534d">Overturning strength (Sv)</text>
-    <text x="${width / 2}" y="${height - 2}" text-anchor="middle" font-size="17" fill="#5a534d">Time</text>
-    <text x="28" y="${height / 2}" text-anchor="middle" font-size="17" fill="#5a534d" transform="rotate(-90 28 ${height / 2})">Sv</text>
-    <text x="${width - 20}" y="18" text-anchor="end" font-size="16" fill="${significant ? "#0f6a8b" : "#7f8b92"}">
-      ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr\u207B\u00B9` : "Trend not significant at p < 0.05"}
+    <text x="${width / 2}" y="${fTitle}" text-anchor="middle" font-size="${fTitle}" fill="#5a534d">Overturning strength (Sv)</text>
+    <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${significant ? "#0f6a8b" : "#7f8b92"}">
+      ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹` : "Trend not significant at p < 0.05"}
     </text>
   `;
 }
 
+/* ---------------- hover tooltips ---------------- */
+
+const hoverRegistry = new Map();
+
+function registerHover(canvas, geom, kind) {
+  hoverRegistry.set(canvas, { geom, kind });
+}
+
+function locateDualBasin(geom, x, y) {
+  const rowIdx = Math.floor((y - geom.margins.top) / geom.cellH);
+  if (!(rowIdx >= 0 && rowIdx < geom.ny)) {
+    return null;
+  }
+  if (x >= geom.leftX0 && x <= geom.leftX0 + geom.leftWidth) {
+    const localX = Math.floor((x - geom.leftX0) / geom.leftCellW);
+    if (localX >= 0 && localX < geom.split.leftIndices.length) {
+      return { latIdx: geom.split.leftIndices[localX], rowIdx };
+    }
+  } else if (x >= geom.rightX0 && x <= geom.rightX0 + geom.rightWidth) {
+    const localX = Math.floor((x - geom.rightX0) / geom.rightCellW);
+    if (localX >= 0 && localX < geom.split.rightIndices.length) {
+      return { latIdx: geom.split.rightIndices[localX], rowIdx };
+    }
+  }
+  return null;
+}
+
+function hoverText(kind, latIdx, rowIdx) {
+  const d = state.data;
+  const latText = formatLatitude(d.latitudes[latIdx]);
+  if (kind === "hovmoller") {
+    const timeIdx = d.dims.nt - 1 - rowIdx;
+    const value = predAt(timeIdx, state.densityIndex, latIdx);
+    return `${latText} · ${d.time_labels[timeIdx]}<br><strong>${value.toFixed(2)} Sv</strong>`;
+  }
+  const sigmaText = `σ₂ ${formatDensity(d.densities[rowIdx])}`;
+  if (kind === "trend") {
+    const slope = d.trend.slope_per_year[rowIdx][latIdx];
+    const sig = d.trend.significant[rowIdx][latIdx];
+    return `${latText} · ${sigmaText}<br><strong>${slope.toFixed(3)} Sv yr⁻¹</strong>${sig ? "" : " (not significant)"}`;
+  }
+  if (kind === "snapshot") {
+    const value = predAt(state.timeIndex, rowIdx, latIdx);
+    return `${latText} · ${sigmaText} · ${d.time_labels[state.timeIndex]}<br><strong>${value.toFixed(2)} Sv</strong>`;
+  }
+  const value = d.mean_yz[rowIdx][latIdx];
+  return `${latText} · ${sigmaText}<br><strong>${value.toFixed(2)} Sv</strong> (time mean)`;
+}
+
+function bindHover(canvas) {
+  canvas.addEventListener("mousemove", (event) => {
+    const entry = hoverRegistry.get(canvas);
+    if (!entry || !state.data) {
+      return;
+    }
+    const { x, y } = getCanvasPointer(canvas, event);
+    const hit = locateDualBasin(entry.geom, x, y);
+    if (!hit) {
+      controls.tooltip.hidden = true;
+      return;
+    }
+    controls.tooltip.innerHTML = hoverText(entry.kind, hit.latIdx, hit.rowIdx);
+    controls.tooltip.hidden = false;
+    const pad = 14;
+    const tw = controls.tooltip.offsetWidth;
+    let left = event.clientX;
+    if (left + tw + pad * 2 > window.innerWidth) {
+      left = event.clientX - tw - pad * 2;
+    }
+    controls.tooltip.style.left = `${left}px`;
+    controls.tooltip.style.top = `${event.clientY}px`;
+  });
+  canvas.addEventListener("mouseleave", () => {
+    controls.tooltip.hidden = true;
+  });
+}
+
+/* ---------------- render ---------------- */
+
 function render() {
   const d = state.data;
   const hovmollerYearTicks = buildYearAxisTicks(d.time_years);
-  const selectedValue = d.pred_yz[state.timeIndex][state.densityIndex][state.latitudeIndex];
-  const selectedStd = d.pred_yz_std ? d.pred_yz_std[state.timeIndex][state.densityIndex][state.latitudeIndex] : null;
-  const meanValue = (d.mean_yz ?? meanOverTime(d.pred_yz))[state.densityIndex][state.latitudeIndex];
+  const selectedStd = stdAt(state.timeIndex, state.densityIndex, state.latitudeIndex);
+  const meanValue = d.mean_yz[state.densityIndex][state.latitudeIndex];
 
   controls.timeLabel.textContent = d.time_labels[state.timeIndex];
   controls.climLabel.textContent = `${state.clim} Sv`;
   controls.selectedLatitude.textContent = formatLatitude(d.latitudes[state.latitudeIndex]);
-  controls.selectedDensity.textContent = `\u03C3\u2082 = ${formatDensity(d.densities[state.densityIndex])} kg m\u207B\u00B3`;
+  controls.selectedDensity.textContent = `σ₂ = ${formatDensity(d.densities[state.densityIndex])} kg m⁻³`;
   controls.selectedValue.textContent = `${meanValue.toFixed(2)} Sv`;
-  controls.selectedStd.textContent = selectedStd !== null ? `${selectedStd.toFixed(2)} Sv` : "Unavailable";
+  controls.selectedStd.textContent = `${selectedStd.toFixed(2)} Sv`;
 
-  drawDualBasinHeatmap(snapshotCanvas, d.pred_yz[state.timeIndex], d.latitudes, d.densities, {
+  const snapshotGeom = drawDualBasinHeatmap(snapshotCanvas, sliceKJ(state.timeIndex), d.latitudes, d.densities, {
     clim: state.clim,
     colorbarTickDigits: 0,
-    yTitle: "Density \u03C3\u2082 (kg/m\u00B3)",
+    yTitle: "Density σ₂ (kg/m³)",
     title: d.time_labels[state.timeIndex],
     colorbarTitle: "Sv",
     leftTitle: "SMOC",
@@ -843,12 +868,12 @@ function render() {
     rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
     yTickIndices: [0, 4, 8, 12, 16],
   });
+  registerHover(snapshotCanvas, snapshotGeom, "snapshot");
 
-  const meanValues = d.mean_yz ?? meanOverTime(d.pred_yz);
-  drawDualBasinHeatmap(sectionCanvas, meanValues, d.latitudes, d.densities, {
+  const sectionGeom = drawDualBasinHeatmap(sectionCanvas, d.mean_yz, d.latitudes, d.densities, {
     clim: state.clim,
     colorbarTickDigits: 0,
-    yTitle: "Density \u03C3\u2082 (kg/m\u00B3)",
+    yTitle: "Density σ₂ (kg/m³)",
     title: "Time mean",
     colorbarTitle: "Sv",
     leftTitle: "SMOC",
@@ -859,8 +884,9 @@ function render() {
     rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
     yTickIndices: [0, 4, 8, 12, 16],
   });
+  registerHover(sectionCanvas, sectionGeom, "mean");
 
-  drawDualBasinHovmoller(hovmollerCanvas, d.pred_yz.map((timeSlice) => timeSlice[state.densityIndex]), d.latitudes, d.time_labels, {
+  const hovmollerGeom = drawDualBasinHovmoller(hovmollerCanvas, sliceTJ(state.densityIndex), d.latitudes, d.time_labels, {
     clim: state.clim,
     colorbarTickDigits: 0,
     flipY: true,
@@ -876,13 +902,14 @@ function render() {
     yTickIndices: hovmollerYearTicks.majorTicks,
     yMinorTickIndices: hovmollerYearTicks.minorTickIndices,
   });
+  registerHover(hovmollerCanvas, hovmollerGeom, "hovmoller");
 
-  drawDualBasinHeatmap(trendCanvas, d.trend.slope_per_year, d.latitudes, d.densities, {
+  const trendGeom = drawDualBasinHeatmap(trendCanvas, d.trend.slope_per_year, d.latitudes, d.densities, {
     clim: state.trendClim,
     colorbarTickDigits: 1,
-    yTitle: "Density \u03C3\u2082 (kg/m\u00B3)",
+    yTitle: "Density σ₂ (kg/m³)",
     title: "Linear trend",
-    colorbarTitle: "Sv yr\u207B\u00B9",
+    colorbarTitle: "Sv yr⁻¹",
     leftTitle: "SMOC",
     rightTitle: "AMOC",
     highlightX: state.latitudeIndex,
@@ -892,124 +919,99 @@ function render() {
     rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
     yTickIndices: [0, 4, 8, 12, 16],
   });
+  registerHover(trendCanvas, trendGeom, "trend");
 
   drawTimeSeries();
 }
 
+/* ---------------- interactions ---------------- */
+
 function updateSelectionFromDualBasin(geom, x, y) {
-  const densityIdx = Math.floor((y - geom.margins.top) / geom.cellH);
-  if (!(densityIdx >= 0 && densityIdx < geom.ny)) {
+  const hit = locateDualBasin(geom, x, y);
+  if (!hit) {
     return false;
   }
-  if (x >= geom.leftX0 && x <= geom.leftX0 + geom.leftWidth) {
-    const localX = Math.floor((x - geom.leftX0) / geom.leftCellW);
-    if (localX >= 0 && localX < geom.split.leftIndices.length) {
-      state.latitudeIndex = geom.split.leftIndices[localX];
-      state.densityIndex = densityIdx;
-      return true;
-    }
-  } else if (x >= geom.rightX0 && x <= geom.rightX0 + geom.rightWidth) {
-    const localX = Math.floor((x - geom.rightX0) / geom.rightCellW);
-    if (localX >= 0 && localX < geom.split.rightIndices.length) {
-      state.latitudeIndex = geom.split.rightIndices[localX];
-      state.densityIndex = densityIdx;
-      return true;
-    }
-  }
-  return false;
+  state.latitudeIndex = hit.latIdx;
+  state.densityIndex = hit.rowIdx;
+  return true;
 }
 
 function bindCanvasInteractions() {
-  snapshotCanvas.addEventListener("click", (event) => {
-    const d = state.data;
-    const geom = drawDualBasinHeatmap(snapshotCanvas, d.pred_yz[state.timeIndex], d.latitudes, d.densities, {
-      clim: state.clim,
-      yTitle: "Density \u03C3\u2082 (kg/m\u00B3)",
-      title: d.time_labels[state.timeIndex],
-      leftTitle: "SMOC",
-      rightTitle: "AMOC",
+  [snapshotCanvas, sectionCanvas, trendCanvas].forEach((canvas) => {
+    canvas.addEventListener("click", (event) => {
+      const entry = hoverRegistry.get(canvas);
+      if (!entry) {
+        return;
+      }
+      const { x, y } = getCanvasPointer(canvas, event);
+      if (updateSelectionFromDualBasin(entry.geom, x, y)) {
+        controls.densitySelect.value = String(state.densityIndex);
+        render();
+      }
     });
-    const { x, y } = getCanvasPointer(snapshotCanvas, event);
-    if (updateSelectionFromDualBasin(geom, x, y)) {
-      controls.densitySelect.value = String(state.densityIndex);
-      render();
-    }
-  });
-
-  sectionCanvas.addEventListener("click", (event) => {
-    const d = state.data;
-    const geom = drawDualBasinHeatmap(sectionCanvas, d.mean_yz ?? meanOverTime(d.pred_yz), d.latitudes, d.densities, {
-      clim: state.clim,
-      yTitle: "Density \u03C3\u2082 (kg/m\u00B3)",
-      title: "Time mean",
-      leftTitle: "SMOC",
-      rightTitle: "AMOC",
-    });
-    const { x, y } = getCanvasPointer(sectionCanvas, event);
-    if (updateSelectionFromDualBasin(geom, x, y)) {
-      controls.densitySelect.value = String(state.densityIndex);
-      render();
-    }
-  });
-
-  trendCanvas.addEventListener("click", (event) => {
-    const d = state.data;
-    const geom = drawDualBasinHeatmap(trendCanvas, d.trend.slope_per_year, d.latitudes, d.densities, {
-      clim: state.trendClim,
-      yTitle: "Density \u03C3\u2082 (kg/m\u00B3)",
-      title: "Linear trend",
-      leftTitle: "SMOC",
-      rightTitle: "AMOC",
-    });
-    const { x, y } = getCanvasPointer(trendCanvas, event);
-    if (updateSelectionFromDualBasin(geom, x, y)) {
-      controls.densitySelect.value = String(state.densityIndex);
-      render();
-    }
+    bindHover(canvas);
   });
 
   hovmollerCanvas.addEventListener("click", (event) => {
-    const d = state.data;
-    const hovmollerYearTicks = buildYearAxisTicks(d.time_years);
-    const geom = drawDualBasinHovmoller(hovmollerCanvas, d.pred_yz.map((timeSlice) => timeSlice[state.densityIndex]), d.latitudes, d.time_labels, {
-      clim: state.clim,
-      colorbarTickDigits: 0,
-      flipY: true,
-      yTitle: "Time",
-      title: hovmollerDensityTitle(d.densities[state.densityIndex]),
-      leftTitle: "SMOC",
-      rightTitle: "AMOC",
-      leftTickIndices: [4, 14, 24, 34],
-      rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
-      yTickIndices: hovmollerYearTicks.majorTicks,
-      yMinorTickIndices: hovmollerYearTicks.minorTickIndices,
-    });
-    const { x, y } = getCanvasPointer(hovmollerCanvas, event);
-    const plotY = Math.floor((y - geom.margins.top) / geom.cellH);
-    if (!(plotY >= 0 && plotY < geom.ny)) {
+    const entry = hoverRegistry.get(hovmollerCanvas);
+    if (!entry) {
       return;
     }
-    const timeIdx = geom.ny - 1 - plotY;
-    let latIdx = -1;
-    if (x >= geom.leftX0 && x <= geom.leftX0 + geom.leftWidth) {
-      const localX = Math.floor((x - geom.leftX0) / geom.leftCellW);
-      if (localX >= 0 && localX < geom.split.leftIndices.length) {
-        latIdx = geom.split.leftIndices[localX];
-      }
-    } else if (x >= geom.rightX0 && x <= geom.rightX0 + geom.rightWidth) {
-      const localX = Math.floor((x - geom.rightX0) / geom.rightCellW);
-      if (localX >= 0 && localX < geom.split.rightIndices.length) {
-        latIdx = geom.split.rightIndices[localX];
-      }
+    const { x, y } = getCanvasPointer(hovmollerCanvas, event);
+    const hit = locateDualBasin(entry.geom, x, y);
+    if (!hit) {
+      return;
     }
-    if (latIdx >= 0) {
-      state.latitudeIndex = latIdx;
-      state.timeIndex = timeIdx;
-      controls.timeSlider.value = String(state.timeIndex);
-      render();
+    state.latitudeIndex = hit.latIdx;
+    state.timeIndex = entry.geom.ny - 1 - hit.rowIdx;
+    controls.timeSlider.value = String(state.timeIndex);
+    render();
+  });
+  bindHover(hovmollerCanvas);
+}
+
+function nearestLatIndex(target) {
+  const lats = state.data.latitudes;
+  let best = 0;
+  let bestDiff = Number.POSITIVE_INFINITY;
+  lats.forEach((value, idx) => {
+    const diff = Math.abs(value - target);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = idx;
     }
   });
+  return best;
 }
+
+function coreDensityIndex(latIdx, mode) {
+  const mean = state.data.mean_yz;
+  let best = 0;
+  let bestValue = mode === "max" ? -Infinity : Infinity;
+  mean.forEach((row, k) => {
+    const value = row[latIdx];
+    if ((mode === "max" && value > bestValue) || (mode === "min" && value < bestValue)) {
+      bestValue = value;
+      best = k;
+    }
+  });
+  return best;
+}
+
+const PRESETS = {
+  rapid: () => {
+    const latIdx = nearestLatIndex(26.5);
+    return { latIdx, densityIdx: coreDensityIndex(latIdx, "max") };
+  },
+  spna: () => {
+    const latIdx = nearestLatIndex(45.5);
+    return { latIdx, densityIdx: coreDensityIndex(latIdx, "max") };
+  },
+  abyssal: () => {
+    const latIdx = nearestLatIndex(-60.5);
+    return { latIdx, densityIdx: coreDensityIndex(latIdx, "min") };
+  },
+};
 
 function bindControls() {
   controls.timeSlider.addEventListener("input", (event) => {
@@ -1045,18 +1047,127 @@ function bindControls() {
       restartPlayback();
     }
   });
+
+  controls.presetRow.addEventListener("click", (event) => {
+    const button = event.target.closest(".preset-option");
+    if (!button || !state.data) {
+      return;
+    }
+    const preset = PRESETS[button.dataset.preset];
+    if (!preset) {
+      return;
+    }
+    const { latIdx, densityIdx } = preset();
+    state.latitudeIndex = latIdx;
+    state.densityIndex = densityIdx;
+    controls.densitySelect.value = String(densityIdx);
+    render();
+  });
+
+  if (controls.copyBibtex) {
+    controls.copyBibtex.addEventListener("click", async () => {
+      const text = document.getElementById("bibtex-source").textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        controls.copyBibtex.textContent = "Copied!";
+      } catch (error) {
+        controls.copyBibtex.textContent = "Copy failed";
+      }
+      window.setTimeout(() => {
+        controls.copyBibtex.textContent = "Copy BibTeX";
+      }, 1600);
+    });
+  }
+
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    if (!state.data) {
+      return;
+    }
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(render, 120);
+  });
+}
+
+/* ---------------- loading ---------------- */
+
+function setLoadingProgress(fraction, message) {
+  controls.loadingBarFill.style.width = `${Math.round(fraction * 100)}%`;
+  if (message) {
+    controls.loadingStatus.textContent = message;
+  }
+}
+
+async function fetchWithProgress(url, expectedBytes, onProgress) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} while fetching ${url}`);
+  }
+  const total = Number(response.headers.get("Content-Length")) || expectedBytes || 0;
+  if (!response.body || !total) {
+    return new Uint8Array(await response.arrayBuffer());
+  }
+  const reader = response.body.getReader();
+  const buffer = new Uint8Array(total);
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    if (received + value.length > buffer.length) {
+      throw new Error("Series file is larger than expected.");
+    }
+    buffer.set(value, received);
+    received += value.length;
+    onProgress(received / total);
+  }
+  return buffer.subarray(0, received);
+}
+
+async function loadData() {
+  setLoadingProgress(0.03, "Fetching metadata…");
+  const metaResponse = await fetch(META_PATH);
+  if (!metaResponse.ok) {
+    throw new Error(`HTTP ${metaResponse.status} while fetching metadata`);
+  }
+  const meta = await metaResponse.json();
+  const [nt, nk, nj] = meta.series_bin.shape;
+  const scale = meta.series_bin.scale_sv;
+
+  setLoadingProgress(0.06, "Downloading the reconstruction…");
+  const bytes = await fetchWithProgress(
+    `${DATA_DIR}${meta.series_bin.file}?v=${meta.metadata.generated_on}`,
+    meta.series_bin.byte_length,
+    (fraction) => setLoadingProgress(0.06 + 0.9 * fraction, "Downloading the reconstruction…"),
+  );
+  if (bytes.byteLength !== meta.series_bin.byte_length) {
+    throw new Error(`Series file has ${bytes.byteLength} bytes; expected ${meta.series_bin.byte_length}.`);
+  }
+
+  setLoadingProgress(0.97, "Decoding…");
+  const counts = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
+  const n = nt * nk * nj;
+  const pred = new Float32Array(n);
+  const std = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) {
+    pred[i] = counts[i] * scale;
+    std[i] = counts[n + i] * scale;
+  }
+
+  meta.dims = { nt, nk, nj };
+  meta.pred = pred;
+  meta.std = std;
+  return meta;
 }
 
 async function init() {
-  const response = await fetch(DATA_PATH);
-  state.data = await response.json();
+  state.data = await loadData();
   state.timeIndex = state.data.time_labels.length - 1;
-  state.densityIndex = Math.floor(state.data.densities.length / 2);
-  state.latitudeIndex = Math.floor(state.data.latitudes.length / 2);
+  const rapid = PRESETS.rapid();
+  state.latitudeIndex = rapid.latIdx;
+  state.densityIndex = rapid.densityIdx;
 
-  const displaySourceFile = state.data.metadata.source_file.replace(/^NeroMOC/i, "NeurMOC");
-  controls.sourceFile.innerHTML = `<a class="meta-link" href="./data/${state.data.metadata.source_file}" download="${displaySourceFile}">${displaySourceFile}</a>`;
-  controls.timeAssumption.innerHTML = 'For more information, refer to the manuscript <a class="meta-link" href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener"><strong>"Deep learning unlocks satellite-based monitoring of the global ocean overturning circulation"</strong></a> by Huaiyu Wei, Andrew L. Stewart, Andrei Medvedev, Kaushik Srinivasan, Aviv Solodoch, Georgy E. Manucharyan, and Andrew McC. Hogg.';
   controls.timeSlider.max = String(state.data.time_labels.length - 1);
   controls.timeSlider.value = String(state.timeIndex);
 
@@ -1070,13 +1181,17 @@ async function init() {
 
   bindControls();
   bindCanvasInteractions();
-  window.addEventListener("resize", render);
   render();
+
+  setLoadingProgress(1, "Done");
+  controls.loadingOverlay.classList.add("is-hidden");
+  window.setTimeout(() => {
+    controls.loadingOverlay.remove();
+  }, 450);
 }
 
 init().catch((error) => {
-  document.body.innerHTML = `<main class="app-shell"><section class="panel"><h1>Viewer failed to load</h1><p>${error.message}</p><p>Start the viewer through a local server so the browser can fetch <code>data/neromoc_data.json</code>.</p></section></main>`;
+  controls.loadingStatus.textContent = `Failed to load: ${error.message}`;
+  controls.loadingBarFill.style.background = "#c0533f";
+  console.error(error);
 });
-
-
-
