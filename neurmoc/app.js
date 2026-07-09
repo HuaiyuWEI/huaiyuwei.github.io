@@ -1116,12 +1116,16 @@ async function fetchWithProgress(url, expectedBytes, onProgress) {
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} while fetching ${url}`);
   }
-  const total = Number(response.headers.get("Content-Length")) || expectedBytes || 0;
+  // Content-Length can be the *compressed* transfer size when the CDN
+  // gzips the response, while the stream yields decompressed bytes - so
+  // size the buffer from the metadata's decoded byte count and use the
+  // header only as a fallback.
+  const total = expectedBytes || Number(response.headers.get("Content-Length")) || 0;
   if (!response.body || !total) {
     return new Uint8Array(await response.arrayBuffer());
   }
   const reader = response.body.getReader();
-  const buffer = new Uint8Array(total);
+  let buffer = new Uint8Array(total);
   let received = 0;
   for (;;) {
     const { done, value } = await reader.read();
@@ -1129,11 +1133,13 @@ async function fetchWithProgress(url, expectedBytes, onProgress) {
       break;
     }
     if (received + value.length > buffer.length) {
-      throw new Error("Series file is larger than expected.");
+      const grown = new Uint8Array(Math.max(buffer.length * 2, received + value.length));
+      grown.set(buffer.subarray(0, received));
+      buffer = grown;
     }
     buffer.set(value, received);
     received += value.length;
-    onProgress(received / total);
+    onProgress(Math.min(1, received / total));
   }
   return buffer.subarray(0, received);
 }
