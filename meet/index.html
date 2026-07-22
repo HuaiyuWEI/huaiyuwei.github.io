@@ -206,11 +206,28 @@
     border: 1px solid var(--accent);
     border-radius: 99px; padding: 0 4px; line-height: 1.35;
   }
-  .star {
-    position: absolute; left: 3px; top: 2px;
-    font-size: 0.72rem; color: var(--accent);
-    text-shadow: 0 0 3px var(--surface);
+  #tip {
+    position: fixed;
+    display: none;
+    z-index: 30;
+    max-width: 320px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+    padding: 8px 11px;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    line-height: 1.55;
+    pointer-events: none;
   }
+  #tip .tipav {
+    margin-top: 5px;
+    border-top: 1px solid var(--line);
+    padding-top: 5px;
+    font-family: var(--body);
+  }
+  #tip .tipav + .tipav { border-top: none; padding-top: 0; margin-top: 2px; }
 
   .respond {
     margin-top: 14px;
@@ -228,6 +245,8 @@
   }
   .respond .rstatus { font-size: 0.8rem; color: var(--ink-dim); margin: 6px 0 10px; }
   .respond .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .respond details.fallback { margin-top: 12px; font-size: 0.85rem; }
+  .respond details.fallback summary { cursor: pointer; color: var(--ink-dim); }
 
   footer.note { margin-top: 16px; font-size: 0.78rem; color: var(--ink-dim); max-width: 76ch; }
 
@@ -275,25 +294,18 @@
   <header>
     <h1>Tri-Zone Meeting Planner</h1>
     <p class="sub">Find a meeting slot across the US west coast, Israel, and Canberra. Each cell
-    shows three comfort stripes — US | Israel | Canberra — for that hour. Mark when you're free,
-    send your availability code back to the organizer, and the grid overlays everyone.</p>
+    shows three comfort stripes — US | Israel | Canberra — for that hour. Type your name, mark
+    when you're free, and everyone's availability appears on the shared grid.</p>
   </header>
 
   <details class="howto">
-    <summary>How to use this (collaborators, start here)</summary>
+    <summary>How to use this</summary>
     <ol>
-      <li><b>Check the window</b>: if you opened the organizer's link, the start date and
-        length are already set from the link; otherwise enter the dates they named.</li>
-      <li><b>Pick your view</b>: "View hours in" defaults to your device's clock —
-        the grid rows are your local hours.</li>
-      <li><b>Mark availability</b>: in <i>Mark availability</i> mode, click or drag
-        across the hours you could meet. Your marks are saved in this browser.</li>
-      <li><b>Share it</b>: type your name. If live sync is on (noted in the Responses
-        section below the grid), your marks reach everyone automatically. Otherwise click
-        <i>Copy my availability</i> and email/Slack the code to the organizer, who pastes
-        it into the Responses box.</li>
-      <li><b>Read the grid</b>: numbers show how many people are free at each hour and
-        ★ marks the top slots.</li>
+      <li>Type your name, then click or drag across the hours you could meet —
+        the grid is in your local time, and everyone sees your marks within seconds.</li>
+      <li>Hover over an hour to see who is free; the number shows how many.</li>
+      <li>To settle on a time, switch to <i>Propose a slot</i>, click an hour, and copy
+        the times in all three zones.</li>
     </ol>
   </details>
 
@@ -335,6 +347,7 @@
       <button id="modePick">🎯 Propose a slot</button>
     </div>
     <input type="text" id="namePick" placeholder="Your name" maxlength="24" aria-label="Your name">
+    <button class="btn" id="clearMine">Clear my marks</button>
     <span class="hint" id="modeHint">Click or drag on the grid to mark when you could meet.</span>
   </div>
 
@@ -343,7 +356,7 @@
     <span class="key"><span class="swatch edge"></span>Off-hours 06–08 · 18–24</span>
     <span class="key"><span class="swatch night"></span>Night 00–06</span>
     <span class="key">stripes = US west coast | Israel | Canberra · dimmed stripe = local weekend</span>
-    <span class="key" style="color: var(--accent); font-weight: 600;">solid ring = you · number = people free · ★ = top slot</span>
+    <span class="key" style="color: var(--accent); font-weight: 600;">solid ring = you · number = people free · hover a cell for details</span>
   </div>
 
   <div class="grid-card">
@@ -354,23 +367,27 @@
   </div>
 
   <div class="respond">
-    <h2>Responses</h2>
+    <h2>Participants</h2>
     <div class="rstatus" id="syncStatus" style="display:none"></div>
-    <div class="actions" style="margin-bottom:10px">
-      <button class="btn primary" id="copyAvail">Copy my availability</button>
-      <button class="btn" id="copyInvite">Copy request message for collaborators</button>
-      <button class="btn" id="clearMine">Clear my marks</button>
+    <div class="rstatus" id="respStatus"></div>
+    <div class="actions">
+      <button class="btn primary" id="copyInvite">Copy invite message</button>
     </div>
-    <textarea id="respBox" spellcheck="false"
-      placeholder="Organizer: paste availability codes here, one per line&#10;TZPLAN1|Name|..."></textarea>
-    <div class="rstatus" id="respStatus">No responses pasted yet.</div>
+    <details class="fallback">
+      <summary>Manual exchange (only needed if live sync is off)</summary>
+      <div class="actions" style="margin:10px 0">
+        <button class="btn" id="copyAvail">Copy my availability code</button>
+      </div>
+      <textarea id="respBox" spellcheck="false"
+        placeholder="Paste availability codes here, one per line&#10;TZPLAN1|Name|..."></textarea>
+    </details>
   </div>
 
   <footer class="note">
     All times come from your browser's IANA time-zone database, so daylight-saving shifts in
     California, Israel, and Australia are handled automatically. Israel's weekend is
-    Friday–Saturday; Sunday is a normal workday there. Availability codes store absolute
-    times (UTC), so they overlay correctly no matter which timezone anyone marked them in.
+    Friday–Saturday; Sunday is a normal workday there. Availability is stored as absolute
+    UTC instants, so marks match up correctly no matter which time zone anyone used.
   </footer>
 </div>
 
@@ -602,7 +619,7 @@
     var vtz = viewTz();
     var days = dayList();
     var people = participants();
-    var nPeople = people.length;
+    lastPeople = people;
 
     // availability count per slot id
     function countFor(id) {
@@ -624,28 +641,6 @@
         cellIndex[c.id] = c;
       }
     });
-
-    // rank: with responses -> most people free, comfort breaks ties;
-    // without -> comfort only, requiring nobody at zero
-    var starIds = {};
-    var scored;
-    if (nPeople > 0) {
-      scored = all.filter(function (c) { return c.names.length > 0; });
-      scored.sort(function (a, b) {
-        return (b.names.length - a.names.length) || (b.total - a.total);
-      });
-      if (scored.length) {
-        var bn = scored[0].names.length, bt = scored[0].total;
-        scored.forEach(function (c) {
-          if (c.names.length === bn && c.total === bt) starIds[c.id] = true;
-        });
-      }
-    } else {
-      var pool = all.filter(function (c) { return c.minEff >= 1; });
-      if (!pool.length) pool = all;
-      var best = Math.max.apply(null, pool.map(function (c) { return c.total; }));
-      pool.forEach(function (c) { if (c.total === best) starIds[c.id] = true; });
-    }
 
     // header
     var head = document.getElementById("dayHead");
@@ -677,11 +672,9 @@
         var td = document.createElement("td");
         td.className = "slot";
         td.dataset.id = c.id;
-        td.title = c.title;
         if (state.mine[c.id]) td.classList.add("mine");
         if (state.sel === c.t) td.classList.add("picked");
         var inner = '<div class="box" style="background:' + stripeCss(c) + '">';
-        if (starIds[c.id]) inner += '<span class="star">★</span>';
         if (c.names.length) inner += '<span class="cnt">' + c.names.length + "</span>";
         inner += "</div>";
         td.innerHTML = inner;
@@ -771,7 +764,7 @@
     if (!syncBase()) { el.style.display = "none"; return; }
     el.style.display = "";
     if (syncState === "error") {
-      el.textContent = "Live sync: connection problem — retrying. Copy-paste codes still work.";
+      el.textContent = "Live sync: connection problem — retrying. The manual exchange below still works.";
     } else {
       el.textContent = "Live sync: on — marks are shared with everyone automatically" +
         " (updates within ~" + Math.round(SYNC_POLL_MS / 1000) + " s)." +
@@ -829,6 +822,7 @@
   gridEl.addEventListener("pointerdown", function (e) {
     var td = e.target.closest ? e.target.closest("td.slot") : null;
     if (!td) return;
+    hideTip();
     if (state.mode === "mark") {
       e.preventDefault();
       painting = true;
@@ -837,10 +831,16 @@
     }
   });
   gridEl.addEventListener("pointermove", function (e) {
-    if (!painting) return;
-    e.preventDefault();
-    applyPaint(slotFromEvent(e));
+    if (painting) {
+      e.preventDefault();
+      applyPaint(slotFromEvent(e));
+      return;
+    }
+    var td = e.target.closest ? e.target.closest("td.slot") : null;
+    if (td && e.pointerType !== "touch") showTip(td, e.clientX, e.clientY);
+    else hideTip();
   });
+  gridEl.addEventListener("pointerleave", hideTip);
   window.addEventListener("pointerup", function () {
     if (painting) {
       painting = false;
@@ -859,6 +859,40 @@
     renderGrid();
     renderDrawer();
   });
+
+  // ---------- hover tooltip: zone times + who is / isn't available ----------
+  var tipEl = null;
+  var lastPeople = [];
+  function hideTip() { if (tipEl) tipEl.style.display = "none"; }
+  function showTip(td, x, y) {
+    var c = cellIndex[td.dataset.id];
+    if (!c) return;
+    if (!tipEl) {
+      tipEl = document.createElement("div");
+      tipEl.id = "tip";
+      document.body.appendChild(tipEl);
+    }
+    var html = c.title.split("\n").map(function (l) {
+      var i = l.indexOf(": ");
+      return "<b>" + l.slice(0, i) + ":</b> " + l.slice(i + 2);
+    }).join("<br>");
+    if (lastPeople.length) {
+      var free = [], not = [];
+      lastPeople.forEach(function (p) { (p.set[c.id] ? free : not).push(p.name); });
+      html += '<div class="tipav"><b>Free:</b> ' + (free.length ? free.join(", ") : "nobody yet") + "</div>";
+      if (not.length) html += '<div class="tipav"><b>Not free:</b> ' + not.join(", ") + "</div>";
+    }
+    tipEl.innerHTML = html;
+    tipEl.style.display = "block";
+    var pad = 14;
+    var w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    var left = x + pad, top = y + pad;
+    if (left + w > innerWidth - 8) left = x - w - pad;
+    if (top + h > innerHeight - 8) top = y - h - pad;
+    tipEl.style.left = Math.max(4, left) + "px";
+    tipEl.style.top = Math.max(4, top) + "px";
+  }
+  document.querySelector(".grid-card").addEventListener("scroll", hideTip);
 
   // ---------- drawer / proposal ----------
   function proposalLines(t) {
@@ -1032,12 +1066,13 @@
       : ["Open the Tri-Zone Meeting Planner link I shared.",
          "Set the window start to " + state.start + " and length to " + state.days +
          " days (" + windowLabel() + ")."];
-    steps.push("In 'Mark availability' mode, click/drag the hours you could meet" +
+    steps.push("Type your name, then click/drag the hours you could meet" +
       " (the grid shows your local time).");
-    steps.push("Type your name, click 'Copy my availability', and send me the code it copies.");
+    steps.push(syncBase()
+      ? "That's it — everyone's availability shows up on the same grid automatically."
+      : "Click 'Copy my availability code' and send me the code it copies.");
     var msg = "Can you mark your availability for our meeting?\n" +
-      steps.map(function (s, i) { return (i + 1) + ". " + s; }).join("\n") +
-      "\nTimes are matched in UTC under the hood, so time zones sort themselves out.";
+      steps.map(function (s, i) { return (i + 1) + ". " + s; }).join("\n");
     copyText(msg, this);
   });
 
