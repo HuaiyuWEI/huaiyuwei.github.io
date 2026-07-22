@@ -338,8 +338,8 @@
 
   <div class="legend">
     <span class="key"><span class="swatch work"></span>Work 08–18</span>
-    <span class="key"><span class="swatch edge"></span>Early morning 06–08 · 18–23</span>
-    <span class="key"><span class="swatch night"></span>Night 23–06</span>
+    <span class="key"><span class="swatch edge"></span>Off-hours 06–08 · 18–24</span>
+    <span class="key"><span class="swatch night"></span>Night 00–06</span>
     <span class="key">stripes = US west coast | Israel | Canberra · dimmed stripe = local weekend</span>
     <span class="key" style="color: var(--accent); font-weight: 600;">solid ring = you · number = people free · ★ = top slot</span>
   </div>
@@ -450,11 +450,11 @@
   function pad(n) { return String(n).padStart(2, "0"); }
 
   function bandOf(h) {
+    if (h < 6) return { band: "night", score: 0 };
     if (h >= 8 && h < 18) return { band: "work", score: 3 };
-    if ((h >= 6 && h < 8) || (h >= 18 && h < 23)) return { band: "edge", score: 2 };
-    return { band: "night", score: 0 };
+    return { band: "edge", score: 2 };
   }
-  var BAND_LABEL = { work: "work", edge: "early morning", night: "night" };
+  var BAND_LABEL = { work: "work", edge: "off-hours", night: "night" };
 
   function auCityName() { return state.auTz.split("/")[1].replace("_", " "); }
   function zones() {
