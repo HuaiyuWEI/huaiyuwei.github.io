@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Find meeting times across Los Angeles, Israel, and Australia — mark availability and overlay everyone's free hours.">
+<meta name="description" content="Find meeting times across the US west coast, Israel, and Australia — mark availability and overlay everyone's free hours.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌏</text></svg>">
 <title>Tri-Zone Meeting Planner</title>
@@ -20,7 +20,6 @@
 
     --work-bg: #fbf3d9;  --work-ink: #6e5a0f;
     --edge-bg: #f6dfc2;  --edge-ink: #8a5314;
-    --late-bg: #cdd3e6;  --late-ink: #333c66;
     --night-bg: #394069; --night-ink: #c9d0f2;
 
     --wknd: #b4562f;
@@ -35,7 +34,7 @@
       --bg: #0f131c; --surface: #171d29; --surface-2: #1f2735; --ink: #e6eaf2;
       --ink-dim: #98a2b3; --line: #293242; --accent: #35b5c9; --accent-ink: #06252b;
       --work-bg: #423a12; --work-ink: #f0dc96; --edge-bg: #46311a; --edge-ink: #f0be8c;
-      --late-bg: #2a3050; --late-ink: #aeb8e8; --night-bg: #141830; --night-ink: #6f7bb0;
+      --night-bg: #141830; --night-ink: #6f7bb0;
       --wknd: #e08a63; --hover-overlay: rgb(255 255 255 / 0.055);
     }
   }
@@ -43,14 +42,14 @@
     --bg: #f4f6f8; --surface: #ffffff; --surface-2: #eef1f5; --ink: #17212b;
     --ink-dim: #5b6774; --line: #dfe4ea; --accent: #0e7490; --accent-ink: #ffffff;
     --work-bg: #fbf3d9; --work-ink: #6e5a0f; --edge-bg: #f6dfc2; --edge-ink: #8a5314;
-    --late-bg: #cdd3e6; --late-ink: #333c66; --night-bg: #394069; --night-ink: #c9d0f2;
+    --night-bg: #394069; --night-ink: #c9d0f2;
     --wknd: #b4562f; --hover-overlay: rgb(0 0 0 / 0.045);
   }
   :root[data-theme="dark"] {
     --bg: #0f131c; --surface: #171d29; --surface-2: #1f2735; --ink: #e6eaf2;
     --ink-dim: #98a2b3; --line: #293242; --accent: #35b5c9; --accent-ink: #06252b;
     --work-bg: #423a12; --work-ink: #f0dc96; --edge-bg: #46311a; --edge-ink: #f0be8c;
-    --late-bg: #2a3050; --late-ink: #aeb8e8; --night-bg: #141830; --night-ink: #6f7bb0;
+    --night-bg: #141830; --night-ink: #6f7bb0;
     --wknd: #e08a63; --hover-overlay: rgb(255 255 255 / 0.055);
   }
 
@@ -105,7 +104,6 @@
   }
   .band-tag.work  { background: var(--work-bg);  color: var(--work-ink); }
   .band-tag.edge  { background: var(--edge-bg);  color: var(--edge-ink); }
-  .band-tag.late  { background: var(--late-bg);  color: var(--late-ink); }
   .band-tag.night { background: var(--night-bg); color: var(--night-ink); }
 
   .controls {
@@ -157,7 +155,6 @@
   .legend .swatch { width: 13px; height: 13px; border-radius: 4px; display: inline-block; }
   .swatch.work  { background: var(--work-bg);  border: 1px solid var(--work-ink); }
   .swatch.edge  { background: var(--edge-bg);  border: 1px solid var(--edge-ink); }
-  .swatch.late  { background: var(--late-bg);  border: 1px solid var(--late-ink); }
   .swatch.night { background: var(--night-bg); border: 1px solid var(--night-ink); }
 
   .grid-card {
@@ -277,9 +274,9 @@
 <div class="wrap">
   <header>
     <h1>Tri-Zone Meeting Planner</h1>
-    <p class="sub">Find a meeting slot across Los Angeles, Israel, and Australia. Each cell shows
-    three comfort stripes — LA | Israel | AU — for that hour. Mark when you're free, send your
-    availability code back to the organizer, and the grid overlays everyone.</p>
+    <p class="sub">Find a meeting slot across the US west coast, Israel, and Canberra. Each cell
+    shows three comfort stripes — US | Israel | Canberra — for that hour. Mark when you're free,
+    send your availability code back to the organizer, and the grid overlays everyone.</p>
   </header>
 
   <details class="howto">
@@ -316,23 +313,12 @@
       </select>
     </div>
     <div class="field">
-      <label for="auPick">Australia city</label>
-      <select id="auPick">
-        <option value="Australia/Canberra" selected>Canberra (ANU)</option>
-        <option value="Australia/Sydney">Sydney</option>
-        <option value="Australia/Melbourne">Melbourne</option>
-        <option value="Australia/Brisbane">Brisbane</option>
-        <option value="Australia/Adelaide">Adelaide</option>
-        <option value="Australia/Perth">Perth</option>
-      </select>
-    </div>
-    <div class="field">
       <label for="viewPick">View hours in</label>
       <select id="viewPick">
         <option value="device" selected>Your device</option>
-        <option value="la">Los Angeles</option>
+        <option value="la">US west coast</option>
         <option value="il">Israel</option>
-        <option value="au">Australia city</option>
+        <option value="au">Canberra</option>
       </select>
     </div>
     <div class="field checkbox">
@@ -352,10 +338,9 @@
 
   <div class="legend">
     <span class="key"><span class="swatch work"></span>Work 08–18</span>
-    <span class="key"><span class="swatch edge"></span>Shoulder 07–08 · 18–21</span>
-    <span class="key"><span class="swatch late"></span>Late 06–07 · 21–23</span>
+    <span class="key"><span class="swatch edge"></span>Early morning 06–08 · 18–23</span>
     <span class="key"><span class="swatch night"></span>Night 23–06</span>
-    <span class="key">stripes = LA | Israel | AU · dimmed stripe = local weekend</span>
+    <span class="key">stripes = US west coast | Israel | Canberra · dimmed stripe = local weekend</span>
     <span class="key" style="color: var(--accent); font-weight: 600;">solid ring = you · number = people free · ★ = top slot</span>
   </div>
 
@@ -466,15 +451,15 @@
 
   function bandOf(h) {
     if (h >= 8 && h < 18) return { band: "work", score: 3 };
-    if ((h >= 7 && h < 8) || (h >= 18 && h < 21)) return { band: "edge", score: 2 };
-    if ((h >= 6 && h < 7) || (h >= 21 && h < 23)) return { band: "late", score: 1 };
+    if ((h >= 6 && h < 8) || (h >= 18 && h < 23)) return { band: "edge", score: 2 };
     return { band: "night", score: 0 };
   }
+  var BAND_LABEL = { work: "work", edge: "early morning", night: "night" };
 
   function auCityName() { return state.auTz.split("/")[1].replace("_", " "); }
   function zones() {
     return [
-      { key: "la", label: "Los Angeles", tz: LA, weekend: [0, 6] },
+      { key: "la", label: "US West Coast", tz: LA, weekend: [0, 6] },
       { key: "il", label: "Israel", tz: IL, weekend: [5, 6] },
       { key: "au", label: auCityName(), tz: state.auTz, weekend: [0, 6] }
     ];
@@ -490,7 +475,7 @@
   function persist() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
-        start: state.start, days: state.days, auTz: state.auTz, view: state.view,
+        start: state.start, days: state.days, view: state.view,
         hideNight: state.hideNight, name: state.name,
         mine: Object.keys(state.mine), respText: state.respText
       }));
@@ -502,7 +487,6 @@
       if (!s) return;
       if (s.start) state.start = s.start;
       if (s.days) state.days = +s.days;
-      if (s.auTz) state.auTz = s.auTz;
       if (s.view) state.view = s.view;
       state.hideNight = !!s.hideNight;
       state.name = s.name || "";
@@ -564,10 +548,10 @@
     });
     var total = per.reduce(function (s, c) { return s + c.eff; }, 0);
     var minEff = Math.min.apply(null, per.map(function (c) { return c.eff; }));
-    var deep = per.some(function (c) { return c.band === "night"; });
+    var deep = per.some(function (c) { return c.p.h + c.p.min / 60 < 6; });
     var title = per.map(function (c) {
       return c.z.label + ": " + WD_NAME[c.p.wd] + " " + pad(c.p.h) + ":" + pad(c.p.min) +
-        " (" + c.band + (c.wknd ? ", weekend" : "") + ")";
+        " (" + BAND_LABEL[c.band] + (c.wknd ? ", weekend" : "") + ")";
     }).join("\n");
     return { t: t, id: t / 60000, per: per, total: total, minEff: minEff, deep: deep, title: title };
   }
@@ -678,7 +662,7 @@
   }
 
   function tzShortLabel(tz) {
-    if (tz === LA) return "Los Angeles";
+    if (tz === LA) return "US West Coast";
     if (tz === IL) return "Israel";
     if (tz === state.auTz) return auCityName();
     return tz.split("/").pop().replace(/_/g, " ");
@@ -713,7 +697,7 @@
         '<div class="ztime" data-tz="' + z.tz + '"></div>' +
         '<div class="zmeta">' + fmt(z.tz, now, { weekday: "short", month: "short", day: "numeric" }) +
           " · " + offsetLabel(z.tz, now) + "</div>" +
-        '<span class="band-tag ' + b.band + '">' + b.band + "</span>";
+        '<span class="band-tag ' + b.band + '">' + BAND_LABEL[b.band] + "</span>";
       host.appendChild(card);
     });
     tickClocks();
@@ -854,7 +838,7 @@
   // ---------- wiring ----------
   restore();
 
-  // URL-hash config (#start=YYYY-MM-DD&days=7&au=Australia/Canberra) overrides saved settings,
+  // URL-hash config (#start=YYYY-MM-DD&days=7) overrides saved settings,
   // so the organizer's shared link pre-sets the meeting window for everyone.
   (function () {
     var h = location.hash.replace(/^#/, "");
@@ -866,19 +850,13 @@
     });
     if (/^\d{4}-\d{2}-\d{2}$/.test(q.start || "")) state.start = q.start;
     if (q.days && [3, 5, 7, 10, 14].indexOf(+q.days) !== -1) state.days = +q.days;
-    if (q.au) {
-      var opts = Array.prototype.map.call(
-        document.querySelectorAll("#auPick option"),
-        function (o) { return o.value; });
-      if (opts.indexOf(q.au) !== -1) state.auTz = q.au;
-    }
   })();
 
   function updateHash() {
     if (!/^https?:$/.test(location.protocol)) return;
     try {
       history.replaceState(null, "",
-        "#start=" + state.start + "&days=" + state.days + "&au=" + state.auTz);
+        "#start=" + state.start + "&days=" + state.days);
     } catch (e) {}
   }
 
@@ -890,7 +868,6 @@
   var dateInput = document.getElementById("datePick");
   dateInput.value = state.start;
   document.getElementById("daysPick").value = String(state.days);
-  document.getElementById("auPick").value = state.auTz;
   document.getElementById("viewPick").value = state.view;
   document.getElementById("hideNight").checked = state.hideNight;
   document.getElementById("namePick").value = state.name;
@@ -904,9 +881,6 @@
   });
   document.getElementById("daysPick").addEventListener("change", function (e) {
     state.days = +e.target.value; reflow();
-  });
-  document.getElementById("auPick").addEventListener("change", function (e) {
-    state.auTz = e.target.value; renderClocks(); reflow();
   });
   document.getElementById("viewPick").addEventListener("change", function (e) {
     state.view = e.target.value; reflow();
@@ -948,7 +922,7 @@
     var link = "";
     if (/^https?:$/.test(location.protocol)) {
       link = location.origin + location.pathname +
-        "#start=" + state.start + "&days=" + state.days + "&au=" + state.auTz;
+        "#start=" + state.start + "&days=" + state.days;
     }
     var steps = link
       ? ["Open " + link + " — the meeting window (" + windowLabel() + ") is preset by the link."]
