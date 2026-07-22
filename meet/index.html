@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Find meeting times across Los Angeles, Israel, and Australia — mark availability and overlay everyone's free hours.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌏</text></svg>">
+<title>Tri-Zone Meeting Planner</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef1f5;
+    --ink: #17212b;
+    --ink-dim: #5b6774;
+    --line: #dfe4ea;
+    --accent: #0e7490;
+    --accent-ink: #ffffff;
+
+    --work-bg: #fbf3d9;  --work-ink: #6e5a0f;
+    --edge-bg: #f6dfc2;  --edge-ink: #8a5314;
+    --late-bg: #cdd3e6;  --late-ink: #333c66;
+    --night-bg: #394069; --night-ink: #c9d0f2;
+
+    --wknd: #b4562f;
+    --hover-overlay: rgb(0 0 0 / 0.045);
+
+    --display: "Avenir Next", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    --body: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "Cascadia Mono", "SF Mono", "JetBrains Mono", Consolas, ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f131c; --surface: #171d29; --surface-2: #1f2735; --ink: #e6eaf2;
+      --ink-dim: #98a2b3; --line: #293242; --accent: #35b5c9; --accent-ink: #06252b;
+      --work-bg: #423a12; --work-ink: #f0dc96; --edge-bg: #46311a; --edge-ink: #f0be8c;
+      --late-bg: #2a3050; --late-ink: #aeb8e8; --night-bg: #141830; --night-ink: #6f7bb0;
+      --wknd: #e08a63; --hover-overlay: rgb(255 255 255 / 0.055);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6f8; --surface: #ffffff; --surface-2: #eef1f5; --ink: #17212b;
+    --ink-dim: #5b6774; --line: #dfe4ea; --accent: #0e7490; --accent-ink: #ffffff;
+    --work-bg: #fbf3d9; --work-ink: #6e5a0f; --edge-bg: #f6dfc2; --edge-ink: #8a5314;
+    --late-bg: #cdd3e6; --late-ink: #333c66; --night-bg: #394069; --night-ink: #c9d0f2;
+    --wknd: #b4562f; --hover-overlay: rgb(0 0 0 / 0.045);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f131c; --surface: #171d29; --surface-2: #1f2735; --ink: #e6eaf2;
+    --ink-dim: #98a2b3; --line: #293242; --accent: #35b5c9; --accent-ink: #06252b;
+    --work-bg: #423a12; --work-ink: #f0dc96; --edge-bg: #46311a; --edge-ink: #f0be8c;
+    --late-bg: #2a3050; --late-ink: #aeb8e8; --night-bg: #141830; --night-ink: #6f7bb0;
+    --wknd: #e08a63; --hover-overlay: rgb(255 255 255 / 0.055);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 28px 20px 130px; }
+
+  header h1 {
+    font-family: var(--display);
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+    text-wrap: balance;
+  }
+  header p.sub { margin: 0 0 18px; color: var(--ink-dim); max-width: 70ch; }
+
+  details.howto {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 18px;
+    font-size: 0.88rem;
+  }
+  details.howto summary { cursor: pointer; font-weight: 600; font-family: var(--display); }
+  details.howto ol { margin: 10px 0 6px; padding-left: 22px; }
+  details.howto li { margin-bottom: 4px; }
+
+  .clocks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+  .clock {
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; background: var(--surface); position: relative; overflow: hidden;
+  }
+  .clock .zname { font-family: var(--display); font-weight: 650; font-size: 0.92rem; }
+  .clock .ztime {
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 1.5rem; margin: 2px 0 1px; letter-spacing: 0.01em;
+  }
+  .clock .zmeta { font-size: 0.78rem; color: var(--ink-dim); }
+  .clock .band-tag {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em;
+    padding: 2px 7px; border-radius: 99px; font-weight: 600;
+  }
+  .band-tag.work  { background: var(--work-bg);  color: var(--work-ink); }
+  .band-tag.edge  { background: var(--edge-bg);  color: var(--edge-ink); }
+  .band-tag.late  { background: var(--late-bg);  color: var(--late-ink); }
+  .band-tag.night { background: var(--night-bg); color: var(--night-ink); }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-end;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; margin-bottom: 12px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); font-weight: 600;
+  }
+  .field input[type="date"], .field select, .field input[type="text"] {
+    font: inherit; font-family: var(--mono); font-size: 0.9rem; color: var(--ink);
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 7px; padding: 6px 9px;
+  }
+  .field.checkbox { flex-direction: row; align-items: center; gap: 8px; padding-bottom: 6px; }
+  .field.checkbox label {
+    text-transform: none; letter-spacing: 0; font-size: 0.86rem;
+    font-weight: 400; color: var(--ink);
+  }
+  input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+  .modebar {
+    display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center;
+    margin-bottom: 12px;
+  }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button {
+    font: inherit; font-size: 0.86rem; font-weight: 600;
+    padding: 7px 14px; border: none; cursor: pointer;
+    background: var(--surface); color: var(--ink-dim);
+  }
+  .seg button.on { background: var(--accent); color: var(--accent-ink); }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .modebar .hint { font-size: 0.8rem; color: var(--ink-dim); }
+  .modebar input[type="text"] {
+    font: inherit; font-size: 0.88rem; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 7px; padding: 6px 10px; width: 150px;
+  }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center;
+    margin: 0 2px 12px; font-size: 0.78rem; color: var(--ink-dim);
+  }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 13px; height: 13px; border-radius: 4px; display: inline-block; }
+  .swatch.work  { background: var(--work-bg);  border: 1px solid var(--work-ink); }
+  .swatch.edge  { background: var(--edge-bg);  border: 1px solid var(--edge-ink); }
+  .swatch.late  { background: var(--late-bg);  border: 1px solid var(--late-ink); }
+  .swatch.night { background: var(--night-bg); border: 1px solid var(--night-ink); }
+
+  .grid-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    overflow: auto; max-height: 72vh;
+  }
+  table { border-collapse: separate; border-spacing: 0; user-select: none; width: 100%; }
+  thead th {
+    position: sticky; top: 0; z-index: 3;
+    background: var(--surface);
+    text-align: center; padding: 8px 6px;
+    border-bottom: 2px solid var(--line);
+    font-family: var(--display); font-weight: 650; font-size: 0.8rem;
+    min-width: 64px;
+  }
+  thead th.hcol { min-width: 74px; z-index: 4; left: 0; }
+  thead th .dsub {
+    display: block; font-family: var(--mono); font-weight: 400;
+    font-size: 0.68rem; color: var(--ink-dim);
+  }
+  tbody th.hlabel {
+    position: sticky; left: 0; z-index: 2;
+    background: var(--surface);
+    font-family: var(--mono); font-weight: 400; font-size: 0.78rem;
+    color: var(--ink-dim); text-align: right;
+    padding: 0 8px; border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  td.slot {
+    padding: 0; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line);
+    cursor: pointer; touch-action: none;
+  }
+  td.slot .box { height: 32px; position: relative; }
+  td.slot:hover .box::after {
+    content: ""; position: absolute; inset: 0; background: var(--hover-overlay);
+  }
+  td.slot.mine .box::before {
+    content: ""; position: absolute; inset: 1px;
+    border: 2px solid var(--accent); border-radius: 4px;
+  }
+  td.slot.picked .box::before {
+    content: ""; position: absolute; inset: 1px;
+    border: 2px dashed var(--accent); border-radius: 4px;
+  }
+  .cnt {
+    position: absolute; right: 2px; bottom: 2px;
+    font-family: var(--mono); font-size: 0.66rem; font-weight: 700;
+    background: var(--surface); color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 99px; padding: 0 4px; line-height: 1.35;
+  }
+  .star {
+    position: absolute; left: 3px; top: 2px;
+    font-size: 0.72rem; color: var(--accent);
+    text-shadow: 0 0 3px var(--surface);
+  }
+
+  .respond {
+    margin-top: 14px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .respond h2 {
+    font-family: var(--display); font-size: 1rem; font-weight: 650; margin: 0 0 8px;
+  }
+  .respond textarea {
+    width: 100%; min-height: 74px; resize: vertical;
+    font-family: var(--mono); font-size: 0.8rem; line-height: 1.5;
+    color: var(--ink); background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px;
+  }
+  .respond .rstatus { font-size: 0.8rem; color: var(--ink-dim); margin: 6px 0 10px; }
+  .respond .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  footer.note { margin-top: 16px; font-size: 0.78rem; color: var(--ink-dim); max-width: 76ch; }
+
+  .drawer {
+    position: fixed; left: 50%; bottom: 14px;
+    transform: translate(-50%, 130%);
+    width: min(1000px, calc(100% - 24px));
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+    padding: 12px 16px;
+    display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center;
+    z-index: 10; visibility: hidden;
+    transition: transform 0.25s ease, visibility 0.25s;
+  }
+  @media (prefers-reduced-motion: reduce) { .drawer { transition: none; } }
+  .drawer.open { transform: translate(-50%, 0); visibility: visible; }
+  .drawer .summary {
+    font-family: var(--mono); font-size: 0.82rem; line-height: 1.5;
+    flex: 1 1 340px; min-width: 0;
+  }
+  .drawer .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .drawer select {
+    font: inherit; font-size: 0.84rem; background: var(--surface-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px;
+  }
+  .btn {
+    font: inherit; font-size: 0.86rem; font-weight: 600;
+    border-radius: 8px; padding: 7px 14px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+    text-decoration: none; display: inline-block;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn.close { border: none; background: none; color: var(--ink-dim); font-size: 1.1rem; padding: 4px 8px; }
+
+  @media (max-width: 640px) {
+    .clocks { grid-template-columns: 1fr; }
+    .clock .ztime { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Tri-Zone Meeting Planner</h1>
+    <p class="sub">Find a meeting slot across Los Angeles, Israel, and Australia. Each cell shows
+    three comfort stripes — LA | Israel | AU — for that hour. Mark when you're free, send your
+    availability code back to the organizer, and the grid overlays everyone.</p>
+  </header>
+
+  <details class="howto">
+    <summary>How to use this (collaborators, start here)</summary>
+    <ol>
+      <li><b>Check the window</b>: if you opened the organizer's link, the start date and
+        length are already set from the link; otherwise enter the dates they named.</li>
+      <li><b>Pick your view</b>: "View hours in" defaults to your device's clock —
+        the grid rows are your local hours.</li>
+      <li><b>Mark availability</b>: in <i>Mark availability</i> mode, click or drag
+        across the hours you could meet. Your marks are saved in this browser.</li>
+      <li><b>Send it back</b>: type your name, click <i>Copy my availability</i>, and
+        email/Slack the code to the organizer.</li>
+      <li><b>Organizer</b>: paste everyone's codes into the Responses box below the grid —
+        counts appear on the cells and ★ marks the top slots.</li>
+    </ol>
+  </details>
+
+  <div class="clocks" id="clocks"></div>
+
+  <div class="controls">
+    <div class="field">
+      <label for="datePick">Window start</label>
+      <input type="date" id="datePick">
+    </div>
+    <div class="field">
+      <label for="daysPick">Length</label>
+      <select id="daysPick">
+        <option value="3">3 days</option>
+        <option value="5">5 days</option>
+        <option value="7" selected>7 days</option>
+        <option value="10">10 days</option>
+        <option value="14">14 days</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="auPick">Australia city</label>
+      <select id="auPick">
+        <option value="Australia/Canberra" selected>Canberra (ANU)</option>
+        <option value="Australia/Sydney">Sydney</option>
+        <option value="Australia/Melbourne">Melbourne</option>
+        <option value="Australia/Brisbane">Brisbane</option>
+        <option value="Australia/Adelaide">Adelaide</option>
+        <option value="Australia/Perth">Perth</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="viewPick">View hours in</label>
+      <select id="viewPick">
+        <option value="device" selected>Your device</option>
+        <option value="la">Los Angeles</option>
+        <option value="il">Israel</option>
+        <option value="au">Australia city</option>
+      </select>
+    </div>
+    <div class="field checkbox">
+      <input type="checkbox" id="hideNight">
+      <label for="hideNight">Hide hours where someone is in deep night (00–06)</label>
+    </div>
+  </div>
+
+  <div class="modebar">
+    <div class="seg" role="tablist">
+      <button id="modeMark" class="on">✏️ Mark availability</button>
+      <button id="modePick">🎯 Propose a slot</button>
+    </div>
+    <input type="text" id="namePick" placeholder="Your name" maxlength="24" aria-label="Your name">
+    <span class="hint" id="modeHint">Click or drag on the grid to mark when you could meet.</span>
+  </div>
+
+  <div class="legend">
+    <span class="key"><span class="swatch work"></span>Work 08–18</span>
+    <span class="key"><span class="swatch edge"></span>Shoulder 07–08 · 18–21</span>
+    <span class="key"><span class="swatch late"></span>Late 06–07 · 21–23</span>
+    <span class="key"><span class="swatch night"></span>Night 23–06</span>
+    <span class="key">stripes = LA | Israel | AU · dimmed stripe = local weekend</span>
+    <span class="key" style="color: var(--accent); font-weight: 600;">solid ring = you · number = people free · ★ = top slot</span>
+  </div>
+
+  <div class="grid-card">
+    <table id="grid">
+      <thead><tr id="dayHead"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <div class="respond">
+    <h2>Responses</h2>
+    <div class="actions" style="margin-bottom:10px">
+      <button class="btn primary" id="copyAvail">Copy my availability</button>
+      <button class="btn" id="copyInvite">Copy request message for collaborators</button>
+      <button class="btn" id="clearMine">Clear my marks</button>
+    </div>
+    <textarea id="respBox" spellcheck="false"
+      placeholder="Organizer: paste availability codes here, one per line&#10;TZPLAN1|Name|..."></textarea>
+    <div class="rstatus" id="respStatus">No responses pasted yet.</div>
+  </div>
+
+  <footer class="note">
+    All times come from your browser's IANA time-zone database, so daylight-saving shifts in
+    California, Israel, and Australia are handled automatically. Israel's weekend is
+    Friday–Saturday; Sunday is a normal workday there. Availability codes store absolute
+    times (UTC), so they overlay correctly no matter which timezone anyone marked them in.
+  </footer>
+</div>
+
+<div class="drawer" id="drawer" role="region" aria-label="Selected slot">
+  <div class="summary" id="drawerText"></div>
+  <div class="actions">
+    <select id="durPick" aria-label="Meeting duration">
+      <option value="30">30 min</option>
+      <option value="45">45 min</option>
+      <option value="60" selected>60 min</option>
+      <option value="90">90 min</option>
+    </select>
+    <button class="btn primary" id="copyBtn">Copy proposal</button>
+    <a class="btn" id="gcalBtn" target="_blank" rel="noopener">Google Calendar</a>
+    <button class="btn close" id="closeBtn" aria-label="Clear selection">✕</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var LA = "America/Los_Angeles";
+  var IL = "Asia/Jerusalem";
+  var DEVICE_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  var STORE_KEY = "tzplan.v1";
+
+  var state = {
+    start: null,          // "YYYY-MM-DD"
+    days: 7,
+    auTz: "Australia/Canberra",
+    view: "device",       // device | la | il | au
+    mode: "mark",         // mark | pick
+    hideNight: false,
+    name: "",
+    mine: {},             // {minuteIndex: true}
+    respText: "",
+    sel: null             // UTC ms of proposed slot
+  };
+
+  // ---------- tz helpers ----------
+  var WD_NUM = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  var WD_NAME = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var partsFmtCache = {};
+
+  function partsIn(tz, t) {
+    var f = partsFmtCache[tz];
+    if (!f) {
+      f = partsFmtCache[tz] = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz, year: "numeric", month: "numeric", day: "numeric",
+        hour: "numeric", minute: "numeric", weekday: "short", hourCycle: "h23"
+      });
+    }
+    var o = {};
+    f.formatToParts(t).forEach(function (p) { o[p.type] = p.value; });
+    return { y: +o.year, m: +o.month, d: +o.day, h: +o.hour, min: +o.minute, wd: WD_NUM[o.weekday] };
+  }
+
+  function zonedToUtc(y, m, d, h, min, tz) {
+    var t = Date.UTC(y, m - 1, d, h, min);
+    for (var i = 0; i < 3; i++) {
+      var p = partsIn(tz, t);
+      t += Date.UTC(y, m - 1, d, h, min) - Date.UTC(p.y, p.m - 1, p.d, p.h, p.min);
+    }
+    return t;
+  }
+
+  function tzNamePart(tz, t, style) {
+    var parts = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: style }).formatToParts(t);
+    for (var i = 0; i < parts.length; i++) if (parts[i].type === "timeZoneName") return parts[i].value;
+    return "";
+  }
+  function offsetLabel(tz, t) {
+    var sn = tzNamePart(tz, t, "short"), so = tzNamePart(tz, t, "shortOffset");
+    return sn !== so ? sn + " · " + so : so;
+  }
+  function fmt(tz, t, opts) {
+    return new Intl.DateTimeFormat("en-US", Object.assign({ timeZone: tz }, opts)).format(t);
+  }
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  function bandOf(h) {
+    if (h >= 8 && h < 18) return { band: "work", score: 3 };
+    if ((h >= 7 && h < 8) || (h >= 18 && h < 21)) return { band: "edge", score: 2 };
+    if ((h >= 6 && h < 7) || (h >= 21 && h < 23)) return { band: "late", score: 1 };
+    return { band: "night", score: 0 };
+  }
+
+  function auCityName() { return state.auTz.split("/")[1].replace("_", " "); }
+  function zones() {
+    return [
+      { key: "la", label: "Los Angeles", tz: LA, weekend: [0, 6] },
+      { key: "il", label: "Israel", tz: IL, weekend: [5, 6] },
+      { key: "au", label: auCityName(), tz: state.auTz, weekend: [0, 6] }
+    ];
+  }
+  function viewTz() {
+    if (state.view === "la") return LA;
+    if (state.view === "il") return IL;
+    if (state.view === "au") return state.auTz;
+    return DEVICE_TZ;
+  }
+
+  // ---------- persistence ----------
+  function persist() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        start: state.start, days: state.days, auTz: state.auTz, view: state.view,
+        hideNight: state.hideNight, name: state.name,
+        mine: Object.keys(state.mine), respText: state.respText
+      }));
+    } catch (e) {}
+  }
+  function restore() {
+    try {
+      var s = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (!s) return;
+      if (s.start) state.start = s.start;
+      if (s.days) state.days = +s.days;
+      if (s.auTz) state.auTz = s.auTz;
+      if (s.view) state.view = s.view;
+      state.hideNight = !!s.hideNight;
+      state.name = s.name || "";
+      (s.mine || []).forEach(function (k) { state.mine[k] = true; });
+      state.respText = s.respText || "";
+    } catch (e) {}
+  }
+
+  // ---------- responses ----------
+  function parseResponses() {
+    var out = [];
+    state.respText.split("\n").forEach(function (line) {
+      line = line.trim();
+      if (!line) return;
+      var parts = line.split("|");
+      if (parts.length !== 3 || parts[0] !== "TZPLAN1") return;
+      var set = {};
+      parts[2].split(",").forEach(function (c) {
+        c = c.trim();
+        if (!c) return;
+        var v = parseInt(c, 36);
+        if (isFinite(v)) set[v] = true;
+      });
+      out.push({ name: parts[1].trim() || "Anonymous", set: set });
+    });
+    return out;
+  }
+
+  function participants() {
+    var resp = parseResponses();
+    var myName = (state.name || "").trim();
+    var myLabel = myName ? myName + " (you)" : "You";
+    var mineCount = Object.keys(state.mine).length;
+    var haveDupe = myName && resp.some(function (r) { return r.name.toLowerCase() === myName.toLowerCase(); });
+    var all = resp.slice();
+    if (mineCount && !haveDupe) all.push({ name: myLabel, set: state.mine });
+    return all;
+  }
+
+  // ---------- grid model ----------
+  function dayList() {
+    var p = state.start.split("-").map(Number);
+    var base = Date.UTC(p[0], p[1] - 1, p[2]);
+    var out = [];
+    for (var i = 0; i < state.days; i++) {
+      var d = new Date(base + i * 86400000);
+      out.push({ y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate() });
+    }
+    return out;
+  }
+
+  function buildCell(t) {
+    var zs = zones();
+    var per = zs.map(function (z) {
+      var p = partsIn(z.tz, t);
+      var b = bandOf(p.h + p.min / 60);
+      var wknd = z.weekend.indexOf(p.wd) !== -1;
+      return { z: z, p: p, band: b.band, wknd: wknd, eff: wknd ? Math.max(0, b.score - 1.5) : b.score };
+    });
+    var total = per.reduce(function (s, c) { return s + c.eff; }, 0);
+    var minEff = Math.min.apply(null, per.map(function (c) { return c.eff; }));
+    var deep = per.some(function (c) { return c.band === "night"; });
+    var title = per.map(function (c) {
+      return c.z.label + ": " + WD_NAME[c.p.wd] + " " + pad(c.p.h) + ":" + pad(c.p.min) +
+        " (" + c.band + (c.wknd ? ", weekend" : "") + ")";
+    }).join("\n");
+    return { t: t, id: t / 60000, per: per, total: total, minEff: minEff, deep: deep, title: title };
+  }
+
+  function stripeCss(c) {
+    var cols = c.per.map(function (p) {
+      var v = "var(--" + p.band + "-bg)";
+      return p.wknd ? "color-mix(in srgb, " + v + " 45%, var(--bg))" : v;
+    });
+    return "linear-gradient(90deg," + cols[0] + " 0 33.4%," + cols[1] + " 33.4% 66.7%," + cols[2] + " 66.7% 100%)";
+  }
+
+  var cellIndex = {};   // id -> cell (rebuilt each render)
+
+  function renderGrid() {
+    var vtz = viewTz();
+    var days = dayList();
+    var people = participants();
+    var nPeople = people.length;
+
+    // availability count per slot id
+    function countFor(id) {
+      var names = [];
+      people.forEach(function (r) { if (r.set[id]) names.push(r.name); });
+      return names;
+    }
+
+    // build all cells first (for best-slot ranking)
+    cellIndex = {};
+    var all = [];
+    days.forEach(function (day) {
+      for (var h = 0; h < 24; h++) {
+        var t = zonedToUtc(day.y, day.m, day.d, h, 0, vtz);
+        var c = buildCell(t);
+        c.h = h; c.day = day;
+        c.names = countFor(c.id);
+        all.push(c);
+        cellIndex[c.id] = c;
+      }
+    });
+
+    // rank: with responses -> most people free, comfort breaks ties;
+    // without -> comfort only, requiring nobody at zero
+    var starIds = {};
+    var scored;
+    if (nPeople > 0) {
+      scored = all.filter(function (c) { return c.names.length > 0; });
+      scored.sort(function (a, b) {
+        return (b.names.length - a.names.length) || (b.total - a.total);
+      });
+      if (scored.length) {
+        var bn = scored[0].names.length, bt = scored[0].total;
+        scored.forEach(function (c) {
+          if (c.names.length === bn && c.total === bt) starIds[c.id] = true;
+        });
+      }
+    } else {
+      var pool = all.filter(function (c) { return c.minEff >= 1; });
+      if (!pool.length) pool = all;
+      var best = Math.max.apply(null, pool.map(function (c) { return c.total; }));
+      pool.forEach(function (c) { if (c.total === best) starIds[c.id] = true; });
+    }
+
+    // header
+    var head = document.getElementById("dayHead");
+    head.innerHTML = "";
+    var hcol = document.createElement("th");
+    hcol.className = "hcol";
+    hcol.innerHTML = tzShortLabel(vtz) + '<span class="dsub">' + offsetLabel(vtz, all[0].t) + "</span>";
+    head.appendChild(hcol);
+    days.forEach(function (day) {
+      var t = zonedToUtc(day.y, day.m, day.d, 12, 0, vtz);
+      var th = document.createElement("th");
+      th.innerHTML = fmt(vtz, t, { weekday: "short" }) +
+        '<span class="dsub">' + fmt(vtz, t, { month: "short", day: "numeric" }) + "</span>";
+      head.appendChild(th);
+    });
+
+    // rows
+    var tbody = document.getElementById("rows");
+    tbody.innerHTML = "";
+    for (var h = 0; h < 24; h++) {
+      var rowCells = all.filter(function (c) { return c.h === h; });
+      if (state.hideNight && rowCells.every(function (c) { return c.deep; })) continue;
+      var tr = document.createElement("tr");
+      var th = document.createElement("th");
+      th.className = "hlabel";
+      th.textContent = pad(h) + ":00";
+      tr.appendChild(th);
+      rowCells.forEach(function (c) {
+        var td = document.createElement("td");
+        td.className = "slot";
+        td.dataset.id = c.id;
+        td.title = c.title;
+        if (state.mine[c.id]) td.classList.add("mine");
+        if (state.sel === c.t) td.classList.add("picked");
+        var inner = '<div class="box" style="background:' + stripeCss(c) + '">';
+        if (starIds[c.id]) inner += '<span class="star">★</span>';
+        if (c.names.length) inner += '<span class="cnt">' + c.names.length + "</span>";
+        inner += "</div>";
+        td.innerHTML = inner;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    }
+
+    renderRespStatus(people);
+  }
+
+  function tzShortLabel(tz) {
+    if (tz === LA) return "Los Angeles";
+    if (tz === IL) return "Israel";
+    if (tz === state.auTz) return auCityName();
+    return tz.split("/").pop().replace(/_/g, " ");
+  }
+
+  function renderRespStatus(people) {
+    var resp = parseResponses();
+    var el = document.getElementById("respStatus");
+    if (!resp.length) {
+      el.textContent = Object.keys(state.mine).length
+        ? "No responses pasted yet — your own marks are shown on the grid."
+        : "No responses pasted yet.";
+    } else {
+      el.textContent = resp.length + " response" + (resp.length > 1 ? "s" : "") + " loaded: " +
+        resp.map(function (r) { return r.name + " (" + Object.keys(r.set).length + " h)"; }).join(", ") +
+        (Object.keys(state.mine).length ? " — plus your own marks." : "");
+    }
+  }
+
+  // ---------- clocks ----------
+  function renderClocks() {
+    var now = Date.now();
+    var host = document.getElementById("clocks");
+    host.innerHTML = "";
+    zones().forEach(function (z) {
+      var p = partsIn(z.tz, now);
+      var b = bandOf(p.h + p.min / 60);
+      var card = document.createElement("div");
+      card.className = "clock";
+      card.innerHTML =
+        '<div class="zname">' + z.label + "</div>" +
+        '<div class="ztime" data-tz="' + z.tz + '"></div>' +
+        '<div class="zmeta">' + fmt(z.tz, now, { weekday: "short", month: "short", day: "numeric" }) +
+          " · " + offsetLabel(z.tz, now) + "</div>" +
+        '<span class="band-tag ' + b.band + '">' + b.band + "</span>";
+      host.appendChild(card);
+    });
+    tickClocks();
+  }
+  function tickClocks() {
+    var now = Date.now();
+    document.querySelectorAll(".ztime").forEach(function (el) {
+      el.textContent = fmt(el.getAttribute("data-tz"), now,
+        { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+    });
+  }
+  setInterval(tickClocks, 1000);
+  setInterval(renderClocks, 60000);
+
+  // ---------- painting & picking ----------
+  var painting = false, paintVal = true;
+
+  function slotFromEvent(e) {
+    var el = document.elementFromPoint(e.clientX, e.clientY);
+    return el ? (el.closest ? el.closest("td.slot") : null) : null;
+  }
+  function applyPaint(td) {
+    if (!td) return;
+    var id = td.dataset.id;
+    if (paintVal) state.mine[id] = true; else delete state.mine[id];
+    td.classList.toggle("mine", !!state.mine[id]);
+  }
+
+  var gridEl = document.getElementById("grid");
+  gridEl.addEventListener("pointerdown", function (e) {
+    var td = e.target.closest ? e.target.closest("td.slot") : null;
+    if (!td) return;
+    if (state.mode === "mark") {
+      e.preventDefault();
+      painting = true;
+      paintVal = !state.mine[td.dataset.id];
+      applyPaint(td);
+    }
+  });
+  gridEl.addEventListener("pointermove", function (e) {
+    if (!painting) return;
+    e.preventDefault();
+    applyPaint(slotFromEvent(e));
+  });
+  window.addEventListener("pointerup", function () {
+    if (painting) {
+      painting = false;
+      persist();
+      renderGrid(); // refresh counts/stars including my marks
+    }
+  });
+  gridEl.addEventListener("click", function (e) {
+    if (state.mode !== "pick") return;
+    var td = e.target.closest ? e.target.closest("td.slot") : null;
+    if (!td) return;
+    var c = cellIndex[td.dataset.id];
+    if (!c) return;
+    state.sel = state.sel === c.t ? null : c.t;
+    renderGrid();
+    renderDrawer();
+  });
+
+  // ---------- drawer / proposal ----------
+  function proposalLines(t) {
+    var lines = [];
+    zones().forEach(function (z) {
+      lines.push(z.label + ": " +
+        fmt(z.tz, t, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) +
+        " (" + offsetLabel(z.tz, t) + ")");
+    });
+    lines.push("UTC: " + fmt("UTC", t,
+      { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }));
+    var c = cellIndex[t / 60000];
+    if (c && c.names.length) lines.push("Available: " + c.names.join(", "));
+    return lines;
+  }
+
+  function renderDrawer() {
+    var drawer = document.getElementById("drawer");
+    if (state.sel === null) { drawer.classList.remove("open"); return; }
+    document.getElementById("drawerText").innerHTML = proposalLines(state.sel)
+      .map(function (l) {
+        var i = l.indexOf(": ");
+        return "<b>" + l.slice(0, i) + ":</b> " + l.slice(i + 2);
+      }).join("<br>");
+    updateGcal();
+    drawer.classList.add("open");
+  }
+
+  function utcStamp(t) {
+    var d = new Date(t);
+    return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) +
+      "T" + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "00Z";
+  }
+  function updateGcal() {
+    if (state.sel === null) return;
+    var dur = +document.getElementById("durPick").value;
+    var url = "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+      "&text=" + encodeURIComponent("Team meeting") +
+      "&dates=" + utcStamp(state.sel) + "/" + utcStamp(state.sel + dur * 60000) +
+      "&details=" + encodeURIComponent(proposalLines(state.sel).join("\n"));
+    document.getElementById("gcalBtn").href = url;
+  }
+
+  // ---------- copy helpers ----------
+  function copyText(text, btn, okLabel) {
+    var orig = btn.textContent;
+    function done(ok) {
+      btn.textContent = ok ? (okLabel || "Copied ✓") : "Copy failed";
+      setTimeout(function () { btn.textContent = orig; }, 1600);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); },
+        function () { legacyCopy(text, done); });
+    } else legacyCopy(text, done);
+  }
+  function legacyCopy(text, done) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+    done(ok);
+  }
+
+  function windowLabel() {
+    var days = dayList();
+    var a = days[0], b = days[days.length - 1];
+    var vtz = viewTz();
+    var ta = zonedToUtc(a.y, a.m, a.d, 12, 0, vtz), tb = zonedToUtc(b.y, b.m, b.d, 12, 0, vtz);
+    return fmt(vtz, ta, { month: "short", day: "numeric" }) + "–" +
+           fmt(vtz, tb, { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  // ---------- wiring ----------
+  restore();
+
+  // URL-hash config (#start=YYYY-MM-DD&days=7&au=Australia/Canberra) overrides saved settings,
+  // so the organizer's shared link pre-sets the meeting window for everyone.
+  (function () {
+    var h = location.hash.replace(/^#/, "");
+    if (!h) return;
+    var q = {};
+    h.split("&").forEach(function (kv) {
+      var i = kv.indexOf("=");
+      if (i > 0) q[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1));
+    });
+    if (/^\d{4}-\d{2}-\d{2}$/.test(q.start || "")) state.start = q.start;
+    if (q.days && [3, 5, 7, 10, 14].indexOf(+q.days) !== -1) state.days = +q.days;
+    if (q.au) {
+      var opts = Array.prototype.map.call(
+        document.querySelectorAll("#auPick option"),
+        function (o) { return o.value; });
+      if (opts.indexOf(q.au) !== -1) state.auTz = q.au;
+    }
+  })();
+
+  function updateHash() {
+    if (!/^https?:$/.test(location.protocol)) return;
+    try {
+      history.replaceState(null, "",
+        "#start=" + state.start + "&days=" + state.days + "&au=" + state.auTz);
+    } catch (e) {}
+  }
+
+  if (!state.start) {
+    var n = new Date();
+    state.start = n.getFullYear() + "-" + pad(n.getMonth() + 1) + "-" + pad(n.getDate());
+  }
+
+  var dateInput = document.getElementById("datePick");
+  dateInput.value = state.start;
+  document.getElementById("daysPick").value = String(state.days);
+  document.getElementById("auPick").value = state.auTz;
+  document.getElementById("viewPick").value = state.view;
+  document.getElementById("hideNight").checked = state.hideNight;
+  document.getElementById("namePick").value = state.name;
+  document.getElementById("respBox").value = state.respText;
+
+  function reflow() { state.sel = null; renderGrid(); renderDrawer(); persist(); updateHash(); }
+
+  dateInput.addEventListener("change", function () {
+    if (!dateInput.value) return;
+    state.start = dateInput.value; reflow();
+  });
+  document.getElementById("daysPick").addEventListener("change", function (e) {
+    state.days = +e.target.value; reflow();
+  });
+  document.getElementById("auPick").addEventListener("change", function (e) {
+    state.auTz = e.target.value; renderClocks(); reflow();
+  });
+  document.getElementById("viewPick").addEventListener("change", function (e) {
+    state.view = e.target.value; reflow();
+  });
+  document.getElementById("hideNight").addEventListener("change", function (e) {
+    state.hideNight = e.target.checked; renderGrid(); persist();
+  });
+  document.getElementById("namePick").addEventListener("input", function (e) {
+    state.name = e.target.value; persist();
+  });
+  document.getElementById("respBox").addEventListener("input", function (e) {
+    state.respText = e.target.value; renderGrid(); persist();
+  });
+
+  document.getElementById("modeMark").addEventListener("click", function () { setMode("mark"); });
+  document.getElementById("modePick").addEventListener("click", function () { setMode("pick"); });
+  function setMode(m) {
+    state.mode = m;
+    document.getElementById("modeMark").classList.toggle("on", m === "mark");
+    document.getElementById("modePick").classList.toggle("on", m === "pick");
+    document.getElementById("modeHint").textContent = m === "mark"
+      ? "Click or drag on the grid to mark when you could meet."
+      : "Click a cell to get the times in all three zones, copyable text, and a calendar link.";
+    if (m === "mark") { state.sel = null; renderGrid(); renderDrawer(); }
+  }
+
+  document.getElementById("copyAvail").addEventListener("click", function () {
+    var ids = Object.keys(state.mine).map(Number).sort(function (a, b) { return a - b; });
+    if (!ids.length) {
+      copyText("", this, "Nothing marked yet");
+      return;
+    }
+    var code = "TZPLAN1|" + ((state.name || "").trim() || "Anonymous") + "|" +
+      ids.map(function (v) { return v.toString(36); }).join(",");
+    copyText(code, this);
+  });
+
+  document.getElementById("copyInvite").addEventListener("click", function () {
+    var link = "";
+    if (/^https?:$/.test(location.protocol)) {
+      link = location.origin + location.pathname +
+        "#start=" + state.start + "&days=" + state.days + "&au=" + state.auTz;
+    }
+    var steps = link
+      ? ["Open " + link + " — the meeting window (" + windowLabel() + ") is preset by the link."]
+      : ["Open the Tri-Zone Meeting Planner link I shared.",
+         "Set the window start to " + state.start + " and length to " + state.days +
+         " days (" + windowLabel() + ")."];
+    steps.push("In 'Mark availability' mode, click/drag the hours you could meet" +
+      " (the grid shows your local time).");
+    steps.push("Type your name, click 'Copy my availability', and send me the code it copies.");
+    var msg = "Can you mark your availability for our meeting?\n" +
+      steps.map(function (s, i) { return (i + 1) + ". " + s; }).join("\n") +
+      "\nTimes are matched in UTC under the hood, so time zones sort themselves out.";
+    copyText(msg, this);
+  });
+
+  document.getElementById("clearMine").addEventListener("click", function () {
+    state.mine = {};
+    persist(); renderGrid();
+  });
+
+  document.getElementById("durPick").addEventListener("change", updateGcal);
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    if (state.sel === null) return;
+    var dur = document.getElementById("durPick").value;
+    copyText("Proposed meeting (" + dur + " min):\n" +
+      proposalLines(state.sel).map(function (l) { return "• " + l; }).join("\n"), this);
+  });
+  document.getElementById("closeBtn").addEventListener("click", function () {
+    state.sel = null; renderGrid(); renderDrawer();
+  });
+
+  renderClocks();
+  renderGrid();
+  updateHash();
+})();
+</script>
+</body>
+</html>
