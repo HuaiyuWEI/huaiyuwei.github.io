@@ -288,10 +288,12 @@
         the grid rows are your local hours.</li>
       <li><b>Mark availability</b>: in <i>Mark availability</i> mode, click or drag
         across the hours you could meet. Your marks are saved in this browser.</li>
-      <li><b>Send it back</b>: type your name, click <i>Copy my availability</i>, and
-        email/Slack the code to the organizer.</li>
-      <li><b>Organizer</b>: paste everyone's codes into the Responses box below the grid —
-        counts appear on the cells and ★ marks the top slots.</li>
+      <li><b>Share it</b>: type your name. If live sync is on (noted in the Responses
+        section below the grid), your marks reach everyone automatically. Otherwise click
+        <i>Copy my availability</i> and email/Slack the code to the organizer, who pastes
+        it into the Responses box.</li>
+      <li><b>Read the grid</b>: numbers show how many people are free at each hour and
+        ★ marks the top slots.</li>
     </ol>
   </details>
 
@@ -353,6 +355,7 @@
 
   <div class="respond">
     <h2>Responses</h2>
+    <div class="rstatus" id="syncStatus" style="display:none"></div>
     <div class="actions" style="margin-bottom:10px">
       <button class="btn primary" id="copyAvail">Copy my availability</button>
       <button class="btn" id="copyInvite">Copy request message for collaborators</button>
@@ -387,6 +390,12 @@
 </div>
 
 <script>
+  // Live-sync backend: a Firebase Realtime Database URL, e.g.
+  // "https://myproject-default-rtdb.firebaseio.com". Empty = sync off; the
+  // page then uses copy-paste availability codes only.
+  window.TZPLAN_CONFIG = { db: "" };
+</script>
+<script>
 (function () {
   "use strict";
 
@@ -394,6 +403,12 @@
   var IL = "Asia/Jerusalem";
   var DEVICE_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
   var STORE_KEY = "tzplan.v1";
+  var SYNC_POLL_MS = 10000;
+  var pollId = "main";
+  function syncBase() {
+    var b = (window.TZPLAN_CONFIG && window.TZPLAN_CONFIG.db) || "";
+    return b.replace(/\/+$/, "");
+  }
 
   var state = {
     start: null,          // "YYYY-MM-DD"
@@ -405,6 +420,7 @@
     name: "",
     mine: {},             // {minuteIndex: true}
     respText: "",
+    lastKey: "",          // last database key my marks were published under
     sel: null             // UTC ms of proposed slot
   };
 
@@ -476,7 +492,7 @@
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
         start: state.start, days: state.days, view: state.view,
-        hideNight: state.hideNight, name: state.name,
+        hideNight: state.hideNight, name: state.name, lastKey: state.lastKey,
         mine: Object.keys(state.mine), respText: state.respText
       }));
     } catch (e) {}
@@ -492,6 +508,7 @@
       state.name = s.name || "";
       (s.mine || []).forEach(function (k) { state.mine[k] = true; });
       state.respText = s.respText || "";
+      state.lastKey = s.lastKey || "";
     } catch (e) {}
   }
 
@@ -516,13 +533,28 @@
   }
 
   function participants() {
-    var resp = parseResponses();
+    var all = [];
+    var seen = {};   // lowercase display name -> true
     var myName = (state.name || "").trim();
-    var myLabel = myName ? myName + " (you)" : "You";
-    var mineCount = Object.keys(state.mine).length;
-    var haveDupe = myName && resp.some(function (r) { return r.name.toLowerCase() === myName.toLowerCase(); });
-    var all = resp.slice();
-    if (mineCount && !haveDupe) all.push({ name: myLabel, set: state.mine });
+    if (Object.keys(state.mine).length) {
+      all.push({ name: myName ? myName + " (you)" : "You", set: state.mine });
+      if (myName) seen[myName.toLowerCase()] = true;
+    }
+    Object.keys(remote).forEach(function (k) {
+      var r = remote[k];
+      if (!r || !r.n || !r.s || !r.s.length) return;
+      var name = String(r.n).slice(0, 24);
+      if (seen[name.toLowerCase()]) return;   // my own published copy, or a duplicate
+      var set = {};
+      r.s.forEach(function (c) { var v = parseInt(c, 36); if (isFinite(v)) set[v] = true; });
+      all.push({ name: name, set: set });
+      seen[name.toLowerCase()] = true;
+    });
+    parseResponses().forEach(function (r) {
+      if (seen[r.name.toLowerCase()]) return;
+      all.push(r);
+      seen[r.name.toLowerCase()] = true;
+    });
     return all;
   }
 
@@ -659,6 +691,7 @@
     }
 
     renderRespStatus(people);
+    renderSyncStatus();
   }
 
   function tzShortLabel(tz) {
@@ -669,16 +702,82 @@
   }
 
   function renderRespStatus(people) {
-    var resp = parseResponses();
     var el = document.getElementById("respStatus");
-    if (!resp.length) {
-      el.textContent = Object.keys(state.mine).length
-        ? "No responses pasted yet — your own marks are shown on the grid."
-        : "No responses pasted yet.";
+    if (!people.length) {
+      el.textContent = "Nobody on the grid yet.";
     } else {
-      el.textContent = resp.length + " response" + (resp.length > 1 ? "s" : "") + " loaded: " +
-        resp.map(function (r) { return r.name + " (" + Object.keys(r.set).length + " h)"; }).join(", ") +
-        (Object.keys(state.mine).length ? " — plus your own marks." : "");
+      el.textContent = people.length + " on the grid: " +
+        people.map(function (p) { return p.name + " (" + Object.keys(p.set).length + " h)"; }).join(", ");
+    }
+  }
+
+  // ---------- live sync (Firebase Realtime Database, plain REST) ----------
+  var remote = {};        // key -> {n: name, s: [base36 slot ids], t: timestamp}
+  var syncState = "off";  // off | ok | error
+
+  function syncUrl(path) { return syncBase() + "/polls/" + pollId + path + ".json"; }
+
+  function syncPull() {
+    if (!syncBase()) return;
+    fetch(syncUrl("/resp"), { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (data) {
+        remote = data || {};
+        syncState = "ok";
+        if (!painting) renderGrid();
+      })
+      .catch(function () { syncState = "error"; renderSyncStatus(); });
+  }
+
+  var pushTimer = null;
+  function syncPushSoon() {
+    if (!syncBase()) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(syncPush, 1200);
+  }
+  function myKey() {
+    return (state.name || "").trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32);
+  }
+  function syncPush() {
+    if (!syncBase()) return;
+    var key = myKey();
+    if (!key) { renderSyncStatus(); return; }
+    if (state.lastKey && state.lastKey !== key) {
+      fetch(syncUrl("/resp/" + state.lastKey), { method: "PUT", body: "null" })
+        .catch(function () {});
+    }
+    state.lastKey = key;
+    persist();
+    var ids = Object.keys(state.mine).map(Number).sort(function (a, b) { return a - b; });
+    var body = ids.length
+      ? JSON.stringify({
+          n: (state.name || "").trim(),
+          s: ids.map(function (v) { return v.toString(36); }),
+          t: Date.now()
+        })
+      : "null";   // PUT null deletes my entry
+    fetch(syncUrl("/resp/" + key), { method: "PUT", body: body })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.status);
+        syncState = "ok";
+        syncPull();
+      })
+      .catch(function () { syncState = "error"; renderSyncStatus(); });
+  }
+
+  function renderSyncStatus() {
+    var el = document.getElementById("syncStatus");
+    if (!syncBase()) { el.style.display = "none"; return; }
+    el.style.display = "";
+    if (syncState === "error") {
+      el.textContent = "Live sync: connection problem — retrying. Copy-paste codes still work.";
+    } else {
+      el.textContent = "Live sync: on — marks are shared with everyone automatically" +
+        " (updates within ~" + Math.round(SYNC_POLL_MS / 1000) + " s)." +
+        (Object.keys(state.mine).length && !myKey()
+          ? " Enter your name so others can see your marks."
+          : "");
     }
   }
 
@@ -747,6 +846,7 @@
       painting = false;
       persist();
       renderGrid(); // refresh counts/stars including my marks
+      syncPushSoon();
     }
   });
   gridEl.addEventListener("click", function (e) {
@@ -850,13 +950,15 @@
     });
     if (/^\d{4}-\d{2}-\d{2}$/.test(q.start || "")) state.start = q.start;
     if (q.days && [3, 5, 7, 10, 14].indexOf(+q.days) !== -1) state.days = +q.days;
+    if (/^[a-z0-9-]{1,40}$/.test(q.poll || "")) pollId = q.poll;
   })();
 
   function updateHash() {
     if (!/^https?:$/.test(location.protocol)) return;
     try {
       history.replaceState(null, "",
-        "#start=" + state.start + "&days=" + state.days);
+        "#start=" + state.start + "&days=" + state.days +
+        (pollId !== "main" ? "&poll=" + pollId : ""));
     } catch (e) {}
   }
 
@@ -889,7 +991,7 @@
     state.hideNight = e.target.checked; renderGrid(); persist();
   });
   document.getElementById("namePick").addEventListener("input", function (e) {
-    state.name = e.target.value; persist();
+    state.name = e.target.value; persist(); syncPushSoon();
   });
   document.getElementById("respBox").addEventListener("input", function (e) {
     state.respText = e.target.value; renderGrid(); persist();
@@ -922,7 +1024,8 @@
     var link = "";
     if (/^https?:$/.test(location.protocol)) {
       link = location.origin + location.pathname +
-        "#start=" + state.start + "&days=" + state.days;
+        "#start=" + state.start + "&days=" + state.days +
+        (pollId !== "main" ? "&poll=" + pollId : "");
     }
     var steps = link
       ? ["Open " + link + " — the meeting window (" + windowLabel() + ") is preset by the link."]
@@ -940,7 +1043,7 @@
 
   document.getElementById("clearMine").addEventListener("click", function () {
     state.mine = {};
-    persist(); renderGrid();
+    persist(); renderGrid(); syncPushSoon();
   });
 
   document.getElementById("durPick").addEventListener("change", updateGcal);
@@ -957,6 +1060,8 @@
   renderClocks();
   renderGrid();
   updateHash();
+  syncPull();
+  setInterval(syncPull, SYNC_POLL_MS);
 })();
 </script>
 </body>
