@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NeurMOC — Satellite-based reconstruction of the ocean overturning circulation</title>
-  <meta name="description" content="NeurMOC is a neural-network reconstruction of the Atlantic and Southern Ocean meridional overturning circulation from GRACE, satellite altimetry, and satellite winds, April 2003 to April 2024. Explore the streamfunction, uncertainty, and trends interactively.">
+  <meta name="description" content="NeurMOC is a neural-network reconstruction of Atlantic and Southern Ocean overturning circulation anomalies from GRACE, satellite altimetry, and satellite winds, April 2003 to December 2024. Choose the satellite products and explore the anomalies, uncertainty, and trends interactively.">
   <link rel="canonical" href="https://huaiyuwei.github.io/neurmoc/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="NeurMOC — satellite-based monitoring of the ocean overturning circulation">
@@ -13,7 +13,7 @@
   <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#4d90c2">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-07-07b">
+  <link rel="stylesheet" href="./styles.css?v=2026-07-31a">
 </head>
 <body>
   <div id="loading-overlay" role="status" aria-live="polite">
@@ -33,19 +33,20 @@
           <h1>NeurMOC</h1>
           <p class="hero-subtitle">Satellite-based monitoring of the ocean overturning circulation with deep learning</p>
           <p class="hero-copy">
-            NeurMOC reconstructs the Atlantic and Southern Ocean meridional overturning circulation (MOC)
-            in latitude&ndash;density space from satellite observations of ocean bottom pressure (GRACE/GRACE-FO),
-            sea surface height (altimetry), and surface winds, using neural networks trained on a large
-            climate-model ensemble. This viewer presents the monthly reconstruction, its uncertainty, and the
-            estimated trend over April 2003 &ndash; April 2024. The reconstruction retains interannual and
-            longer-timescale variability.
+            NeurMOC reconstructs Atlantic and Southern Ocean meridional overturning circulation (MOC)
+            <strong>anomalies</strong> (relative to the 2004&ndash;2009 mean, the GRACE convention) in
+            latitude&ndash;density space from satellite ocean bottom pressure (GRACE/GRACE-FO), sea surface
+            height, and surface winds, using neural networks trained on a large climate-model ensemble.
+            This viewer presents the monthly reconstruction for <strong>every satellite product
+            combination</strong>, its total uncertainty, and the trend over April 2003 &ndash; December 2024
+            with a measured, serial-correlation-aware error budget.
           </p>
           <div class="hero-actions">
             <a class="action-button action-primary" href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm8 1.5V8h4.5L14 3.5zM8 12h8v1.6H8V12zm0 4h8v1.6H8V16z"/></svg>
               Read the preprint
             </a>
-            <a class="action-button" id="download-data-link" href="./data/NeroMOC_data.mat" download="NeurMOC_data.mat">
+            <a class="action-button" id="download-data-link" href="./data/NeurMOC_data.mat" download="NeurMOC_data.mat">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.2l3.6-3.6 1.4 1.4-6 6-6-6 1.4-1.4L10 13.2V3h2zM4 19h16v2H4v-2z"/></svg>
               Download the data (.mat)
             </a>
@@ -60,21 +61,36 @@
           </div>
         </div>
         <aside class="fact-stack" aria-label="Key facts">
-          <div class="fact-chip"><span class="fact-label">Period</span><strong>Apr 2003 – Apr 2024, monthly</strong></div>
+          <div class="fact-chip"><span class="fact-label">Period</span><strong>Apr 2003 – Dec 2024, monthly</strong></div>
           <div class="fact-chip"><span class="fact-label">Coverage</span><strong>74.5°S – 64.5°N, Atlantic + Southern Ocean</strong></div>
           <div class="fact-chip"><span class="fact-label">Vertical coordinate</span><strong>18 density (σ₂) levels</strong></div>
           <div class="fact-chip"><span class="fact-label">Timescales</span><strong>2-year low-pass filtered</strong></div>
+          <div class="fact-chip"><span class="fact-label">Quantity</span><strong>Anomalies rel. 2004–2009</strong></div>
         </aside>
       </div>
     </section>
 
     <section class="dashboard-layout">
+      <article class="panel product-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Satellite products</h2>
+            <p>Every combination is an independent reconstruction by the same trained network.
+               The OBP product choice dominates the differences; the uncertainty envelope and trend
+               statistics already include the across-product spread. Showing:
+               <strong id="product-combo-label">&hellip;</strong></p>
+          </div>
+        </div>
+        <div class="product-bar" id="product-bar" role="group" aria-label="Satellite product selection"></div>
+      </article>
       <section class="top-panels-grid">
         <article class="panel panel-center-figure">
           <div class="panel-header">
             <div>
-              <h2>Time-mean overturning</h2>
-              <p>Time-mean reconstructed streamfunction in latitude&ndash;density space, split into the Southern Ocean (SMOC) and Atlantic (AMOC) sectors. Click any cell to inspect its time series.</p>
+              <h2>Mean overturning state</h2>
+              <p>The 2004&ndash;2009 mean state of the training model plus the reconstructed anomaly mean of the
+                 selected products, split into Southern Ocean (SMOC) and Atlantic (AMOC) sectors &mdash; shown for
+                 orientation (the reconstructed quantity is the anomaly). Click any cell to inspect its time series.</p>
             </div>
           </div>
           <canvas id="section-canvas" width="1200" height="520" role="img" aria-label="Time-mean overturning streamfunction heatmap"></canvas>
@@ -84,7 +100,9 @@
           <div class="panel-header">
             <div>
               <h2>Local time series</h2>
-              <p>Reconstruction at the selected latitude&ndash;density cell with its uncertainty envelope and linear trend. The GRACE/GRACE-FO gap is shaded. Choose a preset or click any map cell.</p>
+              <p>Anomaly reconstruction at the selected latitude&ndash;density cell for the chosen satellite
+                 products, with the total uncertainty envelope and the linear trend. The GRACE/GRACE-FO gap is
+                 shaded. Choose a preset or click any map cell.</p>
             </div>
           </div>
           <div class="preset-row" id="preset-row" role="group" aria-label="Location presets">
@@ -94,7 +112,7 @@
             <button class="preset-option" type="button" data-preset="abyssal">Abyssal cell 60°S</button>
           </div>
           <div class="ts-legend" role="list" aria-label="Time-series legend">
-            <span class="legend-item" role="listitem"><span class="swatch swatch-recon" aria-hidden="true"></span>Reconstruction &plusmn; 1&sigma;</span>
+            <span class="legend-item" role="listitem"><span class="swatch swatch-recon" aria-hidden="true"></span>Reconstruction &plusmn; 1&sigma; total (default products)</span>
             <span class="legend-item" role="listitem"><span class="swatch swatch-trend" aria-hidden="true"></span>Linear trend</span>
             <span class="legend-item" role="listitem"><span class="swatch swatch-gap" aria-hidden="true"></span>GRACE/GRACE-FO gap</span>
           </div>
@@ -109,7 +127,7 @@
               <strong id="selected-density">-</strong>
             </article>
             <article class="summary-card">
-              <span class="summary-label">Mean value</span>
+              <span class="summary-label">Mean anomaly</span>
               <strong id="selected-value">-</strong>
             </article>
             <article class="summary-card">
@@ -122,8 +140,11 @@
         <article class="panel">
           <div class="panel-header">
             <div>
-              <h2>21-year trend</h2>
-              <p>Linear trend of the reconstruction in latitude&ndash;density space. Crosses mark cells where the trend is not significant at the 95% level.</p>
+              <h2>Trend, 2003&ndash;2024</h2>
+              <p>Linear trend of the default-product reconstruction. The &plusmn;2&sigma; uncertainty combines internal
+                 variability (moving-block bootstrap), the network-ensemble spread, the cross-model transfer error,
+                 and the satellite-product spread; crosses mark cells not significant after false-discovery-rate
+                 control.</p>
             </div>
           </div>
           <canvas id="trend-canvas" width="1200" height="520" role="img" aria-label="Linear trend heatmap"></canvas>
@@ -202,8 +223,11 @@
               <li><strong>Validation</strong> &mdash; the approach is validated on withheld climate-model ensembles, on independent climate models, and against the RAPID moored array.</li>
             </ul>
             <p class="prose-note">
-              The uncertainty shown is the ensemble spread of the neural-network reconstruction accounting for
-              observational noise. See the manuscript for the full method, validation, and caveats.
+              The reconstruction is the anomaly relative to the 2004&ndash;2009 mean. The uncertainty envelope
+              combines the cross-model transfer error, the network-ensemble spread, and the spread across
+              satellite product combinations; trend significance additionally accounts for serial correlation
+              (moving-block bootstrap) and false-discovery-rate control. See the manuscript for the full method,
+              validation, and caveats.
             </p>
           </div>
         </article>
@@ -246,7 +270,8 @@
       <span>&copy; 2026 Huaiyu Wei &middot; Atmospheric and Oceanic Sciences, UCLA</span>
       <span class="footer-links">
         <a class="meta-link" href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">Preprint</a>
-        &middot; <a class="meta-link" href="./data/NeroMOC_data.mat" download="NeurMOC_data.mat">Data</a>
+        &middot; <a class="meta-link" href="./data/NeurMOC_data.mat" download="NeurMOC_data.mat">Data (.mat)</a>
+        &middot; <a class="meta-link" href="./data/NeurMOC_data.nc" download="NeurMOC_data.nc">Data (.nc)</a>
         &middot; <a class="meta-link" href="https://huaiyuwei.github.io/" target="_blank" rel="noopener">huaiyuwei.github.io</a>
       </span>
     </footer>
@@ -254,6 +279,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-07-07c"></script>
+  <script src="./app.js?v=2026-07-31a"></script>
 </body>
 </html>

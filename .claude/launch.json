@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "neurmoc-viewer",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8137"],
+      "cwd": "D:/Users/hwei/Documents/GitHub/huaiyuwei.github.io",
+      "port": 8137
+    }
+  ]
+}

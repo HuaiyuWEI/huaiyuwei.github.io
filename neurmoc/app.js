@@ -1,8 +1,9 @@
-const META_PATH = "./data/neurmoc_meta.json?v=2026-07-07a";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-07-31a";
 const DATA_DIR = "./data/";
 
 const state = {
   data: null,
+  combo: { obp: 0, ssh: 0, wind: 0 },   // option index per product axis
   timeIndex: 0,
   densityIndex: 0,
   latitudeIndex: 0,
@@ -21,6 +22,8 @@ const controls = {
   climLabel: document.getElementById("clim-label"),
   playButton: document.getElementById("play-button"),
   speedControl: document.getElementById("speed-control"),
+  productBar: document.getElementById("product-bar"),
+  productComboLabel: document.getElementById("product-combo-label"),
   presetRow: document.getElementById("preset-row"),
   copyBibtex: document.getElementById("copy-bibtex"),
   selectedLatitude: document.getElementById("selected-latitude"),
@@ -130,9 +133,33 @@ function buildYearAxisTicks(timeYears) {
 
 /* ---------------- data access (flat typed arrays) ---------------- */
 
+function comboIndex() {
+  return state.combo.obp * 4 + state.combo.ssh * 2 + state.combo.wind;
+}
+
+function comboLabel() {
+  const axes = state.data.products.axes;
+  return [axes[0].options[state.combo.obp], axes[1].options[state.combo.ssh],
+          axes[2].options[state.combo.wind]].join(" + ");
+}
+
 function predAt(t, k, j) {
-  const { nk, nj } = state.data.dims;
-  return state.data.pred[(t * nk + k) * nj + j];
+  const { nt, nk, nj } = state.data.dims;
+  return state.data.pred[((comboIndex() * nt + t) * nk + k) * nj + j];
+}
+
+const meanStateCache = new Map();
+
+function meanStateYZ() {
+  // 2004-2009 model baseline + the selected combination's anomaly mean
+  const c = comboIndex();
+  if (!meanStateCache.has(c)) {
+    const base = state.data.baseline_yz;
+    const anom = state.data.combo_mean_yz[c];
+    meanStateCache.set(c, base.map((row, k) => row.map(
+      (value, j) => (value <= -900 ? NaN : value + anom[k][j]))));
+  }
+  return meanStateCache.get(c);
 }
 
 function stdAt(t, k, j) {
@@ -221,6 +248,9 @@ function thinTicks(indices, fs) {
 }
 
 function valueToColor(value, clim) {
+  if (!Number.isFinite(value)) {
+    return "rgb(233, 236, 239)";        // masked cell (outside valid plane)
+  }
   const clamped = Math.max(-clim, Math.min(clim, value));
   const t = (clamped + clim) / (2 * clim);
   // RdBu-style diverging ramp (matches the manuscript figures) with a
@@ -659,8 +689,19 @@ function drawTimeSeries() {
     values.push(predAt(t, state.densityIndex, state.latitudeIndex));
     stdValues.push(stdAt(t, state.densityIndex, state.latitudeIndex));
   }
+  if (!Number.isFinite(values[0])) {
+    // masked cell (outside the valid latitude-density plane)
+    timeseriesSvg.innerHTML = `
+      <rect x="0" y="0" width="900" height="320" fill="#ffffff"></rect>
+      <text x="450" y="165" text-anchor="middle" font-size="20" fill="#7b8a99">
+        No data at this cell — pick a cell inside the colored region.
+      </text>`;
+    return;
+  }
   const xYears = d.time_years;
-  const slope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
+  const rawSlope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
+  const trendDefined = rawSlope > -900;
+  const slope = trendDefined ? rawSlope : 0;
   const ci = d.trend.ci95.map((bound) => bound[state.densityIndex][state.latitudeIndex]);
   const xMean = xYears.reduce((sum, value) => sum + value, 0) / xYears.length;
   const yMean = values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -707,7 +748,9 @@ function drawTimeSeries() {
   for (let tick = ymin; tick <= ymax; tick += yTickStep) {
     yTicks.push(tick);
   }
-  const significant = d.trend.significant[state.densityIndex][state.latitudeIndex];
+  const significant = trendDefined
+    && d.trend.significant[state.densityIndex][state.latitudeIndex];
+  const comboNote = comboIndex() === 0 ? "" : " · trend: default products";
   const gapStart = d.gap_time_range ? d.gap_time_range[0] : null;
   const gapEnd = d.gap_time_range ? d.gap_time_range[1] : null;
   const gapX1 = gapStart !== null ? margins.left + ((gapStart - xYears[0]) / (xYears[xYears.length - 1] - xYears[0])) * plotWidth : null;
@@ -766,11 +809,11 @@ function drawTimeSeries() {
       .join("")}
     <path d="${areaPath}" fill="rgba(143,45,27,0.15)"></path>
     <path d="${linePath}" fill="none" stroke="#8f2d1b" stroke-width="3"></path>
-    <path d="${trendPath}" fill="none" stroke="${significant ? "#0d6fa4" : "#7f8b92"}" stroke-width="2.5" stroke-dasharray="9 6"></path>
+    ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${significant ? "#0d6fa4" : "#7f8b92"}" stroke-width="2.5" stroke-dasharray="9 6"></path>` : ""}
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="#162238" stroke-width="1.5" stroke-dasharray="6 4"></line>
-    <text x="${24 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="#5c7186" transform="rotate(-90 ${24 * fs} ${margins.top + plotHeight / 2})">Ψ (Sv)</text>
+    <text x="${24 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="#5c7186" transform="rotate(-90 ${24 * fs} ${margins.top + plotHeight / 2})">Ψ anomaly (Sv)</text>
     <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${significant ? "#0d6fa4" : "#7f8b92"}">
-      ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹` : "Trend not significant at p < 0.05"}
+      ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹` : "Trend not significant (±2σ)"}${comboNote}
     </text>
   `;
 }
@@ -808,20 +851,26 @@ function hoverText(kind, latIdx, rowIdx) {
   if (kind === "hovmoller") {
     const timeIdx = d.dims.nt - 1 - rowIdx;
     const value = predAt(timeIdx, state.densityIndex, latIdx);
-    return `${latText} · ${d.time_labels[timeIdx]}<br><strong>${value.toFixed(2)} Sv</strong>`;
+    return `${latText} · ${d.time_labels[timeIdx]}<br><strong>${Number.isFinite(value) ? `${value.toFixed(2)} Sv` : "no data"}</strong>`;
   }
   const sigmaText = `σ₂ ${formatDensity(d.densities[rowIdx])}`;
   if (kind === "trend") {
     const slope = d.trend.slope_per_year[rowIdx][latIdx];
-    const sig = d.trend.significant[rowIdx][latIdx];
+    if (slope <= -900) {
+      return `${latText} · ${sigmaText}<br><strong>no data</strong>`;
+    }
+    const sig = d.trend.significant_fdr[rowIdx][latIdx];
     return `${latText} · ${sigmaText}<br><strong>${slope.toFixed(3)} Sv yr⁻¹</strong>${sig ? "" : " (not significant)"}`;
   }
   if (kind === "snapshot") {
     const value = predAt(state.timeIndex, rowIdx, latIdx);
-    return `${latText} · ${sigmaText} · ${d.time_labels[state.timeIndex]}<br><strong>${value.toFixed(2)} Sv</strong>`;
+    return `${latText} · ${sigmaText} · ${d.time_labels[state.timeIndex]}<br><strong>${Number.isFinite(value) ? `${value.toFixed(2)} Sv` : "no data"}</strong>`;
   }
-  const value = d.mean_yz[rowIdx][latIdx];
-  return `${latText} · ${sigmaText}<br><strong>${value.toFixed(2)} Sv</strong> (time mean)`;
+  const value = meanStateYZ()[rowIdx][latIdx];
+  if (!Number.isFinite(value)) {
+    return `${latText} · ${sigmaText}<br><strong>no data</strong>`;
+  }
+  return `${latText} · ${sigmaText}<br><strong>${value.toFixed(2)} Sv</strong> (mean state)`;
 }
 
 function bindHover(canvas) {
@@ -858,14 +907,17 @@ function render() {
   const d = state.data;
   const hovmollerYearTicks = buildYearAxisTicks(d.time_years);
   const selectedStd = stdAt(state.timeIndex, state.densityIndex, state.latitudeIndex);
-  const meanValue = d.mean_yz[state.densityIndex][state.latitudeIndex];
+  const meanState = meanStateYZ();
+  const meanValue = d.combo_mean_yz[comboIndex()][state.densityIndex][state.latitudeIndex];
 
   controls.timeLabel.textContent = d.time_labels[state.timeIndex];
   controls.climLabel.textContent = `${state.clim} Sv`;
   controls.selectedLatitude.textContent = formatLatitude(d.latitudes[state.latitudeIndex]);
   controls.selectedDensity.textContent = `σ₂ = ${formatDensity(d.densities[state.densityIndex])} kg m⁻³`;
-  controls.selectedValue.textContent = `${meanValue.toFixed(2)} Sv`;
-  controls.selectedStd.textContent = `${selectedStd.toFixed(2)} Sv`;
+  controls.selectedValue.textContent = Number.isFinite(meanValue)
+    ? `${meanValue.toFixed(2)} Sv` : "no data";
+  controls.selectedStd.textContent = Number.isFinite(selectedStd)
+    ? `${selectedStd.toFixed(2)} Sv` : "no data";
 
   const snapshotGeom = drawDualBasinHeatmap(snapshotCanvas, sliceKJ(state.timeIndex), d.latitudes, d.densities, {
     clim: state.clim,
@@ -883,11 +935,11 @@ function render() {
   });
   registerHover(snapshotCanvas, snapshotGeom, "snapshot");
 
-  const sectionGeom = drawDualBasinHeatmap(sectionCanvas, d.mean_yz, d.latitudes, d.densities, {
+  const sectionGeom = drawDualBasinHeatmap(sectionCanvas, meanState, d.latitudes, d.densities, {
     clim: state.clim,
     colorbarTickDigits: 0,
     yTitle: "Density σ₂ (kg/m³)",
-    title: "Time mean",
+    title: "Mean state",
     colorbarTitle: "Sv",
     leftTitle: "SMOC",
     rightTitle: "AMOC",
@@ -927,7 +979,7 @@ function render() {
     rightTitle: "AMOC",
     highlightX: state.latitudeIndex,
     highlightY: state.densityIndex,
-    stippleMask: d.trend.significant.map((row) => row.map((value) => !value)),
+    stippleMask: d.trend.significant_fdr.map((row) => row.map((value) => !value)),
     leftTickIndices: [4, 14, 24, 34],
     rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
     yTickIndices: [0, 4, 8, 12, 16],
@@ -998,7 +1050,7 @@ function nearestLatIndex(target) {
 }
 
 function coreDensityIndex(latIdx, mode) {
-  const mean = state.data.mean_yz;
+  const mean = meanStateYZ();
   let best = 0;
   let bestValue = mode === "max" ? -Infinity : Infinity;
   mean.forEach((row, k) => {
@@ -1059,6 +1111,22 @@ function bindControls() {
     if (state.playing) {
       restartPlayback();
     }
+  });
+
+  controls.productBar.addEventListener("click", (event) => {
+    const button = event.target.closest(".product-option");
+    if (!button || !state.data) {
+      return;
+    }
+    const axis = button.dataset.axis;
+    state.combo[axis] = Number(button.dataset.option);
+    controls.productBar
+      .querySelectorAll(`.product-option[data-axis="${axis}"]`)
+      .forEach((item) => {
+        item.classList.toggle("is-active", item === button);
+      });
+    controls.productComboLabel.textContent = comboLabel();
+    render();
   });
 
   controls.presetRow.addEventListener("click", (event) => {
@@ -1151,7 +1219,7 @@ async function loadData() {
     throw new Error(`HTTP ${metaResponse.status} while fetching metadata`);
   }
   const meta = await metaResponse.json();
-  const [nt, nk, nj] = meta.series_bin.shape;
+  const [nCombos, nt, nk, nj] = meta.series_bin.shape;
   const scale = meta.series_bin.scale_sv;
 
   setLoadingProgress(0.06, "Downloading the reconstruction…");
@@ -1166,15 +1234,19 @@ async function loadData() {
 
   setLoadingProgress(0.97, "Decoding…");
   const counts = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
-  const n = nt * nk * nj;
+  const nanCount = meta.series_bin.nan_count;
+  const n = nCombos * nt * nk * nj;
+  const nStd = nt * nk * nj;
   const pred = new Float32Array(n);
-  const std = new Float32Array(n);
+  const std = new Float32Array(nStd);
   for (let i = 0; i < n; i += 1) {
-    pred[i] = counts[i] * scale;
-    std[i] = counts[n + i] * scale;
+    pred[i] = counts[i] === nanCount ? NaN : counts[i] * scale;
+  }
+  for (let i = 0; i < nStd; i += 1) {
+    std[i] = counts[n + i] === nanCount ? NaN : counts[n + i] * scale;
   }
 
-  meta.dims = { nt, nk, nj };
+  meta.dims = { nCombos, nt, nk, nj };
   meta.pred = pred;
   meta.std = std;
   return meta;
@@ -1197,6 +1269,29 @@ async function init() {
     controls.densitySelect.appendChild(option);
   });
   controls.densitySelect.value = String(state.densityIndex);
+
+  state.data.products.axes.forEach((axis) => {
+    const group = document.createElement("div");
+    group.className = "product-group";
+    const caption = document.createElement("span");
+    caption.className = "product-caption";
+    caption.textContent = axis.name;
+    group.appendChild(caption);
+    const buttons = document.createElement("div");
+    buttons.className = "product-buttons";
+    axis.options.forEach((label, optionIdx) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "product-option" + (optionIdx === 0 ? " is-active" : "");
+      button.dataset.axis = axis.key;
+      button.dataset.option = String(optionIdx);
+      button.textContent = label;
+      buttons.appendChild(button);
+    });
+    group.appendChild(buttons);
+    controls.productBar.appendChild(group);
+  });
+  controls.productComboLabel.textContent = comboLabel();
 
   bindControls();
   bindCanvasInteractions();

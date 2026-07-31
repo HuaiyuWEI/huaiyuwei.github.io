@@ -753,3 +753,67 @@ canvas {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------------- satellite product selector (2026-07-31) ---------------- */
+
+.product-panel .panel-header p {
+  max-width: 72ch;
+}
+
+.product-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 34px;
+  padding: 4px 2px 2px;
+}
+
+.product-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.product-caption {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #5c7186;
+}
+
+.product-buttons {
+  display: inline-flex;
+  border: 1px solid rgba(27, 44, 62, 0.25);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.product-option {
+  appearance: none;
+  border: none;
+  background: #ffffff;
+  color: #33475c;
+  font: inherit;
+  font-size: 0.92rem;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.product-option + .product-option {
+  border-left: 1px solid rgba(27, 44, 62, 0.18);
+}
+
+.product-option:hover {
+  background: #eef4f9;
+}
+
+.product-option.is-active {
+  background: #4d90c2;
+  color: #ffffff;
+}
+
+.product-option:focus-visible {
+  outline: 2px solid #1b5e93;
+  outline-offset: -2px;
+}
