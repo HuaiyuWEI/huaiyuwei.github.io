@@ -1,4 +1,4 @@
-const META_PATH = "./data/neurmoc_meta.json?v=2026-07-31a";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-08-01a";
 const DATA_DIR = "./data/";
 
 const state = {
@@ -145,22 +145,24 @@ function comboLabel() {
 }
 
 function predAt(t, k, j) {
-  const { nt, nk, nj } = state.data.dims;
-  return state.data.pred[((comboIndex() * nt + t) * nk + k) * nj + j];
+  return predAtCombo(comboIndex(), t, k, j);
 }
 
-const meanStateCache = new Map();
+function predAtCombo(c, t, k, j) {
+  const { nt, nk, nj } = state.data.dims;
+  return state.data.pred[((c * nt + t) * nk + k) * nj + j];
+}
+
+let meanStateMemo = null;
 
 function meanStateYZ() {
-  // 2004-2009 model baseline + the selected combination's anomaly mean
-  const c = comboIndex();
-  if (!meanStateCache.has(c)) {
-    const base = state.data.baseline_yz;
-    const anom = state.data.combo_mean_yz[c];
-    meanStateCache.set(c, base.map((row, k) => row.map(
-      (value, j) => (value <= -900 ? NaN : value + anom[k][j]))));
+  // the 2004-2009 mean state (training-model baseline) alone - the
+  // orientation panel; product-independent by construction
+  if (!meanStateMemo) {
+    meanStateMemo = state.data.baseline_yz.map((row) => row.map(
+      (value) => (value <= -900 ? NaN : value)));
   }
-  return meanStateCache.get(c);
+  return meanStateMemo;
 }
 
 function stdAt(t, k, j) {
@@ -699,10 +701,14 @@ function drawTimeSeries() {
       </text>`;
     return;
   }
-  // the transfer-error field is undefined at some cells (notably abyssal
-  // levels): draw the line without a band there instead of failing on NaN
+  // the band exists everywhere since the unpriced-cell fill (the transfer
+  // term of abyssal cells is borrowed from the nearest priced level above
+  // in the column); keep the NaN fallback for robustness and annotate
+  // borrowed cells
   const hasStd = stdValues.some(Number.isFinite);
   const safeStd = stdValues.map((value) => (Number.isFinite(value) ? value : 0));
+  const borrowed = d.transfer_filled
+    && d.transfer_filled[state.densityIndex][state.latitudeIndex] === 1;
   const xYears = d.time_years;
   const rawSlope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
   const trendDefined = rawSlope > -900;
@@ -720,8 +726,20 @@ function drawTimeSeries() {
   const margins = { left: 82 * fs, right: 24, top: 24 * fs, bottom: 40 * fs };
   const plotWidth = width - margins.left - margins.right;
   const plotHeight = height - margins.top - margins.bottom;
-  const yMinRaw = Math.min(...values.map((v, i) => v - safeStd[i]), ...trendValues);
-  const yMaxRaw = Math.max(...values.map((v, i) => v + safeStd[i]), ...trendValues);
+  // fixed axis across the product selector: the limits span EVERY
+  // combination's series (+- the band) at this cell, so switching
+  // products moves the curve, not the axes
+  let yMinRaw = Math.min(...trendValues);
+  let yMaxRaw = Math.max(...trendValues);
+  for (let c = 0; c < d.dims.nCombos; c += 1) {
+    for (let i = 0; i < nt; i += 1) {
+      const v = predAtCombo(c, i, state.densityIndex, state.latitudeIndex);
+      if (Number.isFinite(v)) {
+        yMinRaw = Math.min(yMinRaw, v - safeStd[i]);
+        yMaxRaw = Math.max(yMaxRaw, v + safeStd[i]);
+      }
+    }
+  }
   let ymin = Math.floor(yMinRaw);
   let ymax = Math.ceil(yMaxRaw);
   if (ymin === ymax) {
@@ -821,6 +839,7 @@ function drawTimeSeries() {
       ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹` : "Trend not significant (±2σ)"}${comboNote}
     </text>
     ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="#7b8a99">Uncertainty unavailable at this cell</text>`}
+    ${hasStd && borrowed ? `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="#7b8a99">Band: transfer term from the σ₂ level above (no cross-model truth here)</text>` : ""}
   `;
 }
 
@@ -945,7 +964,7 @@ function render() {
     clim: state.clim,
     colorbarTickDigits: 0,
     yTitle: "Density σ₂ (kg/m³)",
-    title: "Mean state",
+    title: "2004–2009 mean",
     colorbarTitle: "Sv",
     leftTitle: "SMOC",
     rightTitle: "AMOC",
@@ -1230,7 +1249,7 @@ async function loadData() {
 
   setLoadingProgress(0.06, "Downloading the reconstruction…");
   const bytes = await fetchWithProgress(
-    `${DATA_DIR}${meta.series_bin.file}?v=${meta.metadata.generated_on}`,
+    `${DATA_DIR}${meta.series_bin.file}?v=${meta.series_bin.version || meta.metadata.generated_on}`,
     meta.series_bin.byte_length,
     (fraction) => setLoadingProgress(0.06 + 0.9 * fraction, "Downloading the reconstruction…"),
   );

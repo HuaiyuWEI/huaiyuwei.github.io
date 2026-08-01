@@ -13,7 +13,7 @@
   <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#4d90c2">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-07-31a">
+  <link rel="stylesheet" href="./styles.css?v=2026-08-01a">
 </head>
 <body>
   <div id="loading-overlay" role="status" aria-live="polite">
@@ -141,10 +141,10 @@
         <article class="panel">
           <div class="panel-header">
             <div>
-              <h2>Mean overturning state</h2>
-              <p>The 2004&ndash;2009 mean state of the training model plus the reconstructed anomaly mean of the
-                 selected products, split into Southern Ocean (SMOC) and Atlantic (AMOC) sectors &mdash; shown for
-                 orientation (the reconstructed quantity is the anomaly). Click any cell to inspect its time series.</p>
+              <h2>Mean overturning state (2004&ndash;2009)</h2>
+              <p>The 2004&ndash;2009 mean overturning of the training model &mdash; the reference state the
+                 reconstructed anomalies are relative to &mdash; split into Southern Ocean (SMOC) and Atlantic
+                 (AMOC) sectors, shown for orientation. Click any cell to inspect its time series.</p>
             </div>
           </div>
           <canvas id="section-canvas" width="1200" height="520" role="img" aria-label="Time-mean overturning streamfunction heatmap"></canvas>
@@ -225,9 +225,10 @@
             <p class="prose-note">
               The reconstruction is the anomaly relative to the 2004&ndash;2009 mean. The uncertainty envelope
               combines the cross-model transfer error, the network-ensemble spread, and the spread across
-              satellite product combinations; trend significance additionally accounts for serial correlation
-              (moving-block bootstrap) and false-discovery-rate control. See the manuscript for the full method,
-              validation, and caveats.
+              satellite product combinations; where the cross-model truth leaves the transfer term unmeasured
+              (mostly abyssal densities), it is taken from the nearest measured level above in the same latitude
+              column. Trend significance additionally accounts for serial correlation (moving-block bootstrap)
+              and false-discovery-rate control. See the manuscript for the full method, validation, and caveats.
             </p>
           </div>
         </article>
@@ -279,6 +280,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-07-31a"></script>
+  <script src="./app.js?v=2026-08-01b"></script>
 </body>
 </html>

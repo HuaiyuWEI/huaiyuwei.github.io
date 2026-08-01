@@ -30,6 +30,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 from dataclasses import dataclass
@@ -169,7 +170,49 @@ def main(cfg: Config) -> None:
         raise ValueError("default combination does not reproduce the "
                          "NeurMOC_data export - stale files?")
 
-    blob = quantize(stack).tobytes() + quantize(std_total).tobytes()
+    # ---- monthly envelope with the pipeline's unpriced-cell fill ---------
+    # The export's transfer term (the full-variant MRI RMSE) is undefined
+    # where MRI has no MOC truth (the abyssal densities). Mirror the
+    # 15_compute_trend_budget convention (2026-08-01): every unpriced cell
+    # takes the transfer term of the nearest PRICED level above it in the
+    # same latitude column; columns with no priced level keep zero. The
+    # other two terms (per-month ensemble spread, satellite-product
+    # spread) are the cell's own.
+    scen = np.asarray(
+        sio.loadmat(rw.parent / "TestR2_MRI_SSP245.mat",
+                    variable_names=["rmse_yz"])["rmse_yz"], dtype=np.float64)
+    epi_mat = sio.loadmat(rw / "Pred_RealWorld.mat",
+                          variable_names=["pred_yz_std"])
+    epi = np.asarray(epi_mat["pred_yz_std"],
+                     dtype=np.float64)[EDGE_MONTHS:-EDGE_MONTHS]
+    with np.load(rw / "trend_error_budget.npz") as fh:
+        sate_month = np.asarray(fh["sigma_sate_month"], dtype=np.float64)
+
+    unpriced = ~np.isfinite(scen)
+    lev_of_priced = np.where(~unpriced, np.arange(nk)[:, None], -1)
+    src = np.maximum.accumulate(lev_of_priced, axis=0)
+    scen_fill = np.where(
+        src >= 0,
+        np.take_along_axis(np.nan_to_num(scen, nan=0.0),
+                           np.maximum(src, 0), axis=0),
+        0.0)
+    std_filled = np.sqrt(scen_fill[None] ** 2 + epi ** 2
+                         + sate_month[None] ** 2).astype(np.float32)
+
+    # decomposition check: at priced cells the rebuilt envelope must equal
+    # the export's (proves the same three terms in the same combination)
+    priced3 = np.broadcast_to(~unpriced[None], std_filled.shape)
+    if not np.allclose(std_filled[priced3], std_total[priced3], atol=2e-4):
+        raise ValueError("rebuilt envelope does not reproduce "
+                         "NeurMOC_uncertainty at priced cells - the export "
+                         "formula changed; update the fill accordingly")
+    transfer_filled = unpriced & (src >= 0)
+    print(f"envelope fill: {int(transfer_filled.sum())} unpriced cells take "
+          f"the deepest priced level above them "
+          f"({int((unpriced & (src < 0)).sum())} columns without any priced "
+          "level keep a zero transfer term)")
+
+    blob = quantize(stack).tobytes() + quantize(std_filled).tobytes()
     cfg.bin_path.parent.mkdir(parents=True, exist_ok=True)
     cfg.bin_path.write_bytes(blob)
 
@@ -195,6 +238,7 @@ def main(cfg: Config) -> None:
         "latitudes": round_nested(latitudes, 4),
         "densities": round_nested(densities, 4),
         "nan_sentinel": NAN_SENTINEL,
+        "transfer_filled": transfer_filled.astype(int).tolist(),
         "baseline_yz": round_nested(baseline_j, 4),
         "combo_mean_yz": [round_nested(c.mean(axis=0), 4) for c in stack],
         "products": {
@@ -225,6 +269,9 @@ def main(cfg: Config) -> None:
             "dtype": "int16-le",
             "scale_sv": SCALE,
             "nan_count": int(NAN_COUNT),
+            # content hash busts the browser cache on EVERY data change
+            # (the old generation-date param missed same-day regenerations)
+            "version": hashlib.sha1(blob).hexdigest()[:10],
             "order": ["pred[combo,t,k,j]", "std[t,k,j]"],
             "shape": [len(combos), nt, nk, nj],
             "byte_length": len(blob),
