@@ -81,7 +81,7 @@ const PLOT_COLORS = {
     grid: "rgba(27, 44, 62, 0.12)",
     zero: "rgba(27, 44, 62, 0.55)",
     mask: "rgb(233, 236, 239)",
-    stipple: "rgba(20, 20, 20, 0.8)",
+    hatch: "rgba(60, 60, 60, 0.65)",
     hlOuter: "rgba(255, 255, 255, 0.9)",
     hlInner: "#111111",
     gap: "rgba(100, 116, 139, 0.12)",
@@ -103,7 +103,7 @@ const PLOT_COLORS = {
     grid: "rgba(230, 238, 247, 0.10)",
     zero: "rgba(230, 238, 247, 0.5)",
     mask: "#223043",
-    stipple: "rgba(235, 241, 247, 0.75)",
+    hatch: "rgba(235, 241, 247, 0.55)",
     hlOuter: "rgba(15, 26, 43, 0.9)",
     hlInner: "#f2f6fa",
     gap: "rgba(148, 163, 184, 0.16)",
@@ -601,25 +601,32 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
         ctx.fillRect(x0 + localX * cellW, margins.top + j * cellH, Math.ceil(cellW), Math.ceil(cellH));
       }
     }
-    if (options.stippleMask) {
-      ctx.strokeStyle = theme.stipple;
-      ctx.lineWidth = 1.1 * fs;
+    if (options.hatchMask) {
+      // fig02's hatch convention (section_row hatch_pattern "////"):
+      // thin forward-diagonal lines, cell-exact - clip to the union of
+      // masked cells and stroke 45-degree lines across the half
+      ctx.save();
+      ctx.beginPath();
       for (let j = 0; j < ny; j += 1) {
         for (let localX = 0; localX < indices.length; localX += 1) {
-          const globalX = indices[localX];
-          if (options.stippleMask[j][globalX] && ((localX + j) % 2 === 0)) {
-            const cx = x0 + (localX + 0.5) * cellW;
-            const cy = margins.top + (j + 0.5) * cellH;
-            const arm = Math.max(2.3, Math.min(cellW, cellH) * 0.16);
-            ctx.beginPath();
-            ctx.moveTo(cx - arm, cy - arm);
-            ctx.lineTo(cx + arm, cy + arm);
-            ctx.moveTo(cx - arm, cy + arm);
-            ctx.lineTo(cx + arm, cy - arm);
-            ctx.stroke();
+          if (options.hatchMask[j][indices[localX]]) {
+            ctx.rect(x0 + localX * cellW, margins.top + j * cellH,
+                     cellW + 0.5, cellH + 0.5);
           }
         }
       }
+      ctx.clip();
+      ctx.strokeStyle = theme.hatch;
+      ctx.lineWidth = 0.8 * fs;
+      const spacing = 6.5 * fs;
+      const halfWidth = indices.length * cellW;
+      ctx.beginPath();
+      for (let c = 0; c <= halfWidth + plotHeight; c += spacing) {
+        ctx.moveTo(x0 + c - plotHeight, margins.top + plotHeight);
+        ctx.lineTo(x0 + c, margins.top);
+      }
+      ctx.stroke();
+      ctx.restore();
     }
   }
 
@@ -1412,7 +1419,7 @@ function render() {
     rightTitle: "AMOC",
     highlightX: state.latitudeIndex,
     highlightY: state.densityIndex,
-    stippleMask: d.trend.significant_fdr.map((row) => row.map((value) => !value)),
+    hatchMask: d.trend.significant_fdr.map((row) => row.map((value) => !value)),
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(trendCanvas, trendGeom, "trend");

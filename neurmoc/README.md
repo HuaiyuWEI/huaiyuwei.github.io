@@ -31,7 +31,8 @@ product combination** so visitors can switch inputs.
   combination; the across-product spread is already a term of both.
 - 2003–2024 trend map: OLS slope with ±2σ from the moving-block bootstrap
   combined with the ensemble, cross-model-transfer, and product-spread
-  terms; stippling marks cells not significant after FDR control.
+  terms; thin diagonal hatching (the fig02 style) marks cells not significant
+  after FDR control.
 - Latitude–time Hovmöller diagram at a selected density level.
 - Month-by-month snapshot with animation.
 
@@ -93,7 +94,7 @@ or `powershell -ExecutionPolicy Bypass -File .\start_viewer.ps1`.
   (the v1 float-derived labels shifted every December into January).
 - Trend, its ±2σ CI, and both significance masks are read directly from
   the export (no recomputation in the browser). Every panel — the map
-  stippling, the time-series label, and the interpretation chip — uses the
+  hatching, the time-series label, and the interpretation chip — uses the
   FDR-controlled mask; cells whose per-point ±2σ CI excludes zero but fail
   FDR control are labeled as exactly that.
 - The displayed monthly envelope uses the DEBIASED cross-model transfer
