@@ -238,16 +238,25 @@ def main(cfg: Config) -> None:
                          "NeurMOC_data export - stale files?")
 
     # ---- monthly envelope with the pipeline's unpriced-cell fill ---------
-    # The export's transfer term (the full-variant MRI RMSE) is undefined
-    # where MRI has no MOC truth (the abyssal densities). Mirror the
+    # The transfer term (MRI cross-model RMSE) is undefined where MRI has
+    # no MOC truth (the abyssal densities). Mirror the
     # 15_compute_trend_budget convention (2026-08-01): every unpriced cell
     # takes the transfer term of the nearest PRICED level above it in the
     # same latitude column; columns with no priced level keep zero. The
     # other two terms (per-month ensemble spread, satellite-product
     # spread) are the cell's own.
-    scen = np.asarray(
-        sio.loadmat(rw.parent / "TestR2_MRI_SSP245.mat",
-                    variable_names=["rmse_yz"])["rmse_yz"], dtype=np.float64)
+    #
+    # DISPLAYED band = the DEBIASED transfer variant, matching the
+    # manuscript's zero-bias display convention (fig02 / main-text Fig 4:
+    # a constant transfer bias cannot displace a demeaned curve, and the
+    # viewer shows anomalies with a mean-matched RAPID overlay). The
+    # downloadable NeurMOC_data files keep the export's conservative
+    # full-bias variant; the full variant is still rebuilt here for the
+    # decomposition check against the export.
+    scen_mat = sio.loadmat(rw.parent / "TestR2_MRI_SSP245.mat",
+                           variable_names=["rmse_yz", "rmse_debiased_yz"])
+    scen_full = np.asarray(scen_mat["rmse_yz"], dtype=np.float64)
+    scen_deb = np.asarray(scen_mat["rmse_debiased_yz"], dtype=np.float64)
     epi_mat = sio.loadmat(rw / "Pred_RealWorld.mat",
                           variable_names=["pred_yz_std"])
     epi = np.asarray(epi_mat["pred_yz_std"],
@@ -255,29 +264,43 @@ def main(cfg: Config) -> None:
     with np.load(rw / "trend_error_budget.npz") as fh:
         sate_month = np.asarray(fh["sigma_sate_month"], dtype=np.float64)
 
-    unpriced = ~np.isfinite(scen)
-    lev_of_priced = np.where(~unpriced, np.arange(nk)[:, None], -1)
-    src = np.maximum.accumulate(lev_of_priced, axis=0)
-    scen_fill = np.where(
-        src >= 0,
-        np.take_along_axis(np.nan_to_num(scen, nan=0.0),
-                           np.maximum(src, 0), axis=0),
-        0.0)
-    std_filled = np.sqrt(scen_fill[None] ** 2 + epi ** 2
-                         + sate_month[None] ** 2).astype(np.float32)
+    def fill_unpriced(scen: np.ndarray):
+        unpriced = ~np.isfinite(scen)
+        lev_of_priced = np.where(~unpriced, np.arange(nk)[:, None], -1)
+        src = np.maximum.accumulate(lev_of_priced, axis=0)
+        filled = np.where(
+            src >= 0,
+            np.take_along_axis(np.nan_to_num(scen, nan=0.0),
+                               np.maximum(src, 0), axis=0),
+            0.0)
+        return filled, unpriced, src
 
-    # decomposition check: at priced cells the rebuilt envelope must equal
-    # the export's (proves the same three terms in the same combination)
-    priced3 = np.broadcast_to(~unpriced[None], std_filled.shape)
-    if not np.allclose(std_filled[priced3], std_total[priced3], atol=2e-4):
+    # decomposition check: the FULL-variant rebuild must equal the export's
+    # envelope at priced cells (proves the same three terms combine the
+    # same way before the variant is swapped)
+    full_fill, unpriced, src = fill_unpriced(scen_full)
+    std_check = np.sqrt(full_fill[None] ** 2 + epi ** 2
+                        + sate_month[None] ** 2)
+    priced3 = np.broadcast_to(~unpriced[None], std_check.shape)
+    if not np.allclose(std_check[priced3], std_total[priced3], atol=2e-4):
         raise ValueError("rebuilt envelope does not reproduce "
                          "NeurMOC_uncertainty at priced cells - the export "
                          "formula changed; update the fill accordingly")
+
+    deb_fill, unpriced_deb, _ = fill_unpriced(scen_deb)
+    if not np.array_equal(unpriced, unpriced_deb):
+        raise ValueError("full and debiased transfer fields disagree on "
+                         "which cells are priced")
+    std_filled = np.sqrt(deb_fill[None] ** 2 + epi ** 2
+                         + sate_month[None] ** 2).astype(np.float32)
     transfer_filled = unpriced & (src >= 0)
     print(f"envelope fill: {int(transfer_filled.sum())} unpriced cells take "
           f"the deepest priced level above them "
           f"({int((unpriced & (src < 0)).sum())} columns without any priced "
-          "level keep a zero transfer term)")
+          "level keep a zero transfer term); displayed band uses the "
+          "debiased transfer variant "
+          f"(median full/debiased ratio "
+          f"{np.nanmedian(scen_full / scen_deb):.2f})")
 
     rapid = load_rapid_series(cfg.rapid)
     # canonical-axis index of every RAPID month (-1 = outside the record),
@@ -311,6 +334,13 @@ def main(cfg: Config) -> None:
                      "Jan 2004 - Dec 2009 mean, matching the GRACE "
                      "convention; the mean-state panel adds the training "
                      "model's 2004-2009 baseline for orientation."),
+            "uncertainty": ("Displayed 1-sigma envelope: quadrature of the "
+                            "DEBIASED cross-model transfer RMSE, the "
+                            "ensemble spread, and the satellite-product "
+                            "spread - the manuscript's zero-bias display "
+                            "convention. The downloadable NeurMOC_data "
+                            "files keep the conservative full-bias "
+                            "transfer variant."),
         },
         "dimensions": {"combos": len(combos), "time": nt,
                        "density": nk, "latitude": nj},

@@ -156,8 +156,12 @@
                 <summary>What the curves show</summary>
                 <p>The red curve is the reconstruction of the chosen satellite products; the shaded band is the
                    total &plusmn;1&sigma; uncertainty and the dashed line the linear trend, both belonging to the default
-                   combination. At 26.5&deg;N the dotted dark curve overlays the independent RAPID moored-array
-                   observations (same 2004&ndash;2009 reference, same 2-year filter). The y-axis is fixed across
+                   combination. The band uses the debiased cross-model transfer term &mdash; the manuscript's
+                   displayed-band convention for demeaned curves; the downloadable files carry the conservative
+                   variant that includes the static transfer bias. At 26.5&deg;N the dotted dark curve overlays the independent RAPID moored-array
+                   observations with their observational uncertainty band (same 2-year filter), shifted to the
+                   displayed reconstruction's mean over the shared months &mdash; the manuscript's zero-bias
+                   convention, so the comparison is about variability, not offset. The y-axis is fixed across
                    product combinations, and the GRACE/GRACE-FO gap is shaded. The chip above the plot reads the
                    trend against the local mean state: a positive trend on a negative (counterclockwise) cell
                    means the overturning there is <em>weakening</em>. Trend significance everywhere on this
@@ -179,7 +183,7 @@
             <span class="legend-item" role="listitem"><span class="swatch swatch-recon" aria-hidden="true"></span>Reconstruction &plusmn; 1&sigma; total (default products)</span>
             <span class="legend-item" role="listitem"><span class="swatch swatch-trend" aria-hidden="true"></span>Linear trend</span>
             <span class="legend-item" role="listitem" id="legend-default" hidden><span class="swatch swatch-default" aria-hidden="true"></span>Default products</span>
-            <span class="legend-item" role="listitem" id="legend-rapid" hidden><span class="swatch swatch-rapid" aria-hidden="true"></span>RAPID observations</span>
+            <span class="legend-item" role="listitem" id="legend-rapid" hidden><span class="swatch swatch-rapid" aria-hidden="true"></span>RAPID observations &plusmn; uncertainty (mean-matched)</span>
             <span class="legend-item" role="listitem"><span class="swatch swatch-gap" aria-hidden="true"></span>GRACE/GRACE-FO gap</span>
           </div>
           <div class="trend-reading" id="trend-reading" hidden></div>
@@ -301,8 +305,9 @@
             </ul>
             <p class="prose-note">
               The reconstruction is the anomaly relative to the 2004&ndash;2009 mean. The uncertainty envelope
-              combines the cross-model transfer error, the network-ensemble spread, and the spread across
-              satellite product combinations; where the cross-model truth leaves the transfer term unmeasured
+              combines the cross-model transfer error (debiased &mdash; the displayed-band convention of the
+              manuscript; the downloadable files keep the conservative full-bias variant), the
+              network-ensemble spread, and the spread across satellite product combinations; where the cross-model truth leaves the transfer term unmeasured
               (mostly abyssal densities), it is taken from the nearest measured level above in the same latitude
               column. Trend significance additionally accounts for serial correlation (moving-block bootstrap)
               and false-discovery-rate control. See the manuscript for the full method, validation, and caveats.
@@ -357,6 +362,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-02h"></script>
+  <script src="./app.js?v=2026-08-02j"></script>
 </body>
 </html>
