@@ -3,6 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    // set the theme before first paint so dark mode does not flash white
+    (function () {
+      try {
+        var theme = localStorage.getItem("neurmoc-theme");
+        if (!theme) {
+          theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark" : "light";
+        }
+        document.documentElement.dataset.theme = theme;
+      } catch (error) { /* default to light */ }
+    })();
+  </script>
   <title>NeurMOC — Satellite-based reconstruction of the ocean overturning circulation</title>
   <meta name="description" content="NeurMOC is a neural-network reconstruction of Atlantic and Southern Ocean overturning circulation anomalies from GRACE, satellite altimetry, and satellite winds, April 2003 to December 2024. Choose the satellite products and explore the anomalies, uncertainty, and trends interactively.">
   <link rel="canonical" href="https://huaiyuwei.github.io/neurmoc/">
@@ -10,10 +23,18 @@
   <meta property="og:title" content="NeurMOC — satellite-based monitoring of the ocean overturning circulation">
   <meta property="og:description" content="Interactive viewer for the NeurMOC reconstruction: monthly overturning streamfunction in latitude–density space, with uncertainty and 21-year trends.">
   <meta property="og:url" content="https://huaiyuwei.github.io/neurmoc/">
-  <meta name="twitter:card" content="summary">
-  <meta name="theme-color" content="#4d90c2">
+  <meta property="og:image" content="https://huaiyuwei.github.io/neurmoc/og_image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://huaiyuwei.github.io/neurmoc/og_image.png">
+  <meta name="theme-color" content="#4d90c2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0c1523" media="(prefers-color-scheme: dark)">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-08-01a">
+  <link rel="stylesheet" href="./styles.css?v=2026-08-02d">
 </head>
 <body>
   <div id="loading-overlay" role="status" aria-live="polite">
@@ -24,6 +45,11 @@
       <span id="loading-status">Fetching metadata…</span>
     </div>
   </div>
+
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">
+    <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 14.6A8.6 8.6 0 0 1 9.4 3.4 8.6 8.6 0 1 0 20.6 14.6z"/></svg>
+    <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM11 1h2v3.2h-2V1zm0 18.8h2V23h-2v-3.2zM1 11h3.2v2H1v-2zm18.8 0H23v2h-3.2v-2zM4.2 5.6l1.4-1.4 2.3 2.3-1.4 1.4-2.3-2.3zm11.9 11.9 1.4-1.4 2.3 2.3-1.4 1.4-2.3-2.3zm2.3-13.3 1.4 1.4-2.3 2.3-1.4-1.4 2.3-2.3zM6.5 16.1l1.4 1.4-2.3 2.3-1.4-1.4 2.3-2.3z"/></svg>
+  </button>
 
   <main class="app-shell">
     <section class="hero">
@@ -61,11 +87,13 @@
           </div>
         </div>
         <aside class="fact-stack" aria-label="Key facts">
+          <div class="fact-chip fact-spark" id="hero-spark-chip" role="button" tabindex="0" title="Jump to this time series">
+            <span class="fact-label">AMOC anomaly at 26.5°N (Sv)</span>
+            <svg id="hero-spark" viewBox="0 0 300 64" preserveAspectRatio="none" aria-hidden="true"></svg>
+          </div>
           <div class="fact-chip"><span class="fact-label">Period</span><strong>Apr 2003 – Dec 2024, monthly</strong></div>
           <div class="fact-chip"><span class="fact-label">Coverage</span><strong>74.5°S – 64.5°N, Atlantic + Southern Ocean</strong></div>
-          <div class="fact-chip"><span class="fact-label">Vertical coordinate</span><strong>18 density (σ₂) levels</strong></div>
-          <div class="fact-chip"><span class="fact-label">Timescales</span><strong>2-year low-pass filtered</strong></div>
-          <div class="fact-chip"><span class="fact-label">Quantity</span><strong>Anomalies rel. 2004–2009</strong></div>
+          <div class="fact-chip"><span class="fact-label">Resolution</span><strong>18 density (σ₂) levels · 2-year low-pass</strong></div>
         </aside>
       </div>
     </section>
@@ -75,48 +103,86 @@
         <div class="panel-header">
           <div>
             <h2>Satellite products</h2>
-            <p>Every combination is an independent reconstruction by the same trained network.
-               The OBP product choice dominates the differences; the uncertainty envelope and trend
-               statistics already include the across-product spread. Showing:
-               <strong id="product-combo-label">&hellip;</strong></p>
+            <p>Pick the input products &mdash; every combination is an independent reconstruction by the
+               same trained network. Showing: <strong id="product-combo-label">&hellip;</strong></p>
+            <details class="method-note">
+              <summary>How the combinations relate</summary>
+              <p>The ocean-bottom-pressure choice dominates the differences between combinations; sea
+                 surface height and wind matter less. The uncertainty envelope and the trend statistics
+                 belong to the default combination (GRACE JPL + DUACS + CCMP) and already include the
+                 across-product spread as a budget term, so switching products moves the curve within
+                 the band rather than adding new uncertainty.</p>
+            </details>
           </div>
         </div>
-        <div class="product-bar" id="product-bar" role="group" aria-label="Satellite product selection"></div>
+        <div class="product-row">
+          <div class="product-bar" id="product-bar" role="group" aria-label="Satellite product selection"></div>
+          <div class="panel-tools">
+            <label class="diff-toggle" title="Show each anomaly panel as the selected combination minus the default one">
+              <input type="checkbox" id="diff-toggle" disabled>
+              <span>Difference vs. default</span>
+            </label>
+            <button class="tool-button" id="share-view" type="button">Copy link to this view</button>
+          </div>
+        </div>
+        <p class="product-note" id="product-note">Streaming the seven other combinations in the background&hellip;</p>
       </article>
       <section class="top-panels-grid">
         <article class="panel panel-center-figure">
           <div class="panel-header">
             <div>
               <h2>Trend, 2003&ndash;2024</h2>
-              <p>Linear trend of the default-product reconstruction. The &plusmn;2&sigma; uncertainty combines internal
-                 variability (moving-block bootstrap), the network-ensemble spread, the cross-model transfer error,
-                 and the satellite-product spread; crosses mark cells not significant after false-discovery-rate
-                 control.</p>
+              <p>Linear trend of the reconstruction; crosses mark cells whose trend is not significant.</p>
+              <details class="method-note">
+                <summary>How significance is assessed</summary>
+                <p>The trend belongs to the default-product reconstruction. Its &plusmn;2&sigma; uncertainty combines
+                   internal variability (a moving-block bootstrap that respects serial correlation), the
+                   network-ensemble spread, the cross-model transfer error, and the satellite-product spread;
+                   the crosses mark cells that fail a false-discovery-rate&ndash;controlled test.</p>
+              </details>
             </div>
           </div>
           <canvas id="trend-canvas" width="1200" height="520" role="img" aria-label="Linear trend heatmap"></canvas>
         </article>
 
-        <article class="panel">
+
+        <article class="panel panel-span-rows" id="timeseries-panel">
           <div class="panel-header">
             <div>
               <h2>Local time series</h2>
-              <p>Anomaly reconstruction at the selected latitude&ndash;density cell for the chosen satellite
-                 products, with the total uncertainty envelope and the linear trend. The GRACE/GRACE-FO gap is
-                 shaded. Choose a preset or click any map cell.</p>
+              <p>Anomaly at the selected cell with its uncertainty envelope and trend &mdash; choose a preset
+                 or click any map cell.</p>
+              <details class="method-note">
+                <summary>What the curves show</summary>
+                <p>The red curve is the reconstruction of the chosen satellite products; the shaded band is the
+                   total &plusmn;1&sigma; uncertainty and the dashed line the linear trend, both belonging to the default
+                   combination. At 26.5&deg;N the dotted dark curve overlays the independent RAPID moored-array
+                   observations (same 2004&ndash;2009 reference, same 2-year filter). The y-axis is fixed across
+                   product combinations, and the GRACE/GRACE-FO gap is shaded. The chip above the plot reads the
+                   trend against the local mean state: a positive trend on a negative (counterclockwise) cell
+                   means the overturning there is <em>weakening</em>. Trend significance everywhere on this
+                   page is the map's false-discovery-rate&ndash;controlled test; cells whose &plusmn;2&sigma; interval
+                   excludes zero without surviving FDR control are labeled as such.</p>
+              </details>
             </div>
           </div>
           <div class="preset-row" id="preset-row" role="group" aria-label="Location presets">
             <span class="preset-caption">Jump to:</span>
             <button class="preset-option" type="button" data-preset="rapid">AMOC 26.5°N (RAPID)</button>
-            <button class="preset-option" type="button" data-preset="spna">AMOC 45°N</button>
-            <button class="preset-option" type="button" data-preset="abyssal">Abyssal cell 60°S</button>
+            <button class="preset-option" type="button" data-preset="amoc40">AMOC 40°N</button>
+            <button class="preset-option" type="button" data-preset="amoceq">AMOC equator</button>
+            <button class="preset-option" type="button" data-preset="amoc30s">AMOC 30°S</button>
+            <button class="preset-option" type="button" data-preset="somid">SO mid-depth 50°S</button>
+            <button class="preset-option" type="button" data-preset="abyssal">SO abyssal cell 65°S</button>
           </div>
           <div class="ts-legend" role="list" aria-label="Time-series legend">
             <span class="legend-item" role="listitem"><span class="swatch swatch-recon" aria-hidden="true"></span>Reconstruction &plusmn; 1&sigma; total (default products)</span>
             <span class="legend-item" role="listitem"><span class="swatch swatch-trend" aria-hidden="true"></span>Linear trend</span>
+            <span class="legend-item" role="listitem" id="legend-default" hidden><span class="swatch swatch-default" aria-hidden="true"></span>Default products</span>
+            <span class="legend-item" role="listitem" id="legend-rapid" hidden><span class="swatch swatch-rapid" aria-hidden="true"></span>RAPID observations</span>
             <span class="legend-item" role="listitem"><span class="swatch swatch-gap" aria-hidden="true"></span>GRACE/GRACE-FO gap</span>
           </div>
+          <div class="trend-reading" id="trend-reading" hidden></div>
           <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Time series of the reconstruction at the selected point"></svg>
           <section class="summary-grid embedded-summary-grid plot-summary-grid">
             <article class="summary-card">
@@ -126,6 +192,10 @@
             <article class="summary-card">
               <span class="summary-label">Density</span>
               <strong id="selected-density">-</strong>
+            </article>
+            <article class="summary-card">
+              <span class="summary-label">Mean state 2004&ndash;09</span>
+              <strong id="selected-baseline">-</strong>
             </article>
             <article class="summary-card">
               <span class="summary-label">Mean anomaly</span>
@@ -138,27 +208,38 @@
           </section>
         </article>
 
-        <article class="panel">
+        <article class="panel panel-center-figure">
           <div class="panel-header">
             <div>
               <h2>Mean overturning state (2004&ndash;2009)</h2>
-              <p>The 2004&ndash;2009 mean overturning of the training model &mdash; the reference state the
-                 reconstructed anomalies are relative to &mdash; split into Southern Ocean (SMOC) and Atlantic
-                 (AMOC) sectors, shown for orientation. Click any cell to inspect its time series.</p>
+              <p>The reference state the anomalies are measured from. Click any cell to inspect its time
+                 series.</p>
+              <details class="method-note">
+                <summary>What this panel shows</summary>
+                <p>The 2004&ndash;2009 mean overturning of the training model, split into Southern Ocean (SMOC)
+                   and Atlantic (AMOC) sectors &mdash; shown for orientation; the reconstructed quantity itself is
+                   the anomaly. Positive (red) cells circulate clockwise, negative (blue) cells
+                   counterclockwise, which is what decides whether a trend strengthens or weakens them.</p>
+              </details>
             </div>
           </div>
           <canvas id="section-canvas" width="1200" height="520" role="img" aria-label="Time-mean overturning streamfunction heatmap"></canvas>
         </article>
 
-        <article class="panel">
+
+        <article class="panel panel-full-row">
           <div class="panel-header">
             <div>
               <h2>Latitude&ndash;time evolution</h2>
               <p>Hovm&ouml;ller diagram of the reconstruction at the selected density level. Click to move the month and latitude together.</p>
             </div>
+            <label class="hov-level">
+              <span>Density level</span>
+              <select id="density-select"></select>
+            </label>
           </div>
           <div class="plot-frame plot-frame-wide">
-            <canvas id="hovmoller-canvas" width="1200" height="520" role="img" aria-label="Latitude-time Hovmoller diagram"></canvas>
+            <canvas id="hovmoller-canvas" width="1200" height="480" role="img" aria-label="Latitude-time Hovmoller diagram"></canvas>
           </div>
         </article>
       </section>
@@ -179,10 +260,6 @@
               <span>Month</span>
               <input id="time-slider" type="range" min="0" max="0" value="0">
               <strong id="time-label">Loading...</strong>
-            </label>
-            <label class="control-block">
-              <span>Density level for Hovm&ouml;ller</span>
-              <select id="density-select"></select>
             </label>
             <label class="control-block">
               <span>Anomaly color limit (snapshot &amp; Hovm&ouml;ller)</span>
@@ -280,6 +357,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-01b"></script>
+  <script src="./app.js?v=2026-08-02h"></script>
 </body>
 </html>

@@ -1,9 +1,17 @@
-const META_PATH = "./data/neurmoc_meta.json?v=2026-08-01a";
+/* NeurMOC viewer (v3): themed (light/dark) canvas rendering, progressive
+   data loading (default combination first, the other seven streamed in the
+   background), product-difference view, RAPID 26.5N overlay, mean-state
+   trend interpretation, and shareable URL state. */
+
+const META_PATH = "./data/neurmoc_meta.json?v=2026-08-02a";
 const DATA_DIR = "./data/";
 
 const state = {
   data: null,
+  combosReady: false,
+  pendingCombo: null,                   // combo requested by URL before the stream arrived
   combo: { obp: 0, ssh: 0, wind: 0 },   // option index per product axis
+  diff: false,                          // heatmaps show selected - default
   climAnom: 4,                          // snapshot + Hovmoller (anomalies)
   timeIndex: 0,
   densityIndex: 0,
@@ -15,6 +23,8 @@ const state = {
   timer: null,
 };
 
+let DEFAULT_VIEW = { j: 0, k: 0, t: 0 };
+
 const controls = {
   timeSlider: document.getElementById("time-slider"),
   densitySelect: document.getElementById("density-select"),
@@ -25,10 +35,16 @@ const controls = {
   speedControl: document.getElementById("speed-control"),
   productBar: document.getElementById("product-bar"),
   productComboLabel: document.getElementById("product-combo-label"),
+  productNote: document.getElementById("product-note"),
+  diffToggle: document.getElementById("diff-toggle"),
+  shareView: document.getElementById("share-view"),
+  themeToggle: document.getElementById("theme-toggle"),
   presetRow: document.getElementById("preset-row"),
   copyBibtex: document.getElementById("copy-bibtex"),
+  trendReading: document.getElementById("trend-reading"),
   selectedLatitude: document.getElementById("selected-latitude"),
   selectedDensity: document.getElementById("selected-density"),
+  selectedBaseline: document.getElementById("selected-baseline"),
   selectedValue: document.getElementById("selected-value"),
   selectedStd: document.getElementById("selected-std"),
   loadingOverlay: document.getElementById("loading-overlay"),
@@ -50,7 +66,96 @@ const trendCanvas = document.getElementById("trend-canvas");
 const timeseriesSvg = document.getElementById("timeseries-svg");
 const BASIN_BOUNDARY = -34;
 
+/* ---------------- theme ---------------- */
+
+const THEME_KEY = "neurmoc-theme";
+
+// plot colors per theme; the CSS custom properties style the page chrome,
+// these style everything drawn INSIDE the canvases/SVG
+const PLOT_COLORS = {
+  light: {
+    bg: "#ffffff",
+    ink: "#1b2c3e",
+    muted: "#5c7186",
+    frame: "rgba(27, 44, 62, 0.42)",
+    grid: "rgba(27, 44, 62, 0.12)",
+    zero: "rgba(27, 44, 62, 0.55)",
+    mask: "rgb(233, 236, 239)",
+    stipple: "rgba(20, 20, 20, 0.8)",
+    hlOuter: "rgba(255, 255, 255, 0.9)",
+    hlInner: "#111111",
+    gap: "rgba(100, 116, 139, 0.12)",
+    gapText: "#7b8a99",
+    recon: "#8f2d1b",
+    band: "rgba(143, 45, 27, 0.15)",
+    defaultLine: "#9aa8b5",
+    rapid: "#39424c",
+    rapidBand: "rgba(57, 66, 76, 0.13)",
+    trendSig: "#2f6f9f",
+    trendNot: "#7f8b92",
+    cursor: "#162238",
+  },
+  dark: {
+    bg: "#0f1a2b",
+    ink: "#e6eef7",
+    muted: "#9fb2c6",
+    frame: "rgba(230, 238, 247, 0.35)",
+    grid: "rgba(230, 238, 247, 0.10)",
+    zero: "rgba(230, 238, 247, 0.5)",
+    mask: "#223043",
+    stipple: "rgba(235, 241, 247, 0.75)",
+    hlOuter: "rgba(15, 26, 43, 0.9)",
+    hlInner: "#f2f6fa",
+    gap: "rgba(148, 163, 184, 0.16)",
+    gapText: "#93a6ba",
+    recon: "#e0684b",
+    band: "rgba(224, 104, 75, 0.20)",
+    defaultLine: "#7b8b9c",
+    rapid: "#c3d0dd",
+    rapidBand: "rgba(195, 208, 221, 0.16)",
+    trendSig: "#6db3e8",
+    trendNot: "#8b98a5",
+    cursor: "#dbe6f2",
+  },
+};
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+
+function pc() {
+  return PLOT_COLORS[currentTheme()];
+}
+
+function applyTheme(theme, persist) {
+  document.documentElement.dataset.theme = theme;
+  if (controls.themeToggle) {
+    controls.themeToggle.setAttribute(
+      "aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  }
+  if (persist) {
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch (error) {
+      /* private mode - theme just won't persist */
+    }
+  }
+  if (state.data) {
+    render();
+    renderHeroSpark();
+  }
+}
+
+// the inline <head> script sets data-theme before first paint; this is the
+// fallback if it did not run
+if (!document.documentElement.dataset.theme) {
+  applyTheme(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark" : "light", false);
+}
+
 /* ---------------- formatting helpers ---------------- */
+
+const FONT_STACK = '"Inter", "Segoe UI", sans-serif';
 
 function formatLatitude(value) {
   const deg = Math.abs(value).toFixed(1).replace(".0", "");
@@ -73,6 +178,10 @@ function hovmollerDensityTitle(value) {
 
 function roundValue(value, digits = 2) {
   return Number(value).toFixed(digits);
+}
+
+function formatSigned(value, digits = 1) {
+  return `${value < 0 ? "−" : "+"}${Math.abs(value).toFixed(digits)}`;
 }
 
 function formatColorbarTick(value, digits = 0) {
@@ -153,6 +262,19 @@ function predAtCombo(c, t, k, j) {
   return state.data.pred[((c * nt + t) * nk + k) * nj + j];
 }
 
+function diffActive() {
+  return state.diff && state.combosReady && comboIndex() !== 0;
+}
+
+function displayValueAt(t, k, j) {
+  const v = predAt(t, k, j);
+  if (!diffActive()) {
+    return v;
+  }
+  const v0 = predAtCombo(0, t, k, j);
+  return Number.isFinite(v) && Number.isFinite(v0) ? v - v0 : NaN;
+}
+
 let meanStateMemo = null;
 
 function meanStateYZ() {
@@ -176,7 +298,7 @@ function sliceKJ(t) {
   for (let k = 0; k < nk; k += 1) {
     const row = new Array(nj);
     for (let j = 0; j < nj; j += 1) {
-      row[j] = predAt(t, k, j);
+      row[j] = displayValueAt(t, k, j);
     }
     out.push(row);
   }
@@ -189,7 +311,7 @@ function sliceTJ(k) {
   for (let t = 0; t < nt; t += 1) {
     const row = new Array(nj);
     for (let j = 0; j < nj; j += 1) {
-      row[j] = predAt(t, k, j);
+      row[j] = displayValueAt(t, k, j);
     }
     out.push(row);
   }
@@ -235,10 +357,10 @@ function getCanvasPointer(canvas, event) {
 
 function plotFonts(fs) {
   return {
-    tick: `${Math.round(17 * fs)}px Segoe UI`,
-    title: `${Math.round(19 * fs)}px Segoe UI`,
-    panel: `bold ${Math.round(21 * fs)}px Segoe UI`,
-    colorbar: `${Math.round(16 * fs)}px Segoe UI`,
+    tick: `${Math.round(16.5 * fs)}px ${FONT_STACK}`,
+    title: `${Math.round(18.5 * fs)}px ${FONT_STACK}`,
+    panel: `600 ${Math.round(20 * fs)}px ${FONT_STACK}`,
+    colorbar: `${Math.round(15.5 * fs)}px ${FONT_STACK}`,
   };
 }
 
@@ -250,31 +372,57 @@ function thinTicks(indices, fs) {
   return indices.filter((_, i) => i % step === 0);
 }
 
+// latitude ticks at INTEGER degrees: the cells are centered on half
+// degrees, so integers sit on cell edges - place ticks by value, not by
+// cell index
+function drawIntegerLatTicks(ctx, latitudes, indices, x0, cellW, axisY, labelY, fs) {
+  const first = latitudes[indices[0]];
+  const spacing = indices.length > 1
+    ? latitudes[indices[1]] - latitudes[indices[0]] : 1;
+  const lo = first - spacing / 2;
+  const hi = latitudes[indices[indices.length - 1]] + spacing / 2;
+  let values = [];
+  for (let lat = Math.ceil(lo / 10) * 10; lat <= hi + 1e-6; lat += 10) {
+    values.push(lat);
+  }
+  values = thinTicks(values, fs);
+  values.forEach((lat) => {
+    const local = (lat - first) / spacing + 0.5;   // in cell units
+    if (local < -1e-6 || local > indices.length + 1e-6) {
+      return;
+    }
+    const x = x0 + local * cellW;
+    ctx.beginPath();
+    ctx.moveTo(x, axisY);
+    ctx.lineTo(x, axisY + 6);
+    ctx.stroke();
+    ctx.fillText(formatLatitude(lat), x, labelY);
+  });
+}
+
+// matplotlib/ColorBrewer RdBu_r anchors - the manuscript's diverging map
+// (neurmoc CMAP_DIVERGING), low = blue, mid = neutral, high = red
+const RDBU_R = [
+  [5, 48, 97], [33, 102, 172], [67, 147, 195], [146, 197, 222],
+  [209, 229, 240], [247, 247, 247], [253, 219, 199], [244, 165, 130],
+  [214, 96, 77], [178, 24, 43], [103, 0, 31],
+];
+
 function valueToColor(value, clim) {
   if (!Number.isFinite(value)) {
-    return "rgb(233, 236, 239)";        // masked cell (outside valid plane)
+    return pc().mask;                   // masked cell (outside valid plane)
   }
   const clamped = Math.max(-clim, Math.min(clim, value));
   const t = (clamped + clim) / (2 * clim);
-  // RdBu-style diverging ramp (matches the manuscript figures) with a
-  // neutral midpoint so zero reads as "no signal", not as a warm hue
-  const anchors = [
-    { t: 0.0, rgb: [33, 74, 135] },
-    { t: 0.18, rgb: [89, 141, 196] },
-    { t: 0.5, rgb: [247, 248, 250] },
-    { t: 0.82, rgb: [214, 113, 80] },
-    { t: 1.0, rgb: [132, 34, 25] },
-  ];
-  for (let i = 0; i < anchors.length - 1; i += 1) {
-    const a = anchors[i];
-    const b = anchors[i + 1];
-    if (t >= a.t && t <= b.t) {
-      const local = (t - a.t) / (b.t - a.t);
-      const rgb = a.rgb.map((channel, idx) => Math.round(channel + local * (b.rgb[idx] - channel)));
-      return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
-    }
-  }
-  return "rgb(0,0,0)";
+  const x = t * (RDBU_R.length - 1);
+  const i = Math.min(RDBU_R.length - 2, Math.floor(x));
+  const local = x - i;
+  const a = RDBU_R[i];
+  const b = RDBU_R[i + 1];
+  const r = Math.round(a[0] + local * (b[0] - a[0]));
+  const g = Math.round(a[1] + local * (b[1] - a[1]));
+  const bl = Math.round(a[2] + local * (b[2] - a[2]));
+  return `rgb(${r}, ${g}, ${bl})`;
 }
 
 function restartPlayback() {
@@ -282,6 +430,7 @@ function restartPlayback() {
   if (!state.playing) {
     state.timer = null;
     controls.playButton.textContent = "Play";
+    scheduleUrlUpdate();
     return;
   }
   controls.playButton.textContent = "Pause";
@@ -308,13 +457,81 @@ function getBasinSplitInfo(latitudes) {
   };
 }
 
+/* ---------------- shareable URL state ---------------- */
+
+function buildHash() {
+  const parts = new URLSearchParams();
+  const combo = state.pendingCombo !== null ? state.pendingCombo : comboIndex();
+  if (combo !== 0) {
+    parts.set("c", String(combo));
+  }
+  if (state.latitudeIndex !== DEFAULT_VIEW.j) {
+    parts.set("j", String(state.latitudeIndex));
+  }
+  if (state.densityIndex !== DEFAULT_VIEW.k) {
+    parts.set("k", String(state.densityIndex));
+  }
+  if (state.timeIndex !== DEFAULT_VIEW.t) {
+    parts.set("t", String(state.timeIndex));
+  }
+  if (state.climAnom !== 4) {
+    parts.set("a", String(state.climAnom));
+  }
+  if (state.diff) {
+    parts.set("d", "1");
+  }
+  return parts.toString();
+}
+
+let urlTimer = null;
+
+function scheduleUrlUpdate() {
+  if (!state.data || state.playing) {
+    return;
+  }
+  window.clearTimeout(urlTimer);
+  urlTimer = window.setTimeout(() => {
+    const hash = buildHash();
+    history.replaceState(null, "",
+      hash ? `#${hash}` : window.location.pathname + window.location.search);
+  }, 250);
+}
+
+function applyHashState() {
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const { nt, nk, nj } = state.data.dims;
+  const intParam = (key, lo, hi) => {
+    const raw = params.get(key);
+    if (raw === null || !/^\d+$/.test(raw)) {
+      return null;
+    }
+    const value = Number(raw);
+    return value >= lo && value <= hi ? value : null;
+  };
+  const j = intParam("j", 0, nj - 1);
+  const k = intParam("k", 0, nk - 1);
+  const t = intParam("t", 0, nt - 1);
+  const a = intParam("a", 1, 12);
+  const c = intParam("c", 0, state.data.dims.nCombos - 1);
+  if (j !== null) state.latitudeIndex = j;
+  if (k !== null) state.densityIndex = k;
+  if (t !== null) state.timeIndex = t;
+  if (a !== null) state.climAnom = a;
+  state.diff = params.get("d") === "1";
+  if (c !== null && c !== 0) {
+    // the non-default combinations stream in later; remember the request
+    state.pendingCombo = c;
+  }
+}
+
 /* ---------------- dual-basin heatmap ---------------- */
 
 function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   const { ctx, width, height, fs } = setupCanvasResolution(canvas);
   const fonts = plotFonts(fs);
+  const theme = pc();
   const split = getBasinSplitInfo(latitudes);
-  const margins = { left: 92 * fs, right: 76 * fs, top: 26 * fs, bottom: 54 * fs };
+  const margins = { left: 84 * fs, right: 70 * fs, top: 26 * fs, bottom: 48 * fs };
   const gap = 18;
   const plotHeight = height - margins.top - margins.bottom;
   const ny = densities.length;
@@ -329,7 +546,7 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   const rightX0 = margins.left + leftWidth + gap;
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, width, height);
 
   function drawHalf(indices, x0, cellW) {
@@ -341,7 +558,7 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
       }
     }
     if (options.stippleMask) {
-      ctx.strokeStyle = "rgba(20, 20, 20, 0.8)";
+      ctx.strokeStyle = theme.stipple;
       ctx.lineWidth = 1.1 * fs;
       for (let j = 0; j < ny; j += 1) {
         for (let localX = 0; localX < indices.length; localX += 1) {
@@ -365,46 +582,24 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   drawHalf(split.leftIndices, leftX0, leftCellW);
   drawHalf(split.rightIndices, rightX0, rightCellW);
 
-  ctx.strokeStyle = "rgba(27,44,62,0.45)";
+  ctx.strokeStyle = theme.frame;
   ctx.lineWidth = 1;
   ctx.strokeRect(leftX0, margins.top, leftWidth, plotHeight);
   ctx.strokeRect(rightX0, margins.top, rightWidth, plotHeight);
 
-  ctx.fillStyle = "#1b2c3e";
+  ctx.fillStyle = theme.ink;
   ctx.font = fonts.panel;
   ctx.textAlign = "left";
   ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28 * fs);
   ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28 * fs);
 
-  ctx.fillStyle = "#5c7186";
+  ctx.fillStyle = theme.muted;
   ctx.font = fonts.tick;
   ctx.textAlign = "center";
-  const leftTicks = thinTicks(options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1], fs);
-  leftTicks.forEach((localIdx) => {
-    if (localIdx < 0 || localIdx >= split.leftIndices.length) {
-      return;
-    }
-    const globalIdx = split.leftIndices[localIdx];
-    const x = leftX0 + (localIdx + 0.5) * leftCellW;
-    ctx.beginPath();
-    ctx.moveTo(x, margins.top + plotHeight);
-    ctx.lineTo(x, margins.top + plotHeight + 6);
-    ctx.stroke();
-    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22 * fs);
-  });
-  const rightTicks = thinTicks(options.rightTickIndices ?? [0, Math.floor(split.rightIndices.length / 2), split.rightIndices.length - 1], fs);
-  rightTicks.forEach((localIdx) => {
-    if (localIdx < 0 || localIdx >= split.rightIndices.length) {
-      return;
-    }
-    const globalIdx = split.rightIndices[localIdx];
-    const x = rightX0 + (localIdx + 0.5) * rightCellW;
-    ctx.beginPath();
-    ctx.moveTo(x, margins.top + plotHeight);
-    ctx.lineTo(x, margins.top + plotHeight + 6);
-    ctx.stroke();
-    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22 * fs);
-  });
+  drawIntegerLatTicks(ctx, latitudes, split.leftIndices, leftX0, leftCellW,
+    margins.top + plotHeight, height - 20 * fs, fs);
+  drawIntegerLatTicks(ctx, latitudes, split.rightIndices, rightX0, rightCellW,
+    margins.top + plotHeight, height - 20 * fs, fs);
 
   ctx.textAlign = "right";
   const yTicks = thinTicks(options.yTickIndices ?? [0, 4, 8, 12, 16, ny - 1], fs);
@@ -421,7 +616,7 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   });
 
   ctx.save();
-  ctx.translate(28 * fs * 0.8, margins.top + plotHeight / 2);
+  ctx.translate(24 * fs * 0.8, margins.top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
   ctx.font = fonts.title;
@@ -432,8 +627,8 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   ctx.font = fonts.title;
   ctx.fillText(options.title, margins.left + (availableWidth + gap) / 2, 14 * fs);
 
-  const cbW = 14 * fs;
-  const cbX = width - margins.right + 30 * fs;
+  const cbW = 11 * fs;
+  const cbX = width - margins.right + 24 * fs;
   const cbY = margins.top;
   const cbH = plotHeight;
   for (let p = 0; p < cbH; p += 1) {
@@ -441,7 +636,9 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
     ctx.fillStyle = valueToColor(value, options.clim);
     ctx.fillRect(cbX, cbY + p, cbW, 1);
   }
+  ctx.strokeStyle = theme.frame;
   ctx.strokeRect(cbX, cbY, cbW, cbH);
+  ctx.fillStyle = theme.muted;
   ctx.textAlign = "left";
   ctx.font = fonts.colorbar;
   const tickDigits = options.colorbarTickDigits ?? 0;
@@ -465,12 +662,12 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
     if (localX >= 0) {
       const hx = x0 + (localX + 0.5) * cellW;
       const hy = margins.top + (options.highlightY + 0.5) * cellH;
-      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.strokeStyle = theme.hlOuter;
       ctx.lineWidth = 3.6 * fs;
       ctx.beginPath();
       ctx.arc(hx, hy, 5.5 * fs, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.strokeStyle = "#111111";
+      ctx.strokeStyle = theme.hlInner;
       ctx.lineWidth = 1.6 * fs;
       ctx.beginPath();
       ctx.arc(hx, hy, 5.5 * fs, 0, Math.PI * 2);
@@ -498,8 +695,9 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
 function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) {
   const { ctx, width, height, fs } = setupCanvasResolution(canvas);
   const fonts = plotFonts(fs);
+  const theme = pc();
   const split = getBasinSplitInfo(latitudes);
-  const margins = { left: 128 * fs, right: 76 * fs, top: 26 * fs, bottom: 54 * fs };
+  const margins = { left: 104 * fs, right: 70 * fs, top: 26 * fs, bottom: 48 * fs };
   const gap = 18;
   const ny = timeLabels.length;
   const plotHeight = height - margins.top - margins.bottom;
@@ -514,7 +712,7 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   const rightX0 = margins.left + leftWidth + gap;
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, width, height);
 
   function drawHalf(indices, x0, cellW) {
@@ -531,46 +729,24 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   drawHalf(split.leftIndices, leftX0, leftCellW);
   drawHalf(split.rightIndices, rightX0, rightCellW);
 
-  ctx.strokeStyle = "rgba(27,44,62,0.45)";
+  ctx.strokeStyle = theme.frame;
   ctx.lineWidth = 1;
   ctx.strokeRect(leftX0, margins.top, leftWidth, plotHeight);
   ctx.strokeRect(rightX0, margins.top, rightWidth, plotHeight);
 
-  ctx.fillStyle = "#1b2c3e";
+  ctx.fillStyle = theme.ink;
   ctx.font = fonts.panel;
   ctx.textAlign = "left";
   ctx.fillText(options.leftTitle, leftX0 + 10, margins.top + 28 * fs);
   ctx.fillText(options.rightTitle, rightX0 + 10, margins.top + 28 * fs);
 
-  ctx.fillStyle = "#5c7186";
+  ctx.fillStyle = theme.muted;
   ctx.font = fonts.tick;
   ctx.textAlign = "center";
-  const leftTicks = thinTicks(options.leftTickIndices ?? [0, Math.floor(split.leftIndices.length / 2), split.leftIndices.length - 1], fs);
-  leftTicks.forEach((localIdx) => {
-    if (localIdx < 0 || localIdx >= split.leftIndices.length) {
-      return;
-    }
-    const globalIdx = split.leftIndices[localIdx];
-    const x = leftX0 + (localIdx + 0.5) * leftCellW;
-    ctx.beginPath();
-    ctx.moveTo(x, margins.top + plotHeight);
-    ctx.lineTo(x, margins.top + plotHeight + 6);
-    ctx.stroke();
-    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22 * fs);
-  });
-  const rightTicks = thinTicks(options.rightTickIndices ?? [0, Math.floor(split.rightIndices.length / 2), split.rightIndices.length - 1], fs);
-  rightTicks.forEach((localIdx) => {
-    if (localIdx < 0 || localIdx >= split.rightIndices.length) {
-      return;
-    }
-    const globalIdx = split.rightIndices[localIdx];
-    const x = rightX0 + (localIdx + 0.5) * rightCellW;
-    ctx.beginPath();
-    ctx.moveTo(x, margins.top + plotHeight);
-    ctx.lineTo(x, margins.top + plotHeight + 6);
-    ctx.stroke();
-    ctx.fillText(formatLatitude(latitudes[globalIdx]), x, height - 22 * fs);
-  });
+  drawIntegerLatTicks(ctx, latitudes, split.leftIndices, leftX0, leftCellW,
+    margins.top + plotHeight, height - 20 * fs, fs);
+  drawIntegerLatTicks(ctx, latitudes, split.rightIndices, rightX0, rightCellW,
+    margins.top + plotHeight, height - 20 * fs, fs);
 
   ctx.textAlign = "right";
   const minorTickIndices = fs > 1.6 ? [] : (options.yMinorTickIndices ?? []);
@@ -608,7 +784,7 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   });
 
   ctx.save();
-  ctx.translate(30 * fs * 0.8, margins.top + plotHeight / 2);
+  ctx.translate(26 * fs * 0.8, margins.top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
   ctx.font = fonts.title;
@@ -619,8 +795,8 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
   ctx.font = fonts.title;
   ctx.fillText(options.title, margins.left + (availableWidth + gap) / 2, 14 * fs);
 
-  const cbW = 14 * fs;
-  const cbX = width - margins.right + 30 * fs;
+  const cbW = 11 * fs;
+  const cbX = width - margins.right + 24 * fs;
   const cbY = margins.top;
   const cbH = plotHeight;
   for (let p = 0; p < cbH; p += 1) {
@@ -628,7 +804,9 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
     ctx.fillStyle = valueToColor(value, options.clim);
     ctx.fillRect(cbX, cbY + p, cbW, 1);
   }
+  ctx.strokeStyle = theme.frame;
   ctx.strokeRect(cbX, cbY, cbW, cbH);
+  ctx.fillStyle = theme.muted;
   ctx.textAlign = "left";
   ctx.font = fonts.colorbar;
   const tickDigits = options.colorbarTickDigits ?? 0;
@@ -653,12 +831,12 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
       const hx = x0 + (localX + 0.5) * cellW;
       const hyIndex = options.flipY ? ny - 1 - options.highlightY : options.highlightY;
       const hy = margins.top + (hyIndex + 0.5) * cellH;
-      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.strokeStyle = theme.hlOuter;
       ctx.lineWidth = 3.6 * fs;
       ctx.beginPath();
       ctx.arc(hx, hy, 5.5 * fs, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.strokeStyle = "#111111";
+      ctx.strokeStyle = theme.hlInner;
       ctx.lineWidth = 1.5 * fs;
       ctx.beginPath();
       ctx.arc(hx, hy, 5.5 * fs, 0, Math.PI * 2);
@@ -683,22 +861,44 @@ function drawDualBasinHovmoller(canvas, values, latitudes, timeLabels, options) 
 
 /* ---------------- time series (SVG) ---------------- */
 
+function isRapidCell() {
+  if (!state.data || !state.data.rapid) {
+    return false;
+  }
+  const preset = PRESETS.rapid();
+  return state.latitudeIndex === preset.latIdx && state.densityIndex === preset.densityIdx;
+}
+
 function drawTimeSeries() {
   const d = state.data;
+  const theme = pc();
   const nt = d.dims.nt;
+  // the panel spans both map rows on wide screens and the SVG flexes to
+  // fill it - match the drawing height to the CSS box (no letterboxing)
+  const width = 900;
+  const cssWidth = timeseriesSvg.clientWidth || width;
+  const cssHeight = timeseriesSvg.clientHeight || 0;
+  const height = cssHeight > 40
+    ? Math.max(300, Math.min(720, Math.round((cssHeight / Math.max(cssWidth, 1)) * width)))
+    : 320;
+  timeseriesSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   const values = [];
   const stdValues = [];
   for (let t = 0; t < nt; t += 1) {
     values.push(predAt(t, state.densityIndex, state.latitudeIndex));
     stdValues.push(stdAt(t, state.densityIndex, state.latitudeIndex));
   }
+  const legendDefault = document.getElementById("legend-default");
+  const legendRapid = document.getElementById("legend-rapid");
   if (!Number.isFinite(values[0])) {
     // masked cell (outside the valid latitude-density plane)
     timeseriesSvg.innerHTML = `
-      <rect x="0" y="0" width="900" height="320" fill="#ffffff"></rect>
-      <text x="450" y="165" text-anchor="middle" font-size="20" fill="#7b8a99">
+      <rect x="0" y="0" width="${width}" height="${height}" fill="${theme.bg}"></rect>
+      <text x="${width / 2}" y="${height / 2}" text-anchor="middle" font-size="20" fill="${theme.gapText}">
         No data at this cell — pick a cell inside the colored region.
       </text>`;
+    if (legendDefault) legendDefault.hidden = true;
+    if (legendRapid) legendRapid.hidden = true;
     return;
   }
   // the band exists everywhere since the unpriced-cell fill (the transfer
@@ -707,8 +907,6 @@ function drawTimeSeries() {
   // borrowed cells
   const hasStd = stdValues.some(Number.isFinite);
   const safeStd = stdValues.map((value) => (Number.isFinite(value) ? value : 0));
-  const borrowed = d.transfer_filled
-    && d.transfer_filled[state.densityIndex][state.latitudeIndex] === 1;
   const xYears = d.time_years;
   const rawSlope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
   const trendDefined = rawSlope > -900;
@@ -719,11 +917,39 @@ function drawTimeSeries() {
   const intercept = yMean - slope * xMean;
   const trendValues = xYears.map((x) => slope * x + intercept);
 
-  const width = 900;
-  const height = 320;
-  const cssWidth = timeseriesSvg.clientWidth || width;
+  const showDefault = state.combosReady && comboIndex() !== 0;
+  const defaultValues = [];
+  if (showDefault) {
+    for (let t = 0; t < nt; t += 1) {
+      defaultValues.push(predAtCombo(0, t, state.densityIndex, state.latitudeIndex));
+    }
+  }
+  const showRapid = isRapidCell();
+  let rapidValues = null;
+  let rapidUnc = null;
+  if (showRapid) {
+    // fig02's zero-bias display convention: shift the observed curve onto
+    // the DISPLAYED reconstruction's mean over the shared months
+    let sumPred = 0;
+    let sumObs = 0;
+    let nMatched = 0;
+    d.rapid.time_index.forEach((ti, i) => {
+      const v = ti >= 0 ? values[ti] : NaN;
+      if (Number.isFinite(v)) {
+        sumPred += v;
+        sumObs += d.rapid.anomaly_sv[i];
+        nMatched += 1;
+      }
+    });
+    const offset = nMatched ? sumPred / nMatched - sumObs / nMatched : 0;
+    rapidValues = d.rapid.anomaly_sv.map((value) => value + offset);
+    rapidUnc = d.rapid.uncertainty_sv || null;
+  }
+  if (legendDefault) legendDefault.hidden = !showDefault;
+  if (legendRapid) legendRapid.hidden = !showRapid;
+
   const fs = Math.min(2.2, Math.max(1, 0.68 * (width / Math.max(cssWidth, 1))));
-  const margins = { left: 82 * fs, right: 24, top: 24 * fs, bottom: 40 * fs };
+  const margins = { left: 72 * fs, right: 22, top: 24 * fs, bottom: 38 * fs };
   const plotWidth = width - margins.left - margins.right;
   const plotHeight = height - margins.top - margins.bottom;
   // fixed axis across the product selector: the limits span EVERY
@@ -740,6 +966,15 @@ function drawTimeSeries() {
       }
     }
   }
+  if (showRapid) {
+    rapidValues.forEach((v, i) => {
+      const unc = rapidUnc ? rapidUnc[i] : 0;
+      if (Number.isFinite(v)) {
+        yMinRaw = Math.min(yMinRaw, v - unc);
+        yMaxRaw = Math.max(yMaxRaw, v + unc);
+      }
+    });
+  }
   let ymin = Math.floor(yMinRaw);
   let ymax = Math.ceil(yMaxRaw);
   if (ymin === ymax) {
@@ -747,11 +982,12 @@ function drawTimeSeries() {
     ymax += 1;
   }
   const yrange = ymax - ymin || 1;
+  const yOf = (v) => margins.top + ((ymax - v) / yrange) * plotHeight;
   const xs = values.map((_, i) => margins.left + (i / (values.length - 1)) * plotWidth);
-  const ys = values.map((v) => margins.top + ((ymax - v) / yrange) * plotHeight);
-  const trendYs = trendValues.map((v) => margins.top + ((ymax - v) / yrange) * plotHeight);
-  const upper = values.map((v, i) => margins.top + ((ymax - (v + safeStd[i])) / yrange) * plotHeight);
-  const lower = values.map((v, i) => margins.top + ((ymax - (v - safeStd[i])) / yrange) * plotHeight);
+  const ys = values.map(yOf);
+  const trendYs = trendValues.map(yOf);
+  const upper = values.map((v, i) => yOf(v + safeStd[i]));
+  const lower = values.map((v, i) => yOf(v - safeStd[i]));
 
   const areaPath =
     buildPath(xs, upper) +
@@ -765,14 +1001,41 @@ function drawTimeSeries() {
 
   const linePath = buildPath(xs, ys);
   const trendPath = buildPath(xs, trendYs);
+  const defaultPath = showDefault ? buildPath(xs, defaultValues.map(yOf)) : "";
+  const rapidXs = showRapid
+    ? d.rapid.time_years.map((year) => xToSvg(year, xYears[0], xYears[xYears.length - 1], margins, plotWidth))
+    : null;
+  const rapidPath = showRapid
+    ? rapidXs.map((x, i) => `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${yOf(rapidValues[i]).toFixed(2)}`).join(" ")
+    : "";
+  const rapidBandPath = showRapid && rapidUnc
+    ? rapidXs.map((x, i) => `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${yOf(rapidValues[i] + rapidUnc[i]).toFixed(2)}`).join(" ")
+      + " "
+      + rapidXs
+        .slice()
+        .reverse()
+        .map((x, idx) => {
+          const i = rapidXs.length - 1 - idx;
+          return `L ${x.toFixed(2)} ${yOf(rapidValues[i] - rapidUnc[i]).toFixed(2)}`;
+        })
+        .join(" ")
+      + " Z"
+    : "";
   const currentX = xs[state.timeIndex];
-  const yTickStep = Math.max(1, Math.ceil(((ymax - ymin) / 8) * (fs > 1.6 ? 2 : 1)));
+  // tick density follows the (now variable) plot height
+  const targetTicks = Math.max(6, Math.min(14, Math.round(plotHeight / 40)));
+  const yTickStep = Math.max(1, Math.ceil(((ymax - ymin) / targetTicks) * (fs > 1.6 ? 2 : 1)));
   const yTicks = [];
   for (let tick = ymin; tick <= ymax; tick += yTickStep) {
     yTicks.push(tick);
   }
-  const significant = trendDefined
+  // one significance convention everywhere: the FDR-controlled mask (the
+  // map's stippling); cells whose per-point +-2 sigma CI excludes zero but
+  // fail FDR control are labeled as exactly that
+  const sigPoint = trendDefined
     && d.trend.significant[state.densityIndex][state.latitudeIndex];
+  const sigFdr = trendDefined
+    && d.trend.significant_fdr[state.densityIndex][state.latitudeIndex];
   const comboNote = comboIndex() === 0 ? "" : " · trend: default products";
   const gapStart = d.gap_time_range ? d.gap_time_range[0] : null;
   const gapEnd = d.gap_time_range ? d.gap_time_range[1] : null;
@@ -793,23 +1056,23 @@ function drawTimeSeries() {
     }
   }
   const crossesZero = ymin < 0 && ymax > 0;
-  const zeroY = crossesZero ? margins.top + ((ymax - 0) / yrange) * plotHeight : null;
+  const zeroY = crossesZero ? yOf(0) : null;
   const fTick = Math.round(16 * fs);
   const fTitle = Math.round(18 * fs);
 
   timeseriesSvg.innerHTML = `
-    <rect x="0" y="0" width="${width}" height="${height}" fill="#ffffff"></rect>
-    <rect x="${margins.left}" y="${margins.top}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="rgba(27,44,62,0.35)"></rect>
-    ${gapX1 !== null && gapX2 !== null ? `<rect x="${gapX1}" y="${margins.top}" width="${Math.max(0, gapX2 - gapX1)}" height="${plotHeight}" fill="rgba(100, 116, 139, 0.12)"></rect>` : ""}
-    ${gapX1 !== null && gapX2 !== null && gapX2 - gapX1 > 34 * fs ? `<text x="${(gapX1 + gapX2) / 2}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${Math.round(13 * fs)}" fill="#7b8a99" transform="rotate(-90 ${(gapX1 + gapX2) / 2} ${margins.top + plotHeight / 2})">GRACE gap</text>` : ""}
-    ${crossesZero ? `<line x1="${margins.left}" y1="${zeroY}" x2="${width - margins.right}" y2="${zeroY}" stroke="rgba(27,44,62,0.55)" stroke-width="1"></line>` : ""}
+    <rect x="0" y="0" width="${width}" height="${height}" fill="${theme.bg}"></rect>
+    <rect x="${margins.left}" y="${margins.top}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="${theme.frame}"></rect>
+    ${gapX1 !== null && gapX2 !== null ? `<rect x="${gapX1}" y="${margins.top}" width="${Math.max(0, gapX2 - gapX1)}" height="${plotHeight}" fill="${theme.gap}"></rect>` : ""}
+    ${gapX1 !== null && gapX2 !== null && gapX2 - gapX1 > 34 * fs ? `<text x="${(gapX1 + gapX2) / 2}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${Math.round(13 * fs)}" fill="${theme.gapText}" transform="rotate(-90 ${(gapX1 + gapX2) / 2} ${margins.top + plotHeight / 2})">GRACE gap</text>` : ""}
+    ${crossesZero ? `<line x1="${margins.left}" y1="${zeroY}" x2="${width - margins.right}" y2="${zeroY}" stroke="${theme.zero}" stroke-width="1"></line>` : ""}
     ${yTicks
       .map((tick) => {
-        const y = margins.top + ((ymax - tick) / yrange) * plotHeight;
+        const y = yOf(tick);
         return `<g>
-          <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="rgba(27,44,62,0.12)"></line>
-          <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="rgba(27,44,62,0.35)"></line>
-          <text x="${margins.left - 10}" y="${y + 5}" text-anchor="end" font-size="${fTick}" fill="#5c7186">${tick}</text>
+          <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="${theme.grid}"></line>
+          <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="${theme.frame}"></line>
+          <text x="${margins.left - 10}" y="${y + 5}" text-anchor="end" font-size="${fTick}" fill="${theme.muted}">${tick}</text>
         </g>`;
       })
       .join("")}
@@ -817,7 +1080,7 @@ function drawTimeSeries() {
       .map((year) => {
         const x = xToSvg(year, xYears[0], xYears[xYears.length - 1], margins, plotWidth);
         return `<g>
-          <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 4}" stroke="rgba(27,44,62,0.35)"></line>
+          <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 4}" stroke="${theme.frame}"></line>
         </g>`;
       })
       .join("")}
@@ -825,22 +1088,118 @@ function drawTimeSeries() {
       .map((year) => {
         const x = xToSvg(year, xYears[0], xYears[xYears.length - 1], margins, plotWidth);
         return `<g>
-          <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 8}" stroke="rgba(27,44,62,0.45)"></line>
-          <text x="${x}" y="${height - margins.bottom + 8 + fTick}" text-anchor="middle" font-size="${fTick}" fill="#5c7186">${year}</text>
+          <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 8}" stroke="${theme.frame}"></line>
+          <text x="${x}" y="${height - margins.bottom + 8 + fTick}" text-anchor="middle" font-size="${fTick}" fill="${theme.muted}">${year}</text>
         </g>`;
       })
       .join("")}
-    ${hasStd ? `<path d="${areaPath}" fill="rgba(143,45,27,0.15)"></path>` : ""}
-    <path d="${linePath}" fill="none" stroke="#8f2d1b" stroke-width="3"></path>
-    ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${significant ? "#0d6fa4" : "#7f8b92"}" stroke-width="2.5" stroke-dasharray="9 6"></path>` : ""}
-    <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="#162238" stroke-width="1.5" stroke-dasharray="6 4"></line>
-    <text x="${24 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="#5c7186" transform="rotate(-90 ${24 * fs} ${margins.top + plotHeight / 2})">Ψ anomaly (Sv)</text>
-    <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${significant ? "#0d6fa4" : "#7f8b92"}">
-      ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹` : "Trend not significant (±2σ)"}${comboNote}
+    ${hasStd ? `<path d="${areaPath}" fill="${theme.band}"></path>` : ""}
+    ${showDefault ? `<path d="${defaultPath}" fill="none" stroke="${theme.defaultLine}" stroke-width="2"></path>` : ""}
+    ${showRapid ? `<path d="${rapidPath}" fill="none" stroke="${theme.rapid}" stroke-width="2.4" stroke-dasharray="2 5" stroke-linecap="round"></path>` : ""}
+    <path d="${linePath}" fill="none" stroke="${theme.recon}" stroke-width="3"></path>
+    ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${sigFdr ? theme.trendSig : theme.trendNot}" stroke-width="2.5" stroke-dasharray="9 6"></path>` : ""}
+    <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>
+    <text x="${22 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="${theme.muted}" transform="rotate(-90 ${22 * fs} ${margins.top + plotHeight / 2})">Ψ anomaly (Sv)</text>
+    <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${sigFdr ? theme.trendSig : theme.trendNot}">
+      ${sigFdr ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹`
+        : sigPoint ? "Trend not significant after FDR control"
+          : "Trend not significant (±2σ)"}${comboNote}
     </text>
-    ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="#7b8a99">Uncertainty unavailable at this cell</text>`}
-    ${hasStd && borrowed ? `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="#7b8a99">Band: transfer term from the σ₂ level above (no cross-model truth here)</text>` : ""}
+    ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="${theme.gapText}">Uncertainty unavailable at this cell</text>`}
   `;
+}
+
+/* ---------------- mean-state trend interpretation ---------------- */
+
+// Whether a trend strengthens or weakens the local overturning cell
+// depends on the SIGN of the cell it acts on: a positive trend on a
+// negative (counterclockwise) mean-state cell REDUCES its magnitude.
+function updateTrendReading() {
+  const el = controls.trendReading;
+  if (!el) {
+    return;
+  }
+  const d = state.data;
+  const k = state.densityIndex;
+  const j = state.latitudeIndex;
+  const base = meanStateYZ()[k][j];
+  const hasSeries = Number.isFinite(predAtCombo(0, 0, k, j));
+  if (!Number.isFinite(base) || !hasSeries) {
+    el.hidden = true;
+    return;
+  }
+  const rawSlope = d.trend.slope_per_year[k][j];
+  const trendDefined = rawSlope > -900;
+  // same convention as the map and the plot label: FDR-controlled mask
+  const sigPoint = trendDefined && d.trend.significant[k][j];
+  const sigFdr = trendDefined && d.trend.significant_fdr[k][j];
+  const sense = base >= 0 ? "clockwise" : "counterclockwise";
+  let verdict;
+  let cls = "is-neutral";
+  if (!trendDefined) {
+    verdict = "no trend estimate at this cell";
+  } else if (!sigFdr) {
+    verdict = sigPoint
+      ? "trend ±2σ excludes zero but fails FDR control — no robust change claimed"
+      : "trend not significant — no robust change in cell strength";
+  } else if (Math.abs(base) < 0.5) {
+    verdict = "mean state near zero — strengthening vs. weakening is ill-defined here";
+  } else {
+    const strengthening = (base > 0) === (rawSlope > 0);
+    cls = strengthening ? "is-strengthening" : "is-weakening";
+    verdict = `significant ${rawSlope > 0 ? "positive" : "negative"} trend on a `
+      + `${base >= 0 ? "positive" : "negative"} cell → the overturning here is `
+      + `<strong>${strengthening ? "strengthening" : "weakening"}</strong>`;
+  }
+  // the borrowed-band caveat is a per-cell annotation like the verdict,
+  // and the SVG's top line has no room for it beside the trend label
+  const borrowed = d.transfer_filled && d.transfer_filled[k][j] === 1;
+  el.className = `trend-reading ${cls}`;
+  el.innerHTML = `<span>Mean state <strong>${formatSigned(base)} Sv</strong> (${sense} cell)</span>`
+    + `<span class="tr-sep" aria-hidden="true">·</span><span>${verdict}</span>`
+    + (borrowed
+      ? `<span class="tr-sep" aria-hidden="true">·</span><span>uncertainty band: transfer term borrowed from the σ₂ level above</span>`
+      : "");
+  el.hidden = false;
+}
+
+/* ---------------- hero sparkline ---------------- */
+
+function renderHeroSpark() {
+  const svg = document.getElementById("hero-spark");
+  if (!svg || !state.data) {
+    return;
+  }
+  const { latIdx, densityIdx } = PRESETS.rapid();
+  const nt = state.data.dims.nt;
+  const vals = [];
+  for (let t = 0; t < nt; t += 1) {
+    vals.push(predAtCombo(0, t, densityIdx, latIdx));
+  }
+  const finite = vals.filter(Number.isFinite);
+  if (!finite.length) {
+    return;
+  }
+  const w = 300;
+  const h = 64;
+  const pad = 6;
+  let lo = Math.min(...finite);
+  let hi = Math.max(...finite);
+  if (lo === hi) {
+    lo -= 1;
+    hi += 1;
+  }
+  const x = (i) => pad + (i / (nt - 1)) * (w - 2 * pad);
+  const y = (v) => pad + ((hi - v) / (hi - lo)) * (h - 2 * pad);
+  const line = vals
+    .map((v, i) => `${i === 0 ? "M" : "L"} ${x(i).toFixed(1)} ${y(v).toFixed(1)}`)
+    .join(" ");
+  const theme = pc();
+  const zero = lo < 0 && hi > 0 ? y(0) : null;
+  svg.innerHTML = `
+    ${zero !== null ? `<line x1="${pad}" x2="${w - pad}" y1="${zero.toFixed(1)}" y2="${zero.toFixed(1)}" stroke="${theme.frame}" stroke-width="1" stroke-dasharray="3 3"></line>` : ""}
+    <path d="${line} L ${x(nt - 1).toFixed(1)} ${h - pad} L ${x(0).toFixed(1)} ${h - pad} Z" fill="${theme.band}"></path>
+    <path d="${line}" fill="none" stroke="${theme.recon}" stroke-width="1.8" stroke-linejoin="round"></path>`;
 }
 
 /* ---------------- hover tooltips ---------------- */
@@ -873,10 +1232,11 @@ function locateDualBasin(geom, x, y) {
 function hoverText(kind, latIdx, rowIdx) {
   const d = state.data;
   const latText = formatLatitude(d.latitudes[latIdx]);
+  const deltaPrefix = diffActive() ? "Δ " : "";
   if (kind === "hovmoller") {
     const timeIdx = d.dims.nt - 1 - rowIdx;
-    const value = predAt(timeIdx, state.densityIndex, latIdx);
-    return `${latText} · ${d.time_labels[timeIdx]}<br><strong>${Number.isFinite(value) ? `${value.toFixed(2)} Sv` : "no data"}</strong>`;
+    const value = displayValueAt(timeIdx, state.densityIndex, latIdx);
+    return `${latText} · ${d.time_labels[timeIdx]}<br><strong>${Number.isFinite(value) ? `${deltaPrefix}${value.toFixed(2)} Sv` : "no data"}</strong>`;
   }
   const sigmaText = `σ₂ ${formatDensity(d.densities[rowIdx])}`;
   if (kind === "trend") {
@@ -888,8 +1248,8 @@ function hoverText(kind, latIdx, rowIdx) {
     return `${latText} · ${sigmaText}<br><strong>${slope.toFixed(3)} Sv yr⁻¹</strong>${sig ? "" : " (not significant)"}`;
   }
   if (kind === "snapshot") {
-    const value = predAt(state.timeIndex, rowIdx, latIdx);
-    return `${latText} · ${sigmaText} · ${d.time_labels[state.timeIndex]}<br><strong>${Number.isFinite(value) ? `${value.toFixed(2)} Sv` : "no data"}</strong>`;
+    const value = displayValueAt(state.timeIndex, rowIdx, latIdx);
+    return `${latText} · ${sigmaText} · ${d.time_labels[state.timeIndex]}<br><strong>${Number.isFinite(value) ? `${deltaPrefix}${value.toFixed(2)} Sv` : "no data"}</strong>`;
   }
   const value = meanStateYZ()[rowIdx][latIdx];
   if (!Number.isFinite(value)) {
@@ -933,29 +1293,36 @@ function render() {
   const hovmollerYearTicks = buildYearAxisTicks(d.time_years);
   const selectedStd = stdAt(state.timeIndex, state.densityIndex, state.latitudeIndex);
   const meanState = meanStateYZ();
+  const baseValue = meanState[state.densityIndex][state.latitudeIndex];
   const meanValue = d.combo_mean_yz[comboIndex()][state.densityIndex][state.latitudeIndex];
+  const diff = diffActive();
+  const anomClim = diff ? Math.max(1, Math.round(state.climAnom / 2)) : state.climAnom;
+  const diffSuffix = diff ? " · selected − default" : "";
 
   controls.timeLabel.textContent = d.time_labels[state.timeIndex];
-  controls.climLabel.textContent = `±${state.climAnom} Sv`;
+  controls.climLabel.textContent = diff
+    ? `±${anomClim} Sv (difference)` : `±${state.climAnom} Sv`;
   controls.selectedLatitude.textContent = formatLatitude(d.latitudes[state.latitudeIndex]);
   controls.selectedDensity.textContent = `σ₂ = ${formatDensity(d.densities[state.densityIndex])} kg m⁻³`;
+  if (controls.selectedBaseline) {
+    controls.selectedBaseline.textContent = Number.isFinite(baseValue)
+      ? `${formatSigned(baseValue, 2)} Sv` : "no data";
+  }
   controls.selectedValue.textContent = Number.isFinite(meanValue)
     ? `${meanValue.toFixed(2)} Sv` : "no data";
   controls.selectedStd.textContent = Number.isFinite(selectedStd)
     ? `${selectedStd.toFixed(2)} Sv` : "no data";
 
   const snapshotGeom = drawDualBasinHeatmap(snapshotCanvas, sliceKJ(state.timeIndex), d.latitudes, d.densities, {
-    clim: state.climAnom,
+    clim: anomClim,
     colorbarTickDigits: 0,
     yTitle: "Density σ₂ (kg/m³)",
-    title: d.time_labels[state.timeIndex],
-    colorbarTitle: "Sv",
+    title: `${d.time_labels[state.timeIndex]}${diffSuffix}`,
+    colorbarTitle: diff ? "Δ Sv" : "Sv",
     leftTitle: "SMOC",
     rightTitle: "AMOC",
     highlightX: state.latitudeIndex,
     highlightY: state.densityIndex,
-    leftTickIndices: [4, 14, 24, 34],
-    rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(snapshotCanvas, snapshotGeom, "snapshot");
@@ -970,25 +1337,21 @@ function render() {
     rightTitle: "AMOC",
     highlightX: state.latitudeIndex,
     highlightY: state.densityIndex,
-    leftTickIndices: [4, 14, 24, 34],
-    rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(sectionCanvas, sectionGeom, "mean");
 
   const hovmollerGeom = drawDualBasinHovmoller(hovmollerCanvas, sliceTJ(state.densityIndex), d.latitudes, d.time_labels, {
-    clim: state.climAnom,
+    clim: anomClim,
     colorbarTickDigits: 0,
     flipY: true,
     yTitle: "Time",
-    title: hovmollerDensityTitle(d.densities[state.densityIndex]),
-    colorbarTitle: "Sv",
+    title: `${hovmollerDensityTitle(d.densities[state.densityIndex])}${diffSuffix}`,
+    colorbarTitle: diff ? "Δ Sv" : "Sv",
     leftTitle: "SMOC",
     rightTitle: "AMOC",
     highlightX: state.latitudeIndex,
     highlightY: state.timeIndex,
-    leftTickIndices: [4, 14, 24, 34],
-    rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
     yTickIndices: hovmollerYearTicks.majorTicks,
     yMinorTickIndices: hovmollerYearTicks.minorTickIndices,
   });
@@ -1005,13 +1368,13 @@ function render() {
     highlightX: state.latitudeIndex,
     highlightY: state.densityIndex,
     stippleMask: d.trend.significant_fdr.map((row) => row.map((value) => !value)),
-    leftTickIndices: [4, 14, 24, 34],
-    rightTickIndices: [4, 14, 24, 34, 44, 54, 64, 74, 84, 94],
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(trendCanvas, trendGeom, "trend");
 
   drawTimeSeries();
+  updateTrendReading();
+  scheduleUrlUpdate();
 }
 
 /* ---------------- interactions ---------------- */
@@ -1074,6 +1437,20 @@ function nearestLatIndex(target) {
   return best;
 }
 
+function nearestDensityIndex(target) {
+  const dens = state.data.densities;
+  let best = 0;
+  let bestDiff = Number.POSITIVE_INFINITY;
+  dens.forEach((value, idx) => {
+    const diff = Math.abs(value - target);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = idx;
+    }
+  });
+  return best;
+}
+
 function coreDensityIndex(latIdx, mode) {
   const mean = meanStateYZ();
   let best = 0;
@@ -1093,15 +1470,63 @@ const PRESETS = {
     const latIdx = nearestLatIndex(26.5);
     return { latIdx, densityIdx: coreDensityIndex(latIdx, "max") };
   },
-  spna: () => {
-    const latIdx = nearestLatIndex(45.5);
+  amoc40: () => {
+    const latIdx = nearestLatIndex(40.5);
     return { latIdx, densityIdx: coreDensityIndex(latIdx, "max") };
   },
+  amoceq: () => {
+    // the -0.5 column: its core (sigma2 35.81) carries the FDR-significant
+    // weakening; the +0.5 column's core does not survive FDR
+    const latIdx = nearestLatIndex(-0.5);
+    return { latIdx, densityIdx: coreDensityIndex(latIdx, "max") };
+  },
+  amoc30s: () => {
+    const latIdx = nearestLatIndex(-30.5);
+    return { latIdx, densityIdx: coreDensityIndex(latIdx, "max") };
+  },
+  somid: () => {
+    // the SO mid-depth (clockwise) cell at 50.5S, pinned to the sigma2
+    // 35.81 level where the strengthening is FDR-significant (the column
+    // maximum sits two levels deeper but is not significant)
+    return { latIdx: nearestLatIndex(-50.5),
+             densityIdx: nearestDensityIndex(35.8125) };
+  },
   abyssal: () => {
-    const latIdx = nearestLatIndex(-60.5);
-    return { latIdx, densityIdx: coreDensityIndex(latIdx, "min") };
+    // the SO abyssal (counterclockwise) cell at 65.5S, pinned to the
+    // sigma2 37.06 level where the weakening is FDR-significant (the
+    // column minimum at sigma2 36.94 is not)
+    return { latIdx: nearestLatIndex(-65.5),
+             densityIdx: nearestDensityIndex(37.0625) };
   },
 };
+
+function applyComboIndex(combo) {
+  state.combo = { obp: (combo >> 2) & 1, ssh: (combo >> 1) & 1, wind: combo & 1 };
+  controls.productBar.querySelectorAll(".product-option").forEach((item) => {
+    const axis = item.dataset.axis;
+    item.classList.toggle("is-active",
+      Number(item.dataset.option) === state.combo[axis]);
+  });
+  controls.productComboLabel.textContent = comboLabel();
+  updateDiffAvailability();
+}
+
+function updateDiffAvailability() {
+  if (!controls.diffToggle) {
+    return;
+  }
+  const pendingNonDefault = state.pendingCombo !== null && state.pendingCombo !== 0;
+  controls.diffToggle.disabled = comboIndex() === 0 && !pendingNonDefault;
+}
+
+function setProductOptionsEnabled(ready) {
+  controls.productBar.querySelectorAll(".product-option").forEach((button) => {
+    if (Number(button.dataset.option) > 0) {
+      button.disabled = !ready;
+      button.classList.toggle("is-loading", !ready);
+    }
+  });
+}
 
 function bindControls() {
   controls.timeSlider.addEventListener("input", (event) => {
@@ -1140,19 +1565,71 @@ function bindControls() {
 
   controls.productBar.addEventListener("click", (event) => {
     const button = event.target.closest(".product-option");
-    if (!button || !state.data) {
+    if (!button || !state.data || button.disabled) {
       return;
     }
     const axis = button.dataset.axis;
-    state.combo[axis] = Number(button.dataset.option);
-    controls.productBar
-      .querySelectorAll(`.product-option[data-axis="${axis}"]`)
-      .forEach((item) => {
-        item.classList.toggle("is-active", item === button);
-      });
-    controls.productComboLabel.textContent = comboLabel();
+    const next = { ...state.combo, [axis]: Number(button.dataset.option) };
+    state.pendingCombo = null;
+    applyComboIndex(next.obp * 4 + next.ssh * 2 + next.wind);
     render();
   });
+
+  if (controls.diffToggle) {
+    controls.diffToggle.addEventListener("change", (event) => {
+      state.diff = event.target.checked;
+      render();
+    });
+  }
+
+  if (controls.shareView) {
+    controls.shareView.addEventListener("click", async () => {
+      const hash = buildHash();
+      history.replaceState(null, "",
+        hash ? `#${hash}` : window.location.pathname + window.location.search);
+      const original = "Copy link to this view";
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        controls.shareView.textContent = "Link copied!";
+      } catch (error) {
+        controls.shareView.textContent = "Copy failed";
+      }
+      window.setTimeout(() => {
+        controls.shareView.textContent = original;
+      }, 1600);
+    });
+  }
+
+  if (controls.themeToggle) {
+    controls.themeToggle.addEventListener("click", () => {
+      applyTheme(currentTheme() === "dark" ? "light" : "dark", true);
+    });
+  }
+
+  const sparkChip = document.getElementById("hero-spark-chip");
+  if (sparkChip) {
+    const jumpToRapid = () => {
+      if (!state.data) {
+        return;
+      }
+      const preset = PRESETS.rapid();
+      state.latitudeIndex = preset.latIdx;
+      state.densityIndex = preset.densityIdx;
+      controls.densitySelect.value = String(preset.densityIdx);
+      render();
+      const panel = document.getElementById("timeseries-panel");
+      if (panel) {
+        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+    sparkChip.addEventListener("click", jumpToRapid);
+    sparkChip.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        jumpToRapid();
+      }
+    });
+  }
 
   controls.presetRow.addEventListener("click", (event) => {
     const button = event.target.closest(".preset-option");
@@ -1237,6 +1714,13 @@ async function fetchWithProgress(url, expectedBytes, onProgress) {
   return buffer.subarray(0, received);
 }
 
+function decodeCounts(counts, offset, target, targetOffset, n, scale, nanCount) {
+  for (let i = 0; i < n; i += 1) {
+    const c = counts[offset + i];
+    target[targetOffset + i] = c === nanCount ? NaN : c * scale;
+  }
+}
+
 async function loadData() {
   setLoadingProgress(0.03, "Fetching metadata…");
   const metaResponse = await fetch(META_PATH);
@@ -1244,32 +1728,29 @@ async function loadData() {
     throw new Error(`HTTP ${metaResponse.status} while fetching metadata`);
   }
   const meta = await metaResponse.json();
-  const [nCombos, nt, nk, nj] = meta.series_bin.shape;
-  const scale = meta.series_bin.scale_sv;
+  const [nt, nk, nj] = meta.series_core.shape;
+  const nCombos = meta.dimensions.combos;
+  const { scale_sv: scale, nan_count: nanCount } = meta.series_encoding;
+  const nCell = nt * nk * nj;
 
+  // the core file (default combination + envelope) is enough to render;
+  // the other seven combinations stream in the background afterwards
   setLoadingProgress(0.06, "Downloading the reconstruction…");
   const bytes = await fetchWithProgress(
-    `${DATA_DIR}${meta.series_bin.file}?v=${meta.series_bin.version || meta.metadata.generated_on}`,
-    meta.series_bin.byte_length,
-    (fraction) => setLoadingProgress(0.06 + 0.9 * fraction, "Downloading the reconstruction…"),
+    `${DATA_DIR}${meta.series_core.file}?v=${meta.series_core.version}`,
+    meta.series_core.byte_length,
+    (fraction) => setLoadingProgress(0.06 + 0.86 * fraction, "Downloading the reconstruction…"),
   );
-  if (bytes.byteLength !== meta.series_bin.byte_length) {
-    throw new Error(`Series file has ${bytes.byteLength} bytes; expected ${meta.series_bin.byte_length}.`);
+  if (bytes.byteLength !== meta.series_core.byte_length) {
+    throw new Error(`Core file has ${bytes.byteLength} bytes; expected ${meta.series_core.byte_length}.`);
   }
 
-  setLoadingProgress(0.97, "Decoding…");
+  setLoadingProgress(0.95, "Decoding…");
   const counts = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
-  const nanCount = meta.series_bin.nan_count;
-  const n = nCombos * nt * nk * nj;
-  const nStd = nt * nk * nj;
-  const pred = new Float32Array(n);
-  const std = new Float32Array(nStd);
-  for (let i = 0; i < n; i += 1) {
-    pred[i] = counts[i] === nanCount ? NaN : counts[i] * scale;
-  }
-  for (let i = 0; i < nStd; i += 1) {
-    std[i] = counts[n + i] === nanCount ? NaN : counts[n + i] * scale;
-  }
+  const pred = new Float32Array(nCombos * nCell).fill(NaN);
+  const std = new Float32Array(nCell);
+  decodeCounts(counts, 0, pred, 0, nCell, scale, nanCount);
+  decodeCounts(counts, nCell, std, 0, nCell, scale, nanCount);
 
   meta.dims = { nCombos, nt, nk, nj };
   meta.pred = pred;
@@ -1277,15 +1758,60 @@ async function loadData() {
   return meta;
 }
 
+async function loadCombos() {
+  const d = state.data;
+  const info = d.series_combos;
+  try {
+    const bytes = await fetchWithProgress(
+      `${DATA_DIR}${info.file}?v=${info.version}`, info.byte_length, () => {});
+    if (bytes.byteLength !== info.byte_length) {
+      throw new Error(`Combos file has ${bytes.byteLength} bytes; expected ${info.byte_length}.`);
+    }
+    const counts = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
+    const { nt, nk, nj } = d.dims;
+    const nCell = nt * nk * nj;
+    const { scale_sv: scale, nan_count: nanCount } = d.series_encoding;
+    decodeCounts(counts, 0, d.pred, nCell, counts.length, scale, nanCount);
+    state.combosReady = true;
+    setProductOptionsEnabled(true);
+    if (controls.productNote) {
+      controls.productNote.hidden = true;
+    }
+    if (state.pendingCombo !== null) {
+      applyComboIndex(state.pendingCombo);
+      state.pendingCombo = null;
+    }
+    updateDiffAvailability();
+    render();          // fixed y-limits now span all eight combinations
+  } catch (error) {
+    console.error(error);
+    if (controls.productNote) {
+      controls.productNote.textContent =
+        "Could not load the other product combinations — reload the page to retry.";
+      controls.productNote.hidden = false;
+    }
+  }
+}
+
 async function init() {
   state.data = await loadData();
-  state.timeIndex = state.data.time_labels.length - 1;
   const rapid = PRESETS.rapid();
-  state.latitudeIndex = rapid.latIdx;
-  state.densityIndex = rapid.densityIdx;
+  DEFAULT_VIEW = {
+    j: rapid.latIdx,
+    k: rapid.densityIdx,
+    t: state.data.time_labels.length - 1,
+  };
+  state.timeIndex = DEFAULT_VIEW.t;
+  state.latitudeIndex = DEFAULT_VIEW.j;
+  state.densityIndex = DEFAULT_VIEW.k;
+  applyHashState();
 
   controls.timeSlider.max = String(state.data.time_labels.length - 1);
   controls.timeSlider.value = String(state.timeIndex);
+  controls.climSlider.value = String(state.climAnom);
+  if (controls.diffToggle) {
+    controls.diffToggle.checked = state.diff;
+  }
 
   state.data.densities.forEach((density, idx) => {
     const option = document.createElement("option");
@@ -1317,16 +1843,39 @@ async function init() {
     controls.productBar.appendChild(group);
   });
   controls.productComboLabel.textContent = comboLabel();
+  setProductOptionsEnabled(state.combosReady);
+  updateDiffAvailability();
 
   bindControls();
   bindCanvasInteractions();
   render();
+  renderHeroSpark();
+  // the first render can measure the SVG box before the flex/grid layout
+  // has settled; one more pass on the next frame locks the aspect in
+  window.requestAnimationFrame(() => {
+    if (state.data) {
+      drawTimeSeries();
+    }
+  });
 
   setLoadingProgress(1, "Done");
   controls.loadingOverlay.classList.add("is-hidden");
   window.setTimeout(() => {
     controls.loadingOverlay.remove();
   }, 450);
+
+  // canvas text may have been measured against the fallback font; redraw
+  // once the webfonts are in
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      if (state.data) {
+        render();
+        renderHeroSpark();
+      }
+    });
+  }
+
+  loadCombos();
 }
 
 init().catch((error) => {

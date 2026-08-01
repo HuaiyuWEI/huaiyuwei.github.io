@@ -14,6 +14,15 @@ product combination** so visitors can switch inputs.
 - A satellite-product selector (GRACE JPL/CSR × DUACS/NASA-SSH ×
   CCMP/ERA5): every combination is an independent stage-14 reconstruction
   by the same trained network; all series panels follow the selection.
+  A "difference vs. default" toggle switches the anomaly heatmaps to
+  selected − default.
+- The RAPID moored-array anomaly overlaid on the 26.5°N time series
+  (same 2004–2009 reference and 2-year filter — the project's standard
+  RAPID protocol), plus a chip that reads the local trend against the
+  mean-state sign (a positive trend on a negative cell = weakening).
+- Light/dark theme (floating toggle, persisted) and shareable URLs: the
+  selected products, cell, month, color limit, and diff mode live in the
+  URL hash ("Copy link to this view").
 - Mean overturning state (2004–2009 model baseline + reconstructed anomaly
   mean of the selected products), split into SMOC and AMOC sectors.
 - Local anomaly time series with the total uncertainty envelope and the
@@ -33,15 +42,21 @@ Hovering over any heatmap shows a value readout; clicking selects the cell.
 - `index.html`, `app.js`, `styles.css` — the static viewer.
 - `prepare_viewer_data.py` — reads the pipeline's RealWorld folder (the
   `NeurMOC_data.mat` export, the eight `Pred_RealWorld*.mat` combination
-  reconstructions, and `../moc_baseline.npz`) and writes:
-  - `data/neurmoc_meta.json` (~270 KB): axes, exact month labels, baseline
+  reconstructions, `../moc_baseline.npz`, and the `Rapid_LPF.npz` record)
+  and writes:
+  - `data/neurmoc_meta.json` (~280 KB): axes, exact month labels, baseline
     mean state, per-combination anomaly means, trend statistics (point +
-    FDR masks), product-axis labels, and the binary descriptor.
-  - `data/neurmoc_series.bin` (~11.8 MB): int16 at 0.005 Sv — the anomaly
-    cube of all 8 combinations (`pred[c,t,k,j]`, index = obp·4 + ssh·2 +
-    wind) followed by the default combination's total uncertainty.
-    NaN cells encode as int16 min and decode to NaN.
+    FDR masks), product-axis labels, the RAPID 26.5°N anomaly series, and
+    the binary descriptors.
+  - `data/neurmoc_core.bin` (~2.6 MB): int16 at 0.005 Sv — the default
+    combination's anomaly cube `pred[t,k,j]` followed by its total
+    uncertainty; enough to render the page.
+  - `data/neurmoc_combos.bin` (~9.2 MB): the seven other combinations
+    `pred[c,t,k,j]` (index = obp·4 + ssh·2 + wind), streamed in the
+    background after first paint. NaN cells encode as int16 min.
   - refreshed copies of `NeurMOC_data.mat` / `.nc` for the download links.
+- `make_og_image.py` — renders `og_image.png` (the social-link preview
+  card) from the meta file's trend map; rerun after regenerating data.
 
 ## Updating the data
 
@@ -55,9 +70,11 @@ py -3 .\prepare_viewer_data.py --realworld <RealWorld folder>
 ```
 
 The script validates that the default combination reproduces the
-`NeurMOC_data` export before writing anything. Bump the `?v=` query strings
-in `index.html` (stylesheet + script) when changing `app.js`/`styles.css`;
-the series binary is cache-busted automatically by its generation date.
+`NeurMOC_data` export before writing anything, then run
+`py -3 make_og_image.py` to refresh the social card. Bump the `?v=` query
+strings in `index.html` (stylesheet + script) when changing
+`app.js`/`styles.css`; the binaries are cache-busted automatically by
+content hash.
 
 ## Launch locally
 
@@ -74,8 +91,10 @@ or `powershell -ExecutionPolicy Bypass -File .\start_viewer.ps1`.
 - Month labels come from the pipeline's explicit `time_month` coordinates
   (the v1 float-derived labels shifted every December into January).
 - Trend, its ±2σ CI, and both significance masks are read directly from
-  the export (no recomputation in the browser); the map stipples the FDR
-  mask, the time-series label uses the per-point test.
+  the export (no recomputation in the browser). Every panel — the map
+  stippling, the time-series label, and the interpretation chip — uses the
+  FDR-controlled mask; cells whose per-point ±2σ CI excludes zero but fail
+  FDR control are labeled as exactly that.
 - The GRACE/GRACE-FO gap window is shaded in the time-series panel.
 - Plot fonts auto-enlarge (and ticks thin out) when panels are displayed
   much narrower than their 1200 px drawing resolution, so phones stay

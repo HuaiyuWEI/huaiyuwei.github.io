@@ -1,17 +1,23 @@
 """Prepare the NeurMOC viewer data files (v2: satellite-product ensemble).
 
 Reads the m26r2 reference-network products from the pipeline's RealWorld
-folder and emits the two files consumed by app.js:
+folder and emits the files consumed by app.js:
 
 - ``data/neurmoc_meta.json``: axes, exact month labels, the 2004-2009
   model-baseline mean state, per-combination anomaly means, trend
   statistics (serial-correlation-aware, +-2 sigma, with the FDR mask),
-  the GRACE-gap window, product-axis labels, and the binary descriptor.
-- ``data/neurmoc_series.bin``: little-endian int16 at SCALE Sv per count,
-  holding the monthly ANOMALY reconstruction of every satellite product
-  combination followed by the total uncertainty of the default one:
-  ``pred[c,t,k,j]`` for c = 0..7, then ``std[t,k,j]``, C order. The
-  combination index is obp*4 + ssh*2 + wind over the option axes
+  the GRACE-gap window, product-axis labels, the RAPID 26.5N observed
+  anomaly series (for the time-series overlay), and the binary
+  descriptors.
+- two little-endian int16 binaries at SCALE Sv per count, split so the
+  viewer renders as soon as the default combination arrives and streams
+  the rest in the background:
+  - ``data/neurmoc_core.bin``: the default combination's ANOMALY
+    reconstruction ``pred[t,k,j]`` followed by its total uncertainty
+    ``std[t,k,j]``, C order;
+  - ``data/neurmoc_combos.bin``: the seven non-default combinations
+    ``pred[c,t,k,j]`` for c = 1..7.
+  The combination index is obp*4 + ssh*2 + wind over the option axes
   [GRACE JPL, GRACE CSR] x [DUACS, NASA-SSH] x [CCMP, ERA5]; index 0 is
   the default (JPL + DUACS + CCMP), whose trimmed series must match the
   NeurMOC_data export bit-for-bit (validated here).
@@ -39,6 +45,7 @@ from pathlib import Path
 
 import numpy as np
 import scipy.io as sio
+from scipy.signal import butter, sosfiltfilt
 
 SCALE = 0.005  # Sv per int16 count; int16 range covers +-163.8 Sv
 EDGE_MONTHS = 12
@@ -49,6 +56,12 @@ REALWORLD_DEFAULT = (
     r"\FullDepth_PCAinY64_ResNet_Neur192x96x48_5foldCV_Reg0.01Drop0.2"
     r"_swishActivation_LPF2Year\obp_mascon_V7+ssh_mascon_V7+uas_mascon_V7"
     r"\RealWorld"
+)
+
+#: the pipeline's low-pass-filtered RAPID 26.5N transport record
+RAPID_DEFAULT = (
+    r"E:\NeurMOC_2026_data\processed\observations\insitu_v1\rapid"
+    r"\Rapid_LPF.npz"
 )
 
 #: product axes: (meta key, display name, [(option label, file-stem tag)]).
@@ -64,8 +77,10 @@ PRODUCT_AXES = [
 @dataclass(frozen=True)
 class Config:
     realworld: Path
+    rapid: Path
     meta_path: Path
-    bin_path: Path
+    core_path: Path
+    combos_path: Path
 
 
 def round_nested(values: np.ndarray, decimals: int = 4) -> list:
@@ -90,6 +105,58 @@ def quantize(values: np.ndarray) -> np.ndarray:
 def month_labels(raw) -> np.ndarray:
     """Normalized YYYY-MM labels from a .mat time_month char/str array."""
     return np.char.strip(np.asarray(raw).astype(str).ravel())
+
+
+def lowpass_obs(series: np.ndarray) -> np.ndarray:
+    """Mirror neurmoc.filtering.lowpass with LPF_OBS: 5th-order Butterworth,
+    cutoff 1/24 cycles per month, zero-phase, 24-sample reflect padding."""
+    sos = butter(5, 1.0 / 24.0, btype="low", output="sos", fs=1.0)
+    padded = np.pad(np.asarray(series, dtype=float), 24, mode="reflect")
+    return sosfiltfilt(sos, padded)[24:-24]
+
+
+def load_rapid_series(rapid_path: Path) -> dict:
+    """The observed RAPID 26.5N anomaly for the time-series overlay.
+
+    Mirrors the pipeline's single RAPID protocol (neurmoc/rapid.py):
+    subtract the Jan 2004 - Dec 2009 mean computed on the FULL record
+    (decimal-year bounds; RAPID starts 2004-04, so the effective window
+    is Apr 2004 - Dec 2009), THEN trim EDGE_MONTHS from each end. The
+    stored series is already 2-year low-pass filtered like the
+    reconstruction, so the two curves are directly comparable anomalies
+    on the same reference period.
+
+    The uncertainty band is the McCarthy et al. per-deployment-era
+    observational error (0.9 Sv; 1.0 for 2005-2006; 1.3 for 2007-2008),
+    low-pass filtered exactly like the transport so it has no step
+    discontinuities - the fig02 convention (rapid.py
+    load_rapid(with_uncertainty=True)).
+    """
+    with np.load(rapid_path) as fh:
+        series = np.asarray(fh["RAPID_monthly_LPF"], dtype=np.float64)
+        t_year = np.asarray(fh["t_year"], dtype=np.float64)
+        months = np.char.strip(np.asarray(fh["time_month"]).astype(str))
+    ref = (t_year > 2004.0 + 1e-6) & (t_year <= 2010.0 + 1e-6)
+    anomaly = series - np.nanmean(series[ref])
+    unc = np.full(t_year.size, 0.9)
+    unc[(t_year > 2005) & (t_year <= 2006)] = 1.0
+    unc[(t_year > 2007) & (t_year <= 2008)] = 1.3
+    uncertainty = lowpass_obs(unc)
+    sl = slice(EDGE_MONTHS, -EDGE_MONTHS)
+    return {
+        "latitude": 26.5,
+        "months": months[sl].tolist(),
+        "time_years": round_nested(t_year[sl], 6),
+        "anomaly_sv": round_nested(anomaly[sl], 4),
+        "uncertainty_sv": round_nested(uncertainty[sl], 4),
+        "note": ("RAPID array MOC transport, 2-year low-pass filtered and "
+                 "referenced to its own 2004-2009 mean (effective window "
+                 "Apr 2004 - Dec 2009), 12-month edge trim; the project's "
+                 "standard RAPID protocol (neurmoc/rapid.py). The band is "
+                 "the filtered per-deployment-era observational error; the "
+                 "viewer shifts the curve to the displayed reconstruction's "
+                 "mean over the shared months (zero-bias convention)."),
+    }
 
 
 def load_combo(realworld: Path, tag: str, canonical: np.ndarray) -> np.ndarray:
@@ -212,9 +279,24 @@ def main(cfg: Config) -> None:
           f"({int((unpriced & (src < 0)).sum())} columns without any priced "
           "level keep a zero transfer term)")
 
-    blob = quantize(stack).tobytes() + quantize(std_filled).tobytes()
-    cfg.bin_path.parent.mkdir(parents=True, exist_ok=True)
-    cfg.bin_path.write_bytes(blob)
+    rapid = load_rapid_series(cfg.rapid)
+    # canonical-axis index of every RAPID month (-1 = outside the record),
+    # so the viewer can mean-match the two curves over the shared months
+    canon_idx = {m: i for i, m in enumerate(canonical)}
+    rapid["time_index"] = [canon_idx.get(m, -1) for m in rapid["months"]]
+    if min(rapid["time_index"]) < 0:
+        raise ValueError("RAPID months extend outside the canonical axis; "
+                         "check the edge trims")
+
+    # split binaries: the core (default combination + its envelope) makes
+    # the page interactive; the other seven combinations stream after it
+    core_blob = quantize(stack[0]).tobytes() + quantize(std_filled).tobytes()
+    combos_blob = quantize(stack[1:]).tobytes()
+    cfg.core_path.parent.mkdir(parents=True, exist_ok=True)
+    cfg.core_path.write_bytes(core_blob)
+    cfg.combos_path.write_bytes(combos_blob)
+    # the v2 single-file binary this split replaces
+    (cfg.core_path.parent / "neurmoc_series.bin").unlink(missing_ok=True)
 
     meta = {
         "title": "NeurMOC interactive viewer",
@@ -264,17 +346,27 @@ def main(cfg: Config) -> None:
                        "product trend-error terms; map mask controls the "
                        "false-discovery rate (Benjamini-Hochberg)"),
         },
-        "series_bin": {
-            "file": cfg.bin_path.name,
+        "rapid": rapid,
+        "series_encoding": {
             "dtype": "int16-le",
             "scale_sv": SCALE,
             "nan_count": int(NAN_COUNT),
-            # content hash busts the browser cache on EVERY data change
-            # (the old generation-date param missed same-day regenerations)
-            "version": hashlib.sha1(blob).hexdigest()[:10],
-            "order": ["pred[combo,t,k,j]", "std[t,k,j]"],
-            "shape": [len(combos), nt, nk, nj],
-            "byte_length": len(blob),
+        },
+        # content hashes bust the browser cache on EVERY data change
+        # (a generation-date param would miss same-day regenerations)
+        "series_core": {
+            "file": cfg.core_path.name,
+            "order": ["pred_default[t,k,j]", "std[t,k,j]"],
+            "shape": [nt, nk, nj],
+            "byte_length": len(core_blob),
+            "version": hashlib.sha1(core_blob).hexdigest()[:10],
+        },
+        "series_combos": {
+            "file": cfg.combos_path.name,
+            "order": ["pred[c,t,k,j] for c = 1..7"],
+            "shape": [len(combos) - 1, nt, nk, nj],
+            "byte_length": len(combos_blob),
+            "version": hashlib.sha1(combos_blob).hexdigest()[:10],
         },
         "metadata": {
             "source_folder": "m26r2 reference network RealWorld products",
@@ -292,22 +384,27 @@ def main(cfg: Config) -> None:
 
     # refresh the downloadable products alongside the viewer data
     for name in ("NeurMOC_data.mat", "NeurMOC_data.nc"):
-        shutil.copy2(rw / name, cfg.bin_path.parent / name)
+        shutil.copy2(rw / name, cfg.core_path.parent / name)
 
     err = np.abs(np.round(stack / SCALE) * SCALE - stack).max()
-    print(f"wrote {cfg.bin_path} ({len(blob) / 1e6:.2f} MB) and "
+    print(f"wrote {cfg.core_path} ({len(core_blob) / 1e6:.2f} MB), "
+          f"{cfg.combos_path} ({len(combos_blob) / 1e6:.2f} MB) and "
           f"{cfg.meta_path} ({cfg.meta_path.stat().st_size / 1e3:.0f} KB)")
     print(f"combos x [t,k,j] = {stack.shape}; period {canonical[0]}..; "
-          f"max quantization error {err:.4f} Sv")
+          f"max quantization error {err:.4f} Sv; RAPID overlay "
+          f"{rapid['months'][0]}..{rapid['months'][-1]}")
 
 
 def parse_args() -> Config:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--realworld", default=REALWORLD_DEFAULT)
+    parser.add_argument("--rapid", default=RAPID_DEFAULT)
     parser.add_argument("--meta", default="data/neurmoc_meta.json")
-    parser.add_argument("--bin", default="data/neurmoc_series.bin")
+    parser.add_argument("--core", default="data/neurmoc_core.bin")
+    parser.add_argument("--combos", default="data/neurmoc_combos.bin")
     args = parser.parse_args()
-    return Config(Path(args.realworld), Path(args.meta), Path(args.bin))
+    return Config(Path(args.realworld), Path(args.rapid), Path(args.meta),
+                  Path(args.core), Path(args.combos))
 
 
 if __name__ == "__main__":
