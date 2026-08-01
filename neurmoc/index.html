@@ -69,10 +69,11 @@
             NeurMOC reconstructs Atlantic and Southern Ocean meridional overturning circulation (MOC)
             anomalies (relative to the 2004&ndash;2009 mean, the GRACE convention) in
             latitude&ndash;density space from satellite observations of ocean bottom pressure (GRACE/GRACE-FO), sea surface
-            height, and surface winds, using neural networks trained on a large climate-model ensemble.
+            height, and surface winds, using neural networks trained on the large 
+            ensemble of climate simulations from CSIRO's ACCESS-ESM1.5.
             This viewer presents the monthly reconstruction for <strong>every satellite product
-            combination</strong>, its total uncertainty, and the trend over April 2003 &ndash; December 2024
-            with a measured, serial-correlation-aware error budget.
+            combination</strong>, its reconstruction uncertainty, and the trend over April 2003 &ndash; December 2024
+            with a measured, serial-correlation-aware trend uncertainty budget.
           </p>
           <div class="hero-actions">
             <a class="action-button action-primary" href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">
@@ -139,13 +140,13 @@
           <div class="panel-header">
             <div>
               <h2>Trend, 2003&ndash;2024</h2>
-              <p>Linear trend of the reconstruction; crosses mark cells whose trend is not significant.</p>
+              <p>Linear trend of the reconstruction; thin hatching marks cells whose trend is not significant.</p>
               <details class="method-note">
                 <summary>How significance is assessed</summary>
                 <p>The trend belongs to the default-product reconstruction. Its &plusmn;2&sigma; uncertainty combines
                    internal variability (a moving-block bootstrap that respects serial correlation), the
-                   network-ensemble spread, the cross-model transfer error, and the satellite-product spread;
-                   the crosses mark cells that fail a false-discovery-rate&ndash;controlled test.</p>
+                   network-ensemble spread, the cross-model transfer uncertainty, and the satellite-product spread;
+                   the hatching marks cells that fail a false-discovery-rate&ndash;controlled test.</p>
               </details>
             </div>
           </div>
@@ -302,18 +303,24 @@
               The MOC moves heat, carbon, and nutrients around the globe, but direct measurements exist at only a
               few latitudes (e.g. the RAPID array at 26.5°N and the OSNAP array spanning 53°N to 60°N). NeurMOC closes this gap with neural networks that
               learn the relationship between sea-surface and sea-floor observables and the overturning circulation
-              from a large ensemble of climate-model simulations, then apply it to two decades of satellite
+              from simulations of a <strong>single climate model</strong> &mdash; the large initial-condition
+              ensemble of ACCESS-ESM1.5 (CSIRO) &mdash; and then apply it to two decades of satellite
               observations.
             </p>
             <ul>
               <li><strong>Inputs</strong> &mdash; GRACE/GRACE-FO ocean bottom pressure, satellite-altimetry sea surface height, and satellite surface winds, all on the JPL mascon grid.</li>
               <li><strong>Output</strong> &mdash; the monthly overturning streamfunction in latitude&ndash;density (σ₂) space for the Atlantic and Southern Ocean, with per-cell uncertainty estimates.</li>
-              <li><strong>Validation</strong> &mdash; the approach is validated on withheld climate-model ensembles, on independent climate models, and against the RAPID moored array.</li>
+              <li><strong>Training</strong> &mdash; one climate model only: the ACCESS-ESM1.5 large ensemble is the
+                only simulation set that archives every required field (ocean bottom pressure in particular) with
+                a large ensemble. The cost of applying an ACCESS-trained network beyond its training model is
+                measured on an independent model and charged as the transfer term of the uncertainty budget.</li>
+              <li><strong>Validation</strong> &mdash; withheld ACCESS-ESM1.5 ensemble members, an independent
+                climate model never seen in training (MRI-ESM2-0, from Japan's Meteorological Research
+                Institute), and the RAPID moored array.</li>
             </ul>
             <p class="prose-note">
               The reconstruction is the anomaly relative to the 2004&ndash;2009 mean. The uncertainty envelope
-              combines the cross-model transfer error (debiased &mdash; the displayed-band convention of the
-              manuscript; the downloadable files keep the conservative full-bias variant), the
+              combines the cross-model transfer uncertainty (debiased &mdash; the downloadable files keep the conservative full-bias variant), the
               network-ensemble spread, and the spread across satellite product combinations; where the cross-model truth leaves the transfer term unmeasured
               (mostly abyssal densities), it is taken from the nearest measured level above in the same latitude
               column. Trend significance additionally accounts for serial correlation (moving-block bootstrap)
@@ -369,6 +376,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-02l"></script>
+  <script src="./app.js?v=2026-08-02m"></script>
 </body>
 </html>
