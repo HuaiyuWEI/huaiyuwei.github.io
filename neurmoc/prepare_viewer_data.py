@@ -1,4 +1,4 @@
-"""Prepare the NeurMOC viewer data files (v2: satellite-product ensemble).
+"""Prepare the NeurMOC viewer data files (v3: product ensemble, split binaries, RAPID overlay).
 
 Reads the m26r2 reference-network products from the pipeline's RealWorld
 folder and emits the files consumed by app.js:

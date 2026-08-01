@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $viewerDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $matPath = Join-Path $viewerDir "data\NeurMOC_data.mat"
-$binPath = Join-Path $viewerDir "data\neurmoc_series.bin"
+$binPath = Join-Path $viewerDir "data\neurmoc_core.bin"
 
 if (-not (Test-Path $matPath)) {
     throw "Could not find NeurMOC_data.mat in $viewerDir\\data"

@@ -517,12 +517,56 @@ function applyHashState() {
   if (k !== null) state.densityIndex = k;
   if (t !== null) state.timeIndex = t;
   if (a !== null) state.climAnom = a;
-  state.diff = params.get("d") === "1";
-  if (c !== null && c !== 0) {
+  // diff only means something against a non-default combination
+  const nonDefault = c !== null && c !== 0;
+  state.diff = params.get("d") === "1" && nonDefault;
+  if (nonDefault) {
     // the non-default combinations stream in later; remember the request
     state.pendingCombo = c;
   }
 }
+
+const HASH_STATE_KEYS = ["c", "j", "k", "t", "a", "d"];
+
+// editing the hash by hand, or following a shared link while the page is
+// already open, should apply like a fresh load; plain anchors (#cite) are
+// left alone
+function applyHashToUi() {
+  state.latitudeIndex = DEFAULT_VIEW.j;
+  state.densityIndex = DEFAULT_VIEW.k;
+  state.timeIndex = DEFAULT_VIEW.t;
+  state.climAnom = 4;
+  state.diff = false;
+  state.pendingCombo = null;
+  applyHashState();
+  controls.timeSlider.value = String(state.timeIndex);
+  controls.climSlider.value = String(state.climAnom);
+  controls.densitySelect.value = String(state.densityIndex);
+  if (controls.diffToggle) {
+    controls.diffToggle.checked = state.diff;
+  }
+  if (state.combosReady) {
+    const requested = state.pendingCombo !== null ? state.pendingCombo : 0;
+    applyComboIndex(requested);
+    state.pendingCombo = null;
+  } else if (state.pendingCombo === null) {
+    applyComboIndex(0);
+  }
+  updateDiffAvailability();
+  render();
+}
+
+window.addEventListener("hashchange", () => {
+  if (!state.data) {
+    return;
+  }
+  const hash = window.location.hash.slice(1);
+  const params = new URLSearchParams(hash);
+  if (hash && !HASH_STATE_KEYS.some((key) => params.has(key))) {
+    return;                             // an in-page anchor, not viewer state
+  }
+  applyHashToUi();
+});
 
 /* ---------------- dual-basin heatmap ---------------- */
 
@@ -1096,7 +1140,7 @@ function drawTimeSeries() {
     ${hasStd ? `<path d="${areaPath}" fill="${theme.band}"></path>` : ""}
     ${showDefault ? `<path d="${defaultPath}" fill="none" stroke="${theme.defaultLine}" stroke-width="2"></path>` : ""}
     ${rapidBandPath ? `<path d="${rapidBandPath}" fill="${theme.rapidBand}"></path>` : ""}
-    ${showRapid ? `<path d="${rapidPath}" fill="none" stroke="${theme.rapid}" stroke-width="2.4" stroke-dasharray="2 5" stroke-linecap="round"></path>` : ""}
+    ${showRapid ? `<path d="${rapidPath}" fill="none" stroke="${theme.rapid}" stroke-width="2.4"></path>` : ""}
     <path d="${linePath}" fill="none" stroke="${theme.recon}" stroke-width="3"></path>
     ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${sigFdr ? theme.trendSig : theme.trendNot}" stroke-width="2.5" stroke-dasharray="9 6"></path>` : ""}
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>
@@ -1157,7 +1201,7 @@ function updateTrendReading() {
   const borrowed = d.transfer_filled && d.transfer_filled[k][j] === 1;
   el.className = `trend-reading ${cls}`;
   el.innerHTML = `<span>Mean state <strong>${formatSigned(base)} Sv</strong> (${sense} cell)</span>`
-    + `<span class="tr-sep" aria-hidden="true">·</span><span>${verdict}</span>`
+    + `<span class="tr-sep" aria-hidden="true">·</span><span class="tr-verdict">${verdict}</span>`
     + (borrowed
       ? `<span class="tr-sep" aria-hidden="true">·</span><span>uncertainty band: transfer term borrowed from the σ₂ level above</span>`
       : "");
@@ -1375,7 +1419,24 @@ function render() {
 
   drawTimeSeries();
   updateTrendReading();
+  updatePresetHighlight();
   scheduleUrlUpdate();
+}
+
+// light up the preset button matching the current cell (if any)
+function updatePresetHighlight() {
+  if (!controls.presetRow) {
+    return;
+  }
+  controls.presetRow.querySelectorAll(".preset-option").forEach((button) => {
+    const preset = PRESETS[button.dataset.preset];
+    if (!preset) {
+      return;
+    }
+    const { latIdx, densityIdx } = preset();
+    button.classList.toggle("is-active",
+      latIdx === state.latitudeIndex && densityIdx === state.densityIndex);
+  });
 }
 
 /* ---------------- interactions ---------------- */

@@ -73,8 +73,9 @@ The script validates that the default combination reproduces the
 `NeurMOC_data` export before writing anything, then run
 `py -3 make_og_image.py` to refresh the social card. Bump the `?v=` query
 strings in `index.html` (stylesheet + script) when changing
-`app.js`/`styles.css`; the binaries are cache-busted automatically by
-content hash.
+`app.js`/`styles.css`, and the `META_PATH` stamp at the top of `app.js`
+after regenerating data (it gates the metadata fetch); the binaries
+themselves are cache-busted automatically by content hash.
 
 ## Launch locally
 

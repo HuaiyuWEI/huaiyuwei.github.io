@@ -365,6 +365,12 @@ button {
   background: var(--preset-hover);
 }
 
+.preset-option.is-active {
+  color: var(--toggle-active-text);
+  background: var(--button-start);
+  border-color: var(--button-border);
+}
+
 /* ---- time-series legend ---- */
 
 .ts-legend {
@@ -407,6 +413,14 @@ button {
   background: #8f2d1b;
 }
 
+:root[data-theme="dark"] .swatch-recon {
+  background: rgba(224, 104, 75, 0.20);
+}
+
+:root[data-theme="dark"] .swatch-recon::after {
+  background: #e0684b;
+}
+
 .swatch-trend {
   width: 18px;
   height: 0;
@@ -422,6 +436,10 @@ button {
   height: 12px;
   border-radius: 3px;
   background: rgba(100, 116, 139, 0.22);
+}
+
+:root[data-theme="dark"] .swatch-gap {
+  background: rgba(148, 163, 184, 0.28);
 }
 
 .summary-grid {
@@ -1092,8 +1110,7 @@ canvas {
   border-color: var(--weakening);
 }
 
-.trend-reading.is-weakening strong,
-.trend-reading.is-weakening .tr-sep + span strong {
+.trend-reading.is-weakening .tr-verdict strong {
   color: var(--weakening);
 }
 
@@ -1101,8 +1118,7 @@ canvas {
   border-color: var(--strengthening);
 }
 
-.trend-reading.is-strengthening strong,
-.trend-reading.is-strengthening .tr-sep + span strong {
+.trend-reading.is-strengthening .tr-verdict strong {
   color: var(--strengthening);
 }
 
@@ -1126,7 +1142,7 @@ canvas {
 .swatch-rapid {
   width: 18px;
   height: 0;
-  border-top: 3px dotted #39424c;
+  border-top: 3px solid #39424c;
 }
 
 :root[data-theme="dark"] .swatch-rapid {
@@ -1180,4 +1196,17 @@ canvas {
   .embedded-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* ---- no-JavaScript fallback ---- */
+
+.noscript-note {
+  margin: 16px auto 0;
+  padding: 12px 18px;
+  max-width: 72ch;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--field-border);
+  background: var(--chip-bg);
+  color: var(--muted);
+  text-align: center;
 }
