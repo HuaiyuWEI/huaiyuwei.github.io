@@ -97,11 +97,11 @@ or `powershell -ExecutionPolicy Bypass -File .\start_viewer.ps1`.
   hatching, the time-series label, and the interpretation chip — uses the
   FDR-controlled mask; cells whose per-point ±2σ CI excludes zero but fail
   FDR control are labeled as exactly that.
-- The displayed monthly envelope uses the DEBIASED cross-model transfer
-  term (the manuscript's zero-bias displayed-band convention, main-text
-  Fig 4); the downloadable NeurMOC_data files keep the conservative
-  full-bias variant, so the viewer band is narrower than the file's
-  uncertainty field by design.
+- The monthly envelope uses the DEBIASED cross-model transfer term (the
+  manuscript's zero-bias displayed-band convention, main-text Fig 4) in
+  the viewer AND in the downloadable NeurMOC_data files (the export
+  switched from the full-bias variant on 2026-08-01 for consistency; the
+  conservative full-bias RMSE remains in the pipeline's TestR2 files).
 - The GRACE/GRACE-FO gap window is shaded in the time-series panel.
 - Plot fonts auto-enlarge (and ticks thin out) when panels are displayed
   much narrower than their 1200 px drawing resolution, so phones stay

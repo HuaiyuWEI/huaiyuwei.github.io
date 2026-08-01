@@ -164,17 +164,11 @@
                 <summary>What the curves show</summary>
                 <p>The red curve is the reconstruction of the chosen satellite products; the shaded band is the
                    total &plusmn;1&sigma; uncertainty and the dashed line the linear trend, both belonging to the default
-                   combination. The band uses the debiased cross-model transfer term &mdash; the manuscript's
-                   displayed-band convention for demeaned curves; the downloadable files carry the conservative
-                   variant that includes the static transfer bias. At 26.5&deg;N the solid dark curve overlays the independent RAPID moored-array
-                   observations with their observational uncertainty band (same 2-year filter), shifted to the
-                   displayed reconstruction's mean over the shared months &mdash; the manuscript's zero-bias
-                   convention, so the comparison is about variability, not offset. The y-axis is fixed across
-                   product combinations, and the GRACE/GRACE-FO gap is shaded. The chip above the plot reads the
-                   trend against the local mean state: a positive trend on a negative (counterclockwise) cell
-                   means the overturning there is <em>weakening</em>. Trend significance everywhere on this
-                   page is the map's false-discovery-rate&ndash;controlled test; cells whose &plusmn;2&sigma; interval
-                   excludes zero without surviving FDR control are labeled as such.</p>
+                   combination. At 26.5&deg;N the solid dark curve overlays the independent RAPID moored-array
+                   observations with their observational uncertainty band, shifted to the
+                   displayed reconstruction's mean over the shared months &mdash, so the comparison is about variability only. The GRACE/GRACE-FO gap is shaded. 
+                   The chip above the plot reads the trend against the local mean state: a positive trend on a negative (counterclockwise) cell
+                   means the overturning there is <em>weakening</em>.</p>
               </details>
             </div>
           </div>
@@ -320,7 +314,7 @@
             </ul>
             <p class="prose-note">
               The reconstruction is the anomaly relative to the 2004&ndash;2009 mean. The uncertainty envelope
-              combines the cross-model transfer uncertainty (debiased &mdash; the downloadable files keep the conservative full-bias variant), the
+              combines the cross-model transfer uncertainty (debiased; the downloadable files carry the same envelope), the
               network-ensemble spread, and the spread across satellite product combinations; where the cross-model truth leaves the transfer term unmeasured
               (mostly abyssal densities), it is taken from the nearest measured level above in the same latitude
               column. Trend significance additionally accounts for serial correlation (moving-block bootstrap)
@@ -376,6 +370,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-02m"></script>
+  <script src="./app.js?v=2026-08-02n"></script>
 </body>
 </html>
