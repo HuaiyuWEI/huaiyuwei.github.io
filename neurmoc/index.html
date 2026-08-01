@@ -87,13 +87,14 @@
         <article class="panel panel-center-figure">
           <div class="panel-header">
             <div>
-              <h2>Mean overturning state</h2>
-              <p>The 2004&ndash;2009 mean state of the training model plus the reconstructed anomaly mean of the
-                 selected products, split into Southern Ocean (SMOC) and Atlantic (AMOC) sectors &mdash; shown for
-                 orientation (the reconstructed quantity is the anomaly). Click any cell to inspect its time series.</p>
+              <h2>Trend, 2003&ndash;2024</h2>
+              <p>Linear trend of the default-product reconstruction. The &plusmn;2&sigma; uncertainty combines internal
+                 variability (moving-block bootstrap), the network-ensemble spread, the cross-model transfer error,
+                 and the satellite-product spread; crosses mark cells not significant after false-discovery-rate
+                 control.</p>
             </div>
           </div>
-          <canvas id="section-canvas" width="1200" height="520" role="img" aria-label="Time-mean overturning streamfunction heatmap"></canvas>
+          <canvas id="trend-canvas" width="1200" height="520" role="img" aria-label="Linear trend heatmap"></canvas>
         </article>
 
         <article class="panel">
@@ -140,14 +141,13 @@
         <article class="panel">
           <div class="panel-header">
             <div>
-              <h2>Trend, 2003&ndash;2024</h2>
-              <p>Linear trend of the default-product reconstruction. The &plusmn;2&sigma; uncertainty combines internal
-                 variability (moving-block bootstrap), the network-ensemble spread, the cross-model transfer error,
-                 and the satellite-product spread; crosses mark cells not significant after false-discovery-rate
-                 control.</p>
+              <h2>Mean overturning state</h2>
+              <p>The 2004&ndash;2009 mean state of the training model plus the reconstructed anomaly mean of the
+                 selected products, split into Southern Ocean (SMOC) and Atlantic (AMOC) sectors &mdash; shown for
+                 orientation (the reconstructed quantity is the anomaly). Click any cell to inspect its time series.</p>
             </div>
           </div>
-          <canvas id="trend-canvas" width="1200" height="520" role="img" aria-label="Linear trend heatmap"></canvas>
+          <canvas id="section-canvas" width="1200" height="520" role="img" aria-label="Time-mean overturning streamfunction heatmap"></canvas>
         </article>
 
         <article class="panel">
@@ -185,9 +185,9 @@
               <select id="density-select"></select>
             </label>
             <label class="control-block">
-              <span>Color limit (|Sv|)</span>
-              <input id="clim-slider" type="range" min="5" max="30" value="18" step="1">
-              <strong id="clim-label">18 Sv</strong>
+              <span>Anomaly color limit (snapshot &amp; Hovm&ouml;ller)</span>
+              <input id="clim-slider" type="range" min="1" max="12" value="4" step="1">
+              <strong id="clim-label">&plusmn;4 Sv</strong>
             </label>
             <div class="control-block">
               <span>Playback speed</span>

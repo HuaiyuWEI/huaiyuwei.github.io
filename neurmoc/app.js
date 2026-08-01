@@ -4,10 +4,11 @@ const DATA_DIR = "./data/";
 const state = {
   data: null,
   combo: { obp: 0, ssh: 0, wind: 0 },   // option index per product axis
+  climAnom: 4,                          // snapshot + Hovmoller (anomalies)
   timeIndex: 0,
   densityIndex: 0,
   latitudeIndex: 0,
-  clim: 18,
+  clim: 20,                             // mean-state panel (full field)
   trendClim: 0.4,
   playbackSpeed: "normal",
   playing: false,
@@ -698,6 +699,10 @@ function drawTimeSeries() {
       </text>`;
     return;
   }
+  // the transfer-error field is undefined at some cells (notably abyssal
+  // levels): draw the line without a band there instead of failing on NaN
+  const hasStd = stdValues.some(Number.isFinite);
+  const safeStd = stdValues.map((value) => (Number.isFinite(value) ? value : 0));
   const xYears = d.time_years;
   const rawSlope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
   const trendDefined = rawSlope > -900;
@@ -715,8 +720,8 @@ function drawTimeSeries() {
   const margins = { left: 82 * fs, right: 24, top: 24 * fs, bottom: 40 * fs };
   const plotWidth = width - margins.left - margins.right;
   const plotHeight = height - margins.top - margins.bottom;
-  const yMinRaw = Math.min(...values.map((v, i) => v - stdValues[i]), ...trendValues);
-  const yMaxRaw = Math.max(...values.map((v, i) => v + stdValues[i]), ...trendValues);
+  const yMinRaw = Math.min(...values.map((v, i) => v - safeStd[i]), ...trendValues);
+  const yMaxRaw = Math.max(...values.map((v, i) => v + safeStd[i]), ...trendValues);
   let ymin = Math.floor(yMinRaw);
   let ymax = Math.ceil(yMaxRaw);
   if (ymin === ymax) {
@@ -727,8 +732,8 @@ function drawTimeSeries() {
   const xs = values.map((_, i) => margins.left + (i / (values.length - 1)) * plotWidth);
   const ys = values.map((v) => margins.top + ((ymax - v) / yrange) * plotHeight);
   const trendYs = trendValues.map((v) => margins.top + ((ymax - v) / yrange) * plotHeight);
-  const upper = values.map((v, i) => margins.top + ((ymax - (v + stdValues[i])) / yrange) * plotHeight);
-  const lower = values.map((v, i) => margins.top + ((ymax - (v - stdValues[i])) / yrange) * plotHeight);
+  const upper = values.map((v, i) => margins.top + ((ymax - (v + safeStd[i])) / yrange) * plotHeight);
+  const lower = values.map((v, i) => margins.top + ((ymax - (v - safeStd[i])) / yrange) * plotHeight);
 
   const areaPath =
     buildPath(xs, upper) +
@@ -807,7 +812,7 @@ function drawTimeSeries() {
         </g>`;
       })
       .join("")}
-    <path d="${areaPath}" fill="rgba(143,45,27,0.15)"></path>
+    ${hasStd ? `<path d="${areaPath}" fill="rgba(143,45,27,0.15)"></path>` : ""}
     <path d="${linePath}" fill="none" stroke="#8f2d1b" stroke-width="3"></path>
     ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${significant ? "#0d6fa4" : "#7f8b92"}" stroke-width="2.5" stroke-dasharray="9 6"></path>` : ""}
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="#162238" stroke-width="1.5" stroke-dasharray="6 4"></line>
@@ -815,6 +820,7 @@ function drawTimeSeries() {
     <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${significant ? "#0d6fa4" : "#7f8b92"}">
       ${significant ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹` : "Trend not significant (±2σ)"}${comboNote}
     </text>
+    ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="#7b8a99">Uncertainty unavailable at this cell</text>`}
   `;
 }
 
@@ -911,7 +917,7 @@ function render() {
   const meanValue = d.combo_mean_yz[comboIndex()][state.densityIndex][state.latitudeIndex];
 
   controls.timeLabel.textContent = d.time_labels[state.timeIndex];
-  controls.climLabel.textContent = `${state.clim} Sv`;
+  controls.climLabel.textContent = `±${state.climAnom} Sv`;
   controls.selectedLatitude.textContent = formatLatitude(d.latitudes[state.latitudeIndex]);
   controls.selectedDensity.textContent = `σ₂ = ${formatDensity(d.densities[state.densityIndex])} kg m⁻³`;
   controls.selectedValue.textContent = Number.isFinite(meanValue)
@@ -920,7 +926,7 @@ function render() {
     ? `${selectedStd.toFixed(2)} Sv` : "no data";
 
   const snapshotGeom = drawDualBasinHeatmap(snapshotCanvas, sliceKJ(state.timeIndex), d.latitudes, d.densities, {
-    clim: state.clim,
+    clim: state.climAnom,
     colorbarTickDigits: 0,
     yTitle: "Density σ₂ (kg/m³)",
     title: d.time_labels[state.timeIndex],
@@ -952,7 +958,7 @@ function render() {
   registerHover(sectionCanvas, sectionGeom, "mean");
 
   const hovmollerGeom = drawDualBasinHovmoller(hovmollerCanvas, sliceTJ(state.densityIndex), d.latitudes, d.time_labels, {
-    clim: state.clim,
+    clim: state.climAnom,
     colorbarTickDigits: 0,
     flipY: true,
     yTitle: "Time",
@@ -1090,7 +1096,7 @@ function bindControls() {
   });
 
   controls.climSlider.addEventListener("input", (event) => {
-    state.clim = Number(event.target.value);
+    state.climAnom = Number(event.target.value);
     render();
   });
 
