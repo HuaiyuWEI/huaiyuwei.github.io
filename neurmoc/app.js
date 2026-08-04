@@ -286,6 +286,21 @@ function displayValueAt(t, k, j) {
 
 let meanStateMemo = null;
 
+// Below this magnitude, the sign of the local mean overturning is too weak
+// to give a meaningful strengthening/weakening interpretation.
+const MEAN_STATE_DIRECTION_EPSILON_SV = 0.5;
+
+function relativeTrendDirection(meanState, slope) {
+  if (!Number.isFinite(meanState) || !Number.isFinite(slope)
+      || Math.abs(meanState) < MEAN_STATE_DIRECTION_EPSILON_SV || slope === 0) {
+    return "neutral";
+  }
+  // A trend with the same sign as the mean state increases the magnitude of
+  // that overturning cell. Thus, for a negative mean state, a positive trend
+  // is declining/weakening and a negative trend is increasing/strengthening.
+  return meanState * slope > 0 ? "increasing" : "declining";
+}
+
 function meanStateYZ() {
   // the 2004-2009 mean state (training-model baseline) alone - the
   // orientation panel; product-independent by construction
@@ -986,12 +1001,13 @@ function drawTimeSeries() {
     && d.trend.significant[state.densityIndex][state.latitudeIndex];
   const sigFdr = trendDefined
     && d.trend.significant_fdr[state.densityIndex][state.latitudeIndex];
-  const directionColor = !trendDefined ? theme.trendNot
-    : slope < 0 ? theme.declining
-      : slope > 0 ? theme.increasing : theme.trendNot;
-  const directionBand = !trendDefined ? theme.neutralBand
-    : slope < 0 ? theme.decliningBand
-      : slope > 0 ? theme.increasingBand : theme.neutralBand;
+  const meanStateValue = meanStateYZ()[state.densityIndex][state.latitudeIndex];
+  const direction = trendDefined
+    ? relativeTrendDirection(meanStateValue, slope) : "neutral";
+  const directionColor = direction === "declining" ? theme.declining
+    : direction === "increasing" ? theme.increasing : theme.trendNot;
+  const directionBand = direction === "declining" ? theme.decliningBand
+    : direction === "increasing" ? theme.increasingBand : theme.neutralBand;
   const trendColor = sigFdr ? directionColor : theme.trendNot;
   const ci = d.trend.ci95.map((bound) => bound[state.densityIndex][state.latitudeIndex]);
   const xMean = xYears.reduce((sum, value) => sum + value, 0) / xYears.length;
@@ -1107,8 +1123,9 @@ function drawTimeSeries() {
     yTicks.push(tick);
   }
   // One significance convention everywhere: the FDR-controlled mask (the
-  // map's stippling). Curve and band color encode slope direction; an
-  // insignificant dashed trend stays gray.
+  // map's stippling). Curve and band color encode strengthening/weakening
+  // relative to the local mean-state sign; an insignificant dashed trend
+  // stays gray.
   const comboNote = comboIndex() === 0
     ? "" : " · trend and band: default products";
   const gapStart = d.gap_time_range ? d.gap_time_range[0] : null;
@@ -1224,10 +1241,10 @@ function updateTrendReading() {
     verdict = sigPoint
       ? "trend ±2σ excludes zero but fails FDR control — no robust change claimed"
       : "trend not significant — no robust change in cell strength";
-  } else if (Math.abs(base) < 0.5) {
+  } else if (relativeTrendDirection(base, rawSlope) === "neutral") {
     verdict = "mean state near zero — strengthening vs. weakening is ill-defined here";
   } else {
-    const strengthening = (base > 0) === (rawSlope > 0);
+    const strengthening = relativeTrendDirection(base, rawSlope) === "increasing";
     cls = strengthening ? "is-strengthening" : "is-weakening";
     verdict = `significant ${rawSlope > 0 ? "positive" : "negative"} trend on a `
       + `${base >= 0 ? "positive" : "negative"} cell → the overturning here is `

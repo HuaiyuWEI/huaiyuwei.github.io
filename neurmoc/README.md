@@ -113,8 +113,10 @@ from the m26r3 pipeline defaults before serving them.
   conservative full-bias RMSE remains in the pipeline's TestR2 files).
 - The GRACE/GRACE-FO gap window is shaded in the time-series panel.
 - In the local time-series panel, the reconstruction curve and uncertainty
-  shading are blue for a negative default-product trend and red for a positive
-  default-product trend. Nonsignificant dashed trends remain gray.
+  shading are blue when the default-product trend weakens the local 2004–2009
+  mean overturning and red when it strengthens it. Thus, a positive trend is
+  blue on a negative mean-state cell and red on a positive one. Near-zero
+  mean-state cells use neutral gray. Nonsignificant dashed trends remain gray.
 - The generated metadata records the exact pipeline run, dataset IDs, network,
   trend settings, uncertainty convention, and data hashes. The current release
   is `m26r3` (`access_hist_ssp585_v4`, `satellite_2026m05_v2`,
