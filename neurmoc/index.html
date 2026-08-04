@@ -162,8 +162,7 @@
                 <summary>What the curves show</summary>
                  <p>The solid curve is the selected reconstruction. The curve and uncertainty shading are blue
                     where the default-product trend weakens the local 2004&ndash;2009 mean overturning and red where it strengthens it;
-                    therefore, a positive trend on a negative mean-state cell is blue. A nonsignificant
-                    dashed trend remains gray. The shaded band and dashed trend are centered
+                    A nonsignificant dashed trend remains gray. The shaded band and dashed trend are centered
                     on the default reconstruction (GRACE JPL + DUACS + CCMP); when another combination is selected,
                     its default counterpart is also drawn in gray. At 26.5&deg;N the solid dark curve overlays the independent RAPID moored-array
                     observations with their observational uncertainty band, shifted to the
@@ -299,21 +298,20 @@
               The MOC moves heat, carbon, and nutrients around the globe, but direct measurements exist at only a
               few latitudes (e.g. the RAPID array at 26.5°N and the OSNAP array spanning 53°N to 60°N). NeurMOC closes this gap with neural networks that
               learn the relationship between sea-surface and sea-floor observables and the overturning circulation
-              from simulations of a <strong>single climate model</strong> &mdash; the large initial-condition
+              from simulations of a single climate model &mdash; the large initial-condition
               ensemble of ACCESS-ESM1.5 (CSIRO) &mdash; and then apply it to two decades of satellite
               observations.
             </p>
             <ul>
-              <li><strong>Inputs</strong> &mdash; GRACE/GRACE-FO ocean bottom pressure, satellite-altimetry sea surface height, and 10-m zonal surface wind (CCMP, with ERA5 reanalysis as a sensitivity input), all on the JPL mascon grid.</li>
+              <li><strong>Inputs</strong> &mdash; GRACE/GRACE-FO ocean bottom pressure, satellite-altimetry sea surface height, and 10-m zonal surface wind, all on the JPL mascon grid.</li>
               <li><strong>Output</strong> &mdash; the monthly overturning-streamfunction anomaly in latitude&ndash;density (σ₂) space for the Atlantic and Southern Ocean. The downloadable MAT/NetCDF files contain the default JPL + DUACS + CCMP reconstruction and its per-cell uncertainty; the viewer additionally carries the seven product-swap reconstructions.</li>
               <li><strong>Training</strong> &mdash; one climate model only: the ACCESS-ESM1.5 large ensemble is the
-                only simulation set that archives every required field (ocean bottom pressure in particular) with
+                only simulation set that archives every required field (ocean bottom pressure and density space verturning-streamfunction in particular) with
                 a large ensemble. The cost of applying an ACCESS-trained network beyond its training model is
-                measured on an independent model. Its monthly RMSE contributes to the reconstruction envelope,
-                while its record-length trend errors measure the broader mapping-error term in the trend budget.</li>
+                measured on an independent model.</li>
               <li><strong>Validation</strong> &mdash; withheld ACCESS-ESM1.5 ensemble members, an independent
                 climate model never seen in training (MRI-ESM2-0, from Japan's Meteorological Research
-                Institute), an ECCO v4r3 pseudo-observation evaluation, and the RAPID moored array.</li>
+                Institute), the ECCO v4r3 reanalysis, and the RAPID moored array.</li>
             </ul>
             <p class="prose-note">
                The reconstruction uses each dataset's own 2004&ndash;2009 reference-period convention; the
@@ -323,8 +321,7 @@
                files carry the same envelope), network-ensemble spread, and spread across the eight input-product combinations; where the cross-model truth leaves the transfer term unmeasured
                (mostly abyssal densities), it is taken from the nearest measured level above in the same latitude
                column. Trend significance additionally accounts for serial correlation (moving-block bootstrap)
-               and false-discovery-rate control. This viewer serves the revised m26r3 analysis, which postdates the
-               linked v1 preprint; the generated metadata records the exact current settings and provenance.</p>
+               and false-discovery-rate control. </p>
           </div>
         </article>
 
