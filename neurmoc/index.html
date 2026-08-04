@@ -107,10 +107,9 @@
           <div>
             <h2>Input products</h2>
             <p>Pick the input products &mdash; each of the eight production combinations is separately
-               reconstructed by the same trained network. ERA5 is a reanalysis sensitivity input; the
-               others are observation-based products. Showing: <strong id="product-combo-label">&hellip;</strong></p>
+               reconstructed by the same trained network. Showing: <strong id="product-combo-label">&hellip;</strong></p>
             <details class="method-note">
-              <summary>How the combinations relate</summary>
+              <summary>For additional details</summary>
               <p>The ocean-bottom-pressure choice dominates the differences between combinations; sea
                  surface height and wind matter less. The uncertainty envelope and the trend statistics
                  belong to the default combination (GRACE JPL + DUACS + CCMP) and already include the
@@ -142,9 +141,8 @@
                 <summary>How significance is assessed</summary>
                  <p>The trend belongs to the default-product reconstruction. Its &plusmn;2&sigma; uncertainty combines
                     serially correlated residual variability (a 48-month circular moving-block bootstrap),
-                    measured member-to-member trend spread, mapping-error spread measured from MRI held-out
-                    trend windows, and input-product trend spread. The mapping term currently has five
-                    record-length MRI member samples per cell and is therefore noisy. The terms are combined
+                     mapping-error spread measured from MRI held-out
+                    trend windows, input-product trend spread，and trend spread due to ensemble training. The terms are combined
                     in quadrature, although their independence is not demonstrated. Hatching marks cells that
                     fail the Benjamini&ndash;Hochberg false-discovery-rate gate intersected with the &plusmn;2&sigma; rule.</p>
               </details>
