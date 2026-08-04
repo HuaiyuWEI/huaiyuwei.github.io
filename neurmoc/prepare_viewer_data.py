@@ -1,6 +1,6 @@
 """Prepare the NeurMOC viewer data files (v3: product ensemble, split binaries, RAPID overlay).
 
-Reads the m26r2 reference-network products from the pipeline's RealWorld
+Reads the m26r3 reference-network products from the pipeline's RealWorld
 folder and emits the files consumed by app.js:
 
 - ``data/neurmoc_meta.json``: axes, exact month labels, the 2004-2009
@@ -52,7 +52,7 @@ EDGE_MONTHS = 12
 
 #: default pipeline location of the reference network's real-world products
 REALWORLD_DEFAULT = (
-    r"E:\NeurMOC_2026_data\results\m26r2\ACCESS_hist+SSP585"
+    r"E:\NeurMOC_2026_data\results\m26r3\ACCESS_hist+SSP585"
     r"\FullDepth_PCAinY64_ResNet_Neur192x96x48_5foldCV_Reg0.01Drop0.2"
     r"_swishActivation_LPF2Year\obp_mascon_V7+ssh_mascon_V7+uas_mascon_V7"
     r"\RealWorld"
@@ -60,7 +60,7 @@ REALWORLD_DEFAULT = (
 
 #: the pipeline's low-pass-filtered RAPID 26.5N transport record
 RAPID_DEFAULT = (
-    r"E:\NeurMOC_2026_data\processed\observations\insitu_v1\rapid"
+    r"E:\NeurMOC_2026_data\processed\observations\insitu_v2\rapid"
     r"\Rapid_LPF.npz"
 )
 
@@ -70,7 +70,7 @@ RAPID_DEFAULT = (
 PRODUCT_AXES = [
     ("obp", "Ocean bottom pressure", [("GRACE JPL", ""), ("GRACE CSR", "_obpCSR")]),
     ("ssh", "Sea surface height", [("DUACS", ""), ("NASA-SSH", "_sshNASASSH")]),
-    ("wind", "Surface wind", [("CCMP", ""), ("ERA5", "_ERA5wind")]),
+    ("wind", "Zonal surface wind", [("CCMP", ""), ("ERA5", "_ERA5wind")]),
 ]
 
 
@@ -105,6 +105,20 @@ def quantize(values: np.ndarray) -> np.ndarray:
 def month_labels(raw) -> np.ndarray:
     """Normalized YYYY-MM labels from a .mat time_month char/str array."""
     return np.char.strip(np.asarray(raw).astype(str).ravel())
+
+
+def mat_string(export: dict, key: str, default: str = "unknown") -> str:
+    """One stripped scalar string from a SciPy-loaded MATLAB export."""
+    if key not in export or np.asarray(export[key]).size == 0:
+        return default
+    return str(np.asarray(export[key]).reshape(-1)[0]).strip()
+
+
+def mat_int(export: dict, key: str, default: int) -> int:
+    """One scalar integer from a SciPy-loaded MATLAB export."""
+    if key not in export or np.asarray(export[key]).size == 0:
+        return default
+    return int(np.asarray(export[key]).reshape(-1)[0])
 
 
 def lowpass_obs(series: np.ndarray) -> np.ndarray:
@@ -188,7 +202,26 @@ def main(cfg: Config) -> None:
     trend_ci95 = np.asarray(export["NeurMOC_trend_ci95"], dtype=np.float32)
     sig_point = np.asarray(export["NeurMOC_trend_significant"]).astype(float)
     sig_fdr = np.asarray(export["NeurMOC_trend_significant_fdr"]).astype(float)
-    run_id = str(np.ravel(export["run_id"])[0])
+    run_id = mat_string(export, "run_id")
+    trained_on = mat_string(export, "trained_on")
+    training_experiment = mat_string(export, "training_experiment")
+    cmip_dataset_id = mat_string(export, "cmip_dataset_id")
+    satellite_dataset_id = mat_string(export, "satellite_dataset_id")
+    uncertainty_scenario = mat_string(export, "uncertainty_scenario",
+                                      "MRI_SSP245")
+    uncertainty_variant = mat_string(export, "uncertainty_variant",
+                                     "debiased")
+    uncertainty_definition = mat_string(export, "uncertainty_definition")
+    trend_method = mat_string(export, "trend_method", "mbb")
+    trend_block_months = mat_int(export, "trend_block_months", 48)
+    trend_n_boot = mat_int(export, "trend_n_boot", 1000)
+    trend_seed = mat_int(export, "trend_seed", 0)
+    trend_serial_description = {
+        "mbb": ("circular moving-block bootstrap "
+                f"({trend_block_months}-month blocks)"),
+        "hac": f"Newey-West HAC estimator ({trend_block_months}-month lag)",
+        "ar1": "parametric AR(1) residual bootstrap",
+    }.get(trend_method, trend_method)
 
     nt, nk, nj = pred0.shape
 
@@ -208,10 +241,14 @@ def main(cfg: Config) -> None:
     trend_j = np.where(np.isfinite(trend), trend, NAN_SENTINEL)
     ci_j = np.where(np.isfinite(trend_ci95), trend_ci95, NAN_SENTINEL)
 
-    # the 2004-2009 ACCESS training baseline: the mean state the anomalies
-    # refer to (stored [lat, lev] -> [lev, lat])
-    with np.load(rw.parent / "moc_baseline.npz") as fh:
-        baseline = np.asarray(fh["MOC_baseline_mean"], dtype=np.float32).T
+    # The m26r3 export carries the exact baseline used by the product.
+    # Keep the parent-file fallback so older exports remain readable.
+    if "NeurMOC_baseline" in export and export["NeurMOC_baseline"].size:
+        baseline = np.asarray(export["NeurMOC_baseline"], dtype=np.float32)
+    else:
+        with np.load(rw.parent / "moc_baseline.npz") as fh:
+            baseline = np.asarray(fh["MOC_baseline_mean"],
+                                  dtype=np.float32).T
     if baseline.shape != (nk, nj):
         raise ValueError(f"baseline shape {baseline.shape} != {(nk, nj)}")
     baseline_j = np.where(np.isfinite(baseline), baseline, NAN_SENTINEL)
@@ -238,12 +275,13 @@ def main(cfg: Config) -> None:
                          "NeurMOC_data export - stale files?")
 
     # ---- monthly envelope with the pipeline's unpriced-cell fill ---------
-    # The transfer term (MRI cross-model RMSE) is undefined where MRI has
+    # The transfer term (cross-model RMSE) is undefined where the held-out
+    # model has
     # no MOC truth (the abyssal densities). Mirror the
     # 15_compute_trend_budget convention (2026-08-01): every unpriced cell
     # takes the transfer term of the nearest PRICED level above it in the
     # same latitude column; columns with no priced level keep zero. The
-    # other two terms (per-month ensemble spread, satellite-product
+    # other two terms (per-month ensemble spread, input-product
     # spread) are the cell's own.
     #
     # One envelope everywhere (2026-08-01): the DEBIASED transfer variant
@@ -251,9 +289,14 @@ def main(cfg: Config) -> None:
     # Fig 4) - is used for the displayed band AND is what the NeurMOC_data
     # export itself now carries, so the viewer band and the downloadable
     # uncertainty field are the same quantity (validated below).
+    rmse_key = {"debiased": "rmse_debiased_yz",
+                "full": "rmse_yz"}.get(uncertainty_variant)
+    if rmse_key is None:
+        raise ValueError(
+            f"unsupported uncertainty_variant {uncertainty_variant!r}")
+    transfer_file = rw.parent / f"TestR2_{uncertainty_scenario}.mat"
     scen = np.asarray(
-        sio.loadmat(rw.parent / "TestR2_MRI_SSP245.mat",
-                    variable_names=["rmse_debiased_yz"])["rmse_debiased_yz"],
+        sio.loadmat(transfer_file, variable_names=[rmse_key])[rmse_key],
         dtype=np.float64)
     epi_mat = sio.loadmat(rw / "Pred_RealWorld.mat",
                           variable_names=["pred_yz_std"])
@@ -273,15 +316,13 @@ def main(cfg: Config) -> None:
     std_filled = np.sqrt(scen_fill[None] ** 2 + epi ** 2
                          + sate_month[None] ** 2).astype(np.float32)
 
-    # decomposition check: at priced cells the rebuilt envelope must equal
-    # the export's (proves the export carries the same debiased three-term
-    # combination the viewer displays)
-    priced3 = np.broadcast_to(~unpriced[None], std_filled.shape)
-    if not np.allclose(std_filled[priced3], std_total[priced3], atol=2e-4):
+    # Full decomposition check: m26r3 fills the transfer term at unpriced
+    # cells in the export too, so every cell must match. The viewer writes
+    # the authoritative exported array after this independent validation.
+    if not np.allclose(std_filled, std_total, atol=2e-4, equal_nan=True):
         raise ValueError("rebuilt envelope does not reproduce "
-                         "NeurMOC_uncertainty at priced cells - the export "
-                         "is not the debiased variant (rerun fig02's export "
-                         "cell) or its formula changed")
+                         "NeurMOC_uncertainty - the export and its source "
+                         "budget are inconsistent")
     transfer_filled = unpriced & (src >= 0)
     print(f"envelope fill: {int(transfer_filled.sum())} unpriced cells take "
           f"the deepest priced level above them "
@@ -300,7 +341,7 @@ def main(cfg: Config) -> None:
 
     # split binaries: the core (default combination + its envelope) makes
     # the page interactive; the other seven combinations stream after it
-    core_blob = quantize(stack[0]).tobytes() + quantize(std_filled).tobytes()
+    core_blob = quantize(stack[0]).tobytes() + quantize(std_total).tobytes()
     combos_blob = quantize(stack[1:]).tobytes()
     cfg.core_path.parent.mkdir(parents=True, exist_ok=True)
     cfg.core_path.write_bytes(core_blob)
@@ -312,7 +353,7 @@ def main(cfg: Config) -> None:
         "title": "NeurMOC interactive viewer",
         "description": ("Meridional overturning circulation anomaly "
                         "reconstruction in latitude-density space, per "
-                        "satellite product combination."),
+                        "production input-product combination."),
         "units": "Sv",
         "convention": {
             "quantity": "overturning-streamfunction ANOMALY",
@@ -321,18 +362,15 @@ def main(cfg: Config) -> None:
                      "Jan 2004 - Dec 2009 mean, matching the GRACE "
                      "convention; the mean-state panel adds the training "
                      "model's 2004-2009 baseline for orientation."),
-            "uncertainty": ("1-sigma envelope: quadrature of the DEBIASED "
-                            "cross-model transfer RMSE, the ensemble "
-                            "spread, and the satellite-product spread - "
-                            "the manuscript's zero-bias display "
-                            "convention; identical in the viewer and the "
-                            "downloadable NeurMOC_data files."),
+            "uncertainty": uncertainty_definition,
         },
         "dimensions": {"combos": len(combos), "time": nt,
                        "density": nk, "latitude": nj},
         "time_labels": canonical.tolist(),
         "time_years": round_nested(time_years, 6),
         "gap_time_range": round_nested(gap_time_range, 6),
+        "gap_months": month_labels(export["GRACE_Gap_Months"]).tolist()
+                      if "GRACE_Gap_Months" in export else [],
         "latitudes": round_nested(latitudes, 4),
         "densities": round_nested(densities, 4),
         "nan_sentinel": NAN_SENTINEL,
@@ -345,7 +383,7 @@ def main(cfg: Config) -> None:
                      for key, name, options in PRODUCT_AXES],
             "combo_index": "obp*4 + ssh*2 + wind",
             "combos": combo_meta,
-            "note": ("Every combination is an independent stage-14 "
+            "note": ("Every combination is a separately generated stage-14 "
                      "reconstruction with the same trained network; the "
                      "uncertainty envelope and trend statistics belong to "
                      "the default combination and already include the "
@@ -356,11 +394,21 @@ def main(cfg: Config) -> None:
             "ci95": round_nested(ci_j, 5),
             "significant": (sig_point > 0.5).tolist(),
             "significant_fdr": (sig_fdr > 0.5).tolist(),
-            "method": ("OLS slope; +-2 sigma from a moving-block bootstrap "
-                       "(48-month blocks) combined in quadrature with the "
-                       "ensemble, cross-model-transfer and satellite-"
-                       "product trend-error terms; map mask controls the "
-                       "false-discovery rate (Benjamini-Hochberg)"),
+            "method": (f"OLS slope; +-2 sigma where sigma combines serial "
+                       f"residual uncertainty from a "
+                       f"{trend_serial_description}, "
+                       "measured ensemble-member trend spread, mapping-error "
+                       "spread measured in cross-model transfer windows, and "
+                       "observation/reanalysis input-product trend spread; "
+                       "the map mask applies "
+                       "Benjamini-Hochberg false-discovery-rate control and "
+                       "is intersected with the +-2 sigma rule"),
+            "settings": {
+                "method": trend_method,
+                "block_months": trend_block_months,
+                "n_boot": trend_n_boot,
+                "seed": trend_seed,
+            },
         },
         "rapid": rapid,
         "series_encoding": {
@@ -385,10 +433,21 @@ def main(cfg: Config) -> None:
             "version": hashlib.sha1(combos_blob).hexdigest()[:10],
         },
         "metadata": {
-            "source_folder": "m26r2 reference network RealWorld products",
-            "network": ("PCAinY64 ResNet 192x96x48 swish "
-                        "(configs/manuscript_2026r2.json)"),
+            "source_folder": f"{run_id} reference-network RealWorld products",
+            "network": training_experiment,
+            "trained_on": trained_on,
+            "scientific_profile": f"configs/manuscript_2026{run_id[3:]}.json"
+                                  if run_id.startswith("m26r") else "unknown",
             "run_id": run_id,
+            "cmip_dataset_id": cmip_dataset_id,
+            "satellite_dataset_id": satellite_dataset_id,
+            "insitu_dataset_id": next(
+                (part for part in cfg.rapid.parts
+                 if part.lower().startswith("insitu_")), "unknown"),
+            "rapid_source": "/".join(cfg.rapid.parts[-3:]),
+            "uncertainty_scenario": uncertainty_scenario,
+            "uncertainty_variant": uncertainty_variant,
+            "uncertainty_definition": uncertainty_definition,
             "generated_on": date.today().isoformat(),
             "array_order": "[combo, time, density, latitude]",
             "density_definition": "sigma_2",

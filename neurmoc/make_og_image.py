@@ -1,6 +1,6 @@
 """Render og_image.png (1200x630) for social-link previews.
 
-Draws the real 2003-2024 trend map from data/neurmoc_meta.json under the
+Draws the current trend map from data/neurmoc_meta.json under the
 site title, in the manuscript's RdBu_r colormap, so shared links show the
 actual result. Rerun after regenerating the viewer data:
 
@@ -10,6 +10,7 @@ actual result. Rerun after regenerating the viewer data:
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 import matplotlib
@@ -32,6 +33,13 @@ trend = np.asarray(meta["trend"]["slope_per_year"], dtype=float)
 trend[trend <= -900] = np.nan
 lats = np.asarray(meta["latitudes"], dtype=float)
 dens = np.asarray(meta["densities"], dtype=float)
+first_month, last_month = meta["time_labels"][0], meta["time_labels"][-1]
+pretty_period = (
+    f"{datetime.strptime(first_month, '%Y-%m').strftime('%b %Y')} – "
+    f"{datetime.strptime(last_month, '%Y-%m').strftime('%b %Y')}"
+)
+trend_years = f"{first_month[:4]}–{last_month[:4]}"
+run_id = meta["metadata"]["run_id"]
 
 fig = plt.figure(figsize=(12, 6.3), dpi=100)
 fig.patch.set_facecolor(BG)
@@ -49,8 +57,8 @@ fig.text(0.055, 0.825,
          "with deep learning",
          fontsize=17, color=ACCENT)
 fig.text(0.055, 0.755,
-         "Interactive viewer · monthly anomalies, Apr 2003 – Dec 2024 "
-         "· every satellite product combination · measured error budget",
+         f"Interactive viewer · monthly anomalies, {pretty_period} "
+         f"· eight production input combinations · {run_id} error budget",
          fontsize=13, color=MUTED)
 
 # the trend map, split into SMOC | AMOC like the viewer
@@ -75,7 +83,7 @@ for (sl, label), left, wfrac in zip(sections, lefts,
     ax.text(0.02, 0.94, label, transform=ax.transAxes, fontsize=15,
             fontweight="bold", color=INK, va="top")
 
-fig.text(0.055, 0.03, "Overturning trend, 2003–2024 (Sv yr⁻¹, "
+fig.text(0.055, 0.03, f"Overturning trend, {trend_years} (Sv yr⁻¹, "
          "±0.4) · huaiyuwei.github.io/neurmoc", fontsize=12,
          color=MUTED)
 

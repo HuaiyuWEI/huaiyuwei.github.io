@@ -3,7 +3,7 @@
    background), product-difference view, RAPID 26.5N overlay, mean-state
    trend interpretation, and shareable URL state. */
 
-const META_PATH = "./data/neurmoc_meta.json?v=2026-08-02d";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-08-03a";
 const DATA_DIR = "./data/";
 
 const state = {
@@ -51,6 +51,7 @@ const controls = {
   loadingBarFill: document.getElementById("loading-bar-fill"),
   loadingStatus: document.getElementById("loading-status"),
   tooltip: document.getElementById("plot-tooltip"),
+  dataRelease: document.getElementById("data-release"),
 };
 
 const PLAYBACK_INTERVALS = {
@@ -958,16 +959,6 @@ function drawTimeSeries() {
   // borrowed cells
   const hasStd = stdValues.some(Number.isFinite);
   const safeStd = stdValues.map((value) => (Number.isFinite(value) ? value : 0));
-  const xYears = d.time_years;
-  const rawSlope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
-  const trendDefined = rawSlope > -900;
-  const slope = trendDefined ? rawSlope : 0;
-  const ci = d.trend.ci95.map((bound) => bound[state.densityIndex][state.latitudeIndex]);
-  const xMean = xYears.reduce((sum, value) => sum + value, 0) / xYears.length;
-  const yMean = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const intercept = yMean - slope * xMean;
-  const trendValues = xYears.map((x) => slope * x + intercept);
-
   const showDefault = state.combosReady && comboIndex() !== 0;
   const defaultValues = [];
   if (showDefault) {
@@ -975,6 +966,21 @@ function drawTimeSeries() {
       defaultValues.push(predAtCombo(0, t, state.densityIndex, state.latitudeIndex));
     }
   }
+  // The distributed uncertainty and trend statistics are estimates for
+  // the default JPL + DUACS + CCMP reconstruction. Keep both centered on
+  // that point estimate when another input combination is selected.
+  const referenceValues = showDefault ? defaultValues : values;
+  const xYears = d.time_years;
+  const rawSlope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
+  const trendDefined = rawSlope > -900;
+  const slope = trendDefined ? rawSlope : 0;
+  const ci = d.trend.ci95.map((bound) => bound[state.densityIndex][state.latitudeIndex]);
+  const xMean = xYears.reduce((sum, value) => sum + value, 0) / xYears.length;
+  const yMean = referenceValues.reduce((sum, value) => sum + value, 0)
+    / referenceValues.length;
+  const intercept = yMean - slope * xMean;
+  const trendValues = xYears.map((x) => slope * x + intercept);
+
   const showRapid = isRapidCell();
   let rapidValues = null;
   let rapidUnc = null;
@@ -1003,17 +1009,18 @@ function drawTimeSeries() {
   const margins = { left: 72 * fs, right: 22, top: 24 * fs, bottom: 38 * fs };
   const plotWidth = width - margins.left - margins.right;
   const plotHeight = height - margins.top - margins.bottom;
-  // fixed axis across the product selector: the limits span EVERY
-  // combination's series (+- the band) at this cell, so switching
-  // products moves the curve, not the axes
-  let yMinRaw = Math.min(...trendValues);
-  let yMaxRaw = Math.max(...trendValues);
+  // Fixed axis across the selector: span every combination, plus the one
+  // uncertainty band (centered on the default reconstruction).
+  let yMinRaw = Math.min(...trendValues,
+    ...referenceValues.map((v, i) => v - safeStd[i]));
+  let yMaxRaw = Math.max(...trendValues,
+    ...referenceValues.map((v, i) => v + safeStd[i]));
   for (let c = 0; c < d.dims.nCombos; c += 1) {
     for (let i = 0; i < nt; i += 1) {
       const v = predAtCombo(c, i, state.densityIndex, state.latitudeIndex);
       if (Number.isFinite(v)) {
-        yMinRaw = Math.min(yMinRaw, v - safeStd[i]);
-        yMaxRaw = Math.max(yMaxRaw, v + safeStd[i]);
+        yMinRaw = Math.min(yMinRaw, v);
+        yMaxRaw = Math.max(yMaxRaw, v);
       }
     }
   }
@@ -1037,8 +1044,8 @@ function drawTimeSeries() {
   const xs = values.map((_, i) => margins.left + (i / (values.length - 1)) * plotWidth);
   const ys = values.map(yOf);
   const trendYs = trendValues.map(yOf);
-  const upper = values.map((v, i) => yOf(v + safeStd[i]));
-  const lower = values.map((v, i) => yOf(v - safeStd[i]));
+  const upper = referenceValues.map((v, i) => yOf(v + safeStd[i]));
+  const lower = referenceValues.map((v, i) => yOf(v - safeStd[i]));
 
   const areaPath =
     buildPath(xs, upper) +
@@ -1087,7 +1094,8 @@ function drawTimeSeries() {
     && d.trend.significant[state.densityIndex][state.latitudeIndex];
   const sigFdr = trendDefined
     && d.trend.significant_fdr[state.densityIndex][state.latitudeIndex];
-  const comboNote = comboIndex() === 0 ? "" : " · trend: default products";
+  const comboNote = comboIndex() === 0
+    ? "" : " · trend and band: default products";
   const gapStart = d.gap_time_range ? d.gap_time_range[0] : null;
   const gapEnd = d.gap_time_range ? d.gap_time_range[1] : null;
   const gapX1 = gapStart !== null ? margins.left + ((gapStart - xYears[0]) / (xYears[xYears.length - 1] - xYears[0])) * plotWidth : null;
@@ -1206,9 +1214,12 @@ function updateTrendReading() {
   // the borrowed-band caveat is a per-cell annotation like the verdict,
   // and the SVG's top line has no room for it beside the trend label
   const borrowed = d.transfer_filled && d.transfer_filled[k][j] === 1;
+  const defaultNote = comboIndex() === 0 ? "" :
+    `<span class="tr-sep" aria-hidden="true">·</span><span>trend: default products</span>`;
   el.className = `trend-reading ${cls}`;
   el.innerHTML = `<span>Mean state <strong>${formatSigned(base)} Sv</strong> (${sense} cell)</span>`
     + `<span class="tr-sep" aria-hidden="true">·</span><span class="tr-verdict">${verdict}</span>`
+    + defaultNote
     + (borrowed
       ? `<span class="tr-sep" aria-hidden="true">·</span><span>uncertainty band: transfer term borrowed from the σ₂ level above</span>`
       : "");
@@ -1544,8 +1555,8 @@ const PRESETS = {
     return { latIdx, densityIdx: coreDensityIndex(latIdx, "max") };
   },
   amoceq: () => {
-    // the -0.5 column: its core (sigma2 35.81) carries the FDR-significant
-    // weakening; the +0.5 column's core does not survive FDR
+    // Use the -0.5-degree column so the split-basin selection remains on
+    // the Atlantic side of the equator.
     const latIdx = nearestLatIndex(-0.5);
     return { latIdx, densityIdx: coreDensityIndex(latIdx, "max") };
   },
@@ -1864,6 +1875,10 @@ async function loadCombos() {
 
 async function init() {
   state.data = await loadData();
+  if (controls.dataRelease) {
+    controls.dataRelease.textContent = state.data.metadata.run_id;
+    controls.dataRelease.title = `${state.data.metadata.network} · ${state.data.metadata.generated_on}`;
+  }
   const rapid = PRESETS.rapid();
   DEFAULT_VIEW = {
     j: rapid.latIdx,

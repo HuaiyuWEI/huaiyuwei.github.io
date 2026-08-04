@@ -1,22 +1,35 @@
+param(
+    [switch]$RefreshData
+)
+
 $ErrorActionPreference = "Stop"
 
 $viewerDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$matPath = Join-Path $viewerDir "data\NeurMOC_data.mat"
-$binPath = Join-Path $viewerDir "data\neurmoc_core.bin"
 
-if (-not (Test-Path $matPath)) {
-    throw "Could not find NeurMOC_data.mat in $viewerDir\\data"
-}
-
-if (-not (Test-Path $binPath) -or ((Get-Item $binPath).LastWriteTime -lt (Get-Item $matPath).LastWriteTime)) {
-    Write-Host "Generating viewer data from data/NeurMOC_data.mat..."
+if ($RefreshData) {
+    Write-Host "Refreshing viewer data from the pipeline paths configured in prepare_viewer_data.py..."
     Push-Location $viewerDir
     try {
         py -3 .\prepare_viewer_data.py
+        py -3 .\make_og_image.py
     }
     finally {
         Pop-Location
     }
+}
+
+$required = @(
+    "data\neurmoc_meta.json",
+    "data\neurmoc_core.bin",
+    "data\neurmoc_combos.bin",
+    "data\NeurMOC_data.mat",
+    "data\NeurMOC_data.nc"
+)
+$missing = @($required | Where-Object {
+    -not (Test-Path -LiteralPath (Join-Path $viewerDir $_))
+})
+if ($missing.Count -gt 0) {
+    throw "Viewer data are incomplete ($($missing -join ', ')). Run prepare_viewer_data.py or relaunch with -RefreshData."
 }
 
 Write-Host "Starting NeurMOC viewer at http://localhost:8000"
