@@ -51,7 +51,6 @@ const controls = {
   loadingBarFill: document.getElementById("loading-bar-fill"),
   loadingStatus: document.getElementById("loading-status"),
   tooltip: document.getElementById("plot-tooltip"),
-  dataRelease: document.getElementById("data-release"),
 };
 
 const PLAYBACK_INTERVALS = {
@@ -1914,10 +1913,6 @@ async function loadCombos() {
 
 async function init() {
   state.data = await loadData();
-  if (controls.dataRelease) {
-    controls.dataRelease.textContent = state.data.metadata.run_id;
-    controls.dataRelease.title = `${state.data.metadata.network} · ${state.data.metadata.generated_on}`;
-  }
   const rapid = PRESETS.rapid();
   DEFAULT_VIEW = {
     j: rapid.latIdx,
