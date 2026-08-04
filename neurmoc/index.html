@@ -168,7 +168,9 @@
                  or click any map cell.</p>
               <details class="method-note">
                 <summary>What the curves show</summary>
-                 <p>The red curve is the selected reconstruction. The shaded band and dashed trend are centered
+                 <p>The solid curve is the selected reconstruction. The curve and uncertainty shading are blue
+                    where the default-product trend is declining and red where it is increasing; a nonsignificant
+                    dashed trend remains gray. The shaded band and dashed trend are centered
                     on the default reconstruction (GRACE JPL + DUACS + CCMP); when another combination is selected,
                     its default counterpart is also drawn in gray. At 26.5&deg;N the solid dark curve overlays the independent RAPID moored-array
                     observations with their observational uncertainty band, shifted to the
@@ -188,9 +190,9 @@
             <button class="preset-option" type="button" data-preset="abyssal">SO abyssal cell 65°S</button>
           </div>
           <div class="ts-legend" role="list" aria-label="Time-series legend">
-            <span class="legend-item" role="listitem"><span class="swatch swatch-recon" aria-hidden="true"></span>Selected reconstruction</span>
-            <span class="legend-item" role="listitem"><span class="swatch swatch-uncertainty" aria-hidden="true"></span>Default-products &plusmn;1&sigma; total</span>
-            <span class="legend-item" role="listitem"><span class="swatch swatch-trend" aria-hidden="true"></span>Default-products linear trend</span>
+            <span class="legend-item" role="listitem"><span class="swatch swatch-recon" id="legend-reconstruction-swatch" aria-hidden="true"></span>Selected reconstruction (blue declining; red increasing)</span>
+            <span class="legend-item" role="listitem"><span class="swatch swatch-uncertainty" id="legend-uncertainty-swatch" aria-hidden="true"></span>Default-products &plusmn;1&sigma; total</span>
+            <span class="legend-item" role="listitem"><span class="swatch swatch-trend" id="legend-trend-swatch" aria-hidden="true"></span>Default-products linear trend</span>
             <span class="legend-item" role="listitem" id="legend-default" hidden><span class="swatch swatch-default" aria-hidden="true"></span>Default reconstruction</span>
             <span class="legend-item" role="listitem" id="legend-rapid" hidden><span class="swatch swatch-rapid" aria-hidden="true"></span>RAPID observations &plusmn; uncertainty (mean-matched)</span>
             <span class="legend-item" role="listitem"><span class="swatch swatch-gap" aria-hidden="true"></span>GRACE/GRACE-FO gap</span>
@@ -380,6 +382,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-03a"></script>
+  <script src="./app.js?v=2026-08-03b"></script>
 </body>
 </html>

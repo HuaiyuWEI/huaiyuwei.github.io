@@ -89,10 +89,14 @@ const PLOT_COLORS = {
     gapText: "#7b8a99",
     recon: "#8f2d1b",
     band: "rgba(143, 45, 27, 0.15)",
+    declining: "#2166ac",
+    decliningBand: "rgba(33, 102, 172, 0.16)",
+    increasing: "#b2182b",
+    increasingBand: "rgba(178, 24, 43, 0.15)",
+    neutralBand: "rgba(127, 139, 146, 0.14)",
     defaultLine: "#9aa8b5",
     rapid: "#39424c",
     rapidBand: "rgba(57, 66, 76, 0.13)",
-    trendSig: "#2f6f9f",
     trendNot: "#7f8b92",
     cursor: "#162238",
   },
@@ -111,10 +115,14 @@ const PLOT_COLORS = {
     gapText: "#93a6ba",
     recon: "#e0684b",
     band: "rgba(224, 104, 75, 0.20)",
+    declining: "#6db3e8",
+    decliningBand: "rgba(109, 179, 232, 0.20)",
+    increasing: "#ff8d70",
+    increasingBand: "rgba(255, 141, 112, 0.20)",
+    neutralBand: "rgba(139, 152, 165, 0.18)",
     defaultLine: "#7b8b9c",
     rapid: "#c3d0dd",
     rapidBand: "rgba(195, 208, 221, 0.16)",
-    trendSig: "#6db3e8",
     trendNot: "#8b98a5",
     cursor: "#dbe6f2",
   },
@@ -974,6 +982,17 @@ function drawTimeSeries() {
   const rawSlope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
   const trendDefined = rawSlope > -900;
   const slope = trendDefined ? rawSlope : 0;
+  const sigPoint = trendDefined
+    && d.trend.significant[state.densityIndex][state.latitudeIndex];
+  const sigFdr = trendDefined
+    && d.trend.significant_fdr[state.densityIndex][state.latitudeIndex];
+  const directionColor = !trendDefined ? theme.trendNot
+    : slope < 0 ? theme.declining
+      : slope > 0 ? theme.increasing : theme.trendNot;
+  const directionBand = !trendDefined ? theme.neutralBand
+    : slope < 0 ? theme.decliningBand
+      : slope > 0 ? theme.increasingBand : theme.neutralBand;
+  const trendColor = sigFdr ? directionColor : theme.trendNot;
   const ci = d.trend.ci95.map((bound) => bound[state.densityIndex][state.latitudeIndex]);
   const xMean = xYears.reduce((sum, value) => sum + value, 0) / xYears.length;
   const yMean = referenceValues.reduce((sum, value) => sum + value, 0)
@@ -1087,13 +1106,9 @@ function drawTimeSeries() {
   for (let tick = ymin; tick <= ymax; tick += yTickStep) {
     yTicks.push(tick);
   }
-  // one significance convention everywhere: the FDR-controlled mask (the
-  // map's stippling); cells whose per-point +-2 sigma CI excludes zero but
-  // fail FDR control are labeled as exactly that
-  const sigPoint = trendDefined
-    && d.trend.significant[state.densityIndex][state.latitudeIndex];
-  const sigFdr = trendDefined
-    && d.trend.significant_fdr[state.densityIndex][state.latitudeIndex];
+  // One significance convention everywhere: the FDR-controlled mask (the
+  // map's stippling). Curve and band color encode slope direction; an
+  // insignificant dashed trend stays gray.
   const comboNote = comboIndex() === 0
     ? "" : " · trend and band: default products";
   const gapStart = d.gap_time_range ? d.gap_time_range[0] : null;
@@ -1152,21 +1167,28 @@ function drawTimeSeries() {
         </g>`;
       })
       .join("")}
-    ${hasStd ? `<path d="${areaPath}" fill="${theme.band}"></path>` : ""}
+    ${hasStd ? `<path d="${areaPath}" fill="${directionBand}"></path>` : ""}
     ${showDefault ? `<path d="${defaultPath}" fill="none" stroke="${theme.defaultLine}" stroke-width="2"></path>` : ""}
     ${rapidBandPath ? `<path d="${rapidBandPath}" fill="${theme.rapidBand}"></path>` : ""}
     ${showRapid ? `<path d="${rapidPath}" fill="none" stroke="${theme.rapid}" stroke-width="2.4"></path>` : ""}
-    <path d="${linePath}" fill="none" stroke="${theme.recon}" stroke-width="3"></path>
-    ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${sigFdr ? theme.trendSig : theme.trendNot}" stroke-width="2.5" stroke-dasharray="9 6"></path>` : ""}
+    <path d="${linePath}" fill="none" stroke="${directionColor}" stroke-width="3"></path>
+    ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${trendColor}" stroke-width="2.5" stroke-dasharray="9 6"></path>` : ""}
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>
     <text x="${22 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="${theme.muted}" transform="rotate(-90 ${22 * fs} ${margins.top + plotHeight / 2})">Ψ anomaly (Sv)</text>
-    <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${sigFdr ? theme.trendSig : theme.trendNot}">
+    <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${trendColor}">
       ${sigFdr ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹`
         : sigPoint ? "Trend not significant after FDR control"
           : "Trend not significant (±2σ)"}${comboNote}
     </text>
     ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="${theme.gapText}">Uncertainty unavailable at this cell</text>`}
   `;
+
+  const reconSwatch = document.getElementById("legend-reconstruction-swatch");
+  const bandSwatch = document.getElementById("legend-uncertainty-swatch");
+  const trendSwatch = document.getElementById("legend-trend-swatch");
+  if (reconSwatch) reconSwatch.style.background = directionColor;
+  if (bandSwatch) bandSwatch.style.background = directionBand;
+  if (trendSwatch) trendSwatch.style.borderTopColor = trendColor;
 }
 
 /* ---------------- mean-state trend interpretation ---------------- */
