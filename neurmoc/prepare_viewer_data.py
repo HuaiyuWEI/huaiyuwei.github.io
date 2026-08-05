@@ -114,6 +114,16 @@ def mat_string(export: dict, key: str, default: str = "unknown") -> str:
     return str(np.asarray(export[key]).reshape(-1)[0]).strip()
 
 
+def mat_strings(export: dict, key: str) -> list[str]:
+    """All non-empty stripped strings from one MATLAB export field."""
+    if key not in export or np.asarray(export[key]).size == 0:
+        return []
+    return [value for value in
+            (str(item).strip()
+             for item in np.asarray(export[key]).astype(str).ravel())
+            if value]
+
+
 def mat_int(export: dict, key: str, default: int) -> int:
     """One scalar integer from a SciPy-loaded MATLAB export."""
     if key not in export or np.asarray(export[key]).size == 0:
@@ -207,11 +217,24 @@ def main(cfg: Config) -> None:
     training_experiment = mat_string(export, "training_experiment")
     cmip_dataset_id = mat_string(export, "cmip_dataset_id")
     satellite_dataset_id = mat_string(export, "satellite_dataset_id")
-    uncertainty_scenario = mat_string(export, "uncertainty_scenario",
-                                      "MRI_SSP245")
-    uncertainty_variant = mat_string(export, "uncertainty_variant",
-                                     "debiased")
     uncertainty_definition = mat_string(export, "uncertainty_definition")
+    sigma_map_estimator = mat_string(export, "sigma_map_estimator")
+    sigma_map_cases = mat_strings(export, "sigma_map_cases")
+    sigma_map_monthly_estimator = mat_string(
+        export, "sigma_map_monthly_estimator")
+    sigma_map_monthly_centering = mat_string(
+        export, "sigma_map_monthly_centering")
+    sigma_map_monthly_dependence = mat_string(
+        export, "sigma_map_monthly_dependence")
+    sigma_map_monthly_n_branch_windows = mat_int(
+        export, "sigma_map_monthly_n_branch_windows", 0)
+    sigma_map_monthly_months_per_branch = mat_int(
+        export, "sigma_map_monthly_months_per_branch", 0)
+    sigma_map_monthly_expected_nobs = mat_int(
+        export, "sigma_map_monthly_expected_nobs", 0)
+    grace_noise_mode = mat_string(export, "grace_noise_mode")
+    grace_noise_draws = mat_int(export, "grace_noise_draws", 0)
+    grace_noise_granule = mat_string(export, "grace_noise_granule")
     trend_method = mat_string(export, "trend_method", "mbb")
     trend_block_months = mat_int(export, "trend_block_months", 48)
     trend_n_boot = mat_int(export, "trend_n_boot", 1000)
@@ -274,61 +297,152 @@ def main(cfg: Config) -> None:
         raise ValueError("default combination does not reproduce the "
                          "NeurMOC_data export - stale files?")
 
-    # ---- monthly envelope with the pipeline's unpriced-cell fill ---------
-    # The transfer term (cross-model RMSE) is undefined where the held-out
-    # model has
-    # no MOC truth (the abyssal densities). Mirror the
-    # 15_compute_trend_budget convention (2026-08-01): every unpriced cell
-    # takes the transfer term of the nearest PRICED level above it in the
-    # same latitude column; columns with no priced level keep zero. The
-    # other two terms (per-month ensemble spread, input-product
-    # spread) are the cell's own.
-    #
-    # One envelope everywhere (2026-08-01): the DEBIASED transfer variant
-    # - the manuscript's zero-bias display convention (fig02 / main-text
-    # Fig 4) - is used for the displayed band AND is what the NeurMOC_data
-    # export itself now carries, so the viewer band and the downloadable
-    # uncertainty field are the same quantity (validated below).
-    rmse_key = {"debiased": "rmse_debiased_yz",
-                "full": "rmse_yz"}.get(uncertainty_variant)
-    if rmse_key is None:
-        raise ValueError(
-            f"unsupported uncertainty_variant {uncertainty_variant!r}")
-    transfer_file = rw.parent / f"TestR2_{uncertainty_scenario}.mat"
-    scen = np.asarray(
-        sio.loadmat(transfer_file, variable_names=[rmse_key])[rmse_key],
-        dtype=np.float64)
+    # ---- reconstruct the four-term monthly uncertainty envelope ----------
+    # Stage 15 supplies the empirical monthly mapping-error magnitude and
+    # the product-combination spread.  The latter is now explicitly
+    # time-dependent [time, density, latitude], so its stored month axis must
+    # match the reconstruction exactly. Stage 16 supplies the GRACE
+    # measurement-noise term. The fourth term is the network-ensemble spread
+    # saved by stage 14. Rebuild their quadrature sum independently and require
+    # it to reproduce the exported envelope before writing website data.
     epi_mat = sio.loadmat(rw / "Pred_RealWorld.mat",
                           variable_names=["pred_yz_std"])
     epi = np.asarray(epi_mat["pred_yz_std"],
                      dtype=np.float64)[EDGE_MONTHS:-EDGE_MONTHS]
-    with np.load(rw / "trend_error_budget.npz") as fh:
+    with np.load(rw / "trend_error_budget.npz", allow_pickle=False) as fh:
+        sigma_map_monthly = np.asarray(
+            fh["sigma_map_monthly"], dtype=np.float64)
+        sigma_map_monthly_cell = np.asarray(
+            fh["sigma_map_monthly_cell"], dtype=np.float64)
+        monthly_map_unpriced = np.asarray(
+            fh["monthly_map_unpriced"], dtype=bool)
+        sigma_map_monthly_nobs = np.asarray(
+            fh["sigma_map_monthly_nobs"], dtype=np.int64)
         sate_month = np.asarray(fh["sigma_sate_month"], dtype=np.float64)
+        sate_month_axis = np.asarray(fh["sate_month_axis"],
+                                     dtype=np.int64)
+        budget_map_estimator = str(
+            np.asarray(fh["sigma_map_monthly_estimator"]).item()).strip()
 
-    unpriced = ~np.isfinite(scen)
-    lev_of_priced = np.where(~unpriced, np.arange(nk)[:, None], -1)
+    plane_shape = (nk, nj)
+    cube_shape = (nt, nk, nj)
+    for name, field in (
+        ("network ensemble spread", epi),
+        ("time-dependent product spread", sate_month),
+    ):
+        if field.shape != cube_shape:
+            raise ValueError(f"{name} shape {field.shape} != {cube_shape}")
+    for name, field in (
+        ("monthly mapping spread", sigma_map_monthly),
+        ("monthly mapping support", monthly_map_unpriced),
+        ("monthly mapping nobs", sigma_map_monthly_nobs),
+    ):
+        if field.shape != plane_shape:
+            raise ValueError(f"{name} shape {field.shape} != {plane_shape}")
+    if budget_map_estimator != sigma_map_monthly_estimator:
+        raise ValueError(
+            "monthly mapping-error estimator differs between the stage-15 "
+            "budget and NeurMOC_data export")
+    sate_month_labels = sate_month_axis.astype(
+        "datetime64[M]").astype(str)
+    if not np.array_equal(sate_month_labels, canonical):
+        raise ValueError(
+            "time-dependent product-spread month axis does not match the "
+            "reconstruction")
+
+    grace_file = rw / "grace_noise_budget.npz"
+    with np.load(grace_file, allow_pickle=False) as fh:
+        grace_month = np.asarray(fh["sigma_grace_month"], dtype=np.float64)
+        grace_trend = np.asarray(fh["sigma_grace"], dtype=np.float64)
+        grace_month_axis = np.char.strip(
+            np.asarray(fh["time_month"]).astype(str).ravel())
+        budget_grace_mode = str(np.asarray(fh["central_mode"]).item()).strip()
+        budget_grace_draws = int(np.asarray(fh["n_draws"]).item())
+        budget_grace_granule = str(np.asarray(fh["granule"]).item()).strip()
+        grace_sigma_source = str(np.asarray(fh["sigma_source"]).item()).strip()
+        grace_complementary_to = str(
+            np.asarray(fh["complementary_to"]).item()).strip()
+    for name, field in (("monthly GRACE noise", grace_month),
+                        ("trend GRACE noise", grace_trend)):
+        if field.shape != plane_shape:
+            raise ValueError(f"{name} shape {field.shape} != {plane_shape}")
+        if not np.isfinite(field).all() or np.any(field < 0):
+            raise ValueError(f"{name} contains non-finite or negative values")
+    if not np.array_equal(grace_month_axis, canonical):
+        raise ValueError("GRACE-noise budget month axis does not match the "
+                         "reconstruction")
+    if (budget_grace_mode != grace_noise_mode
+            or budget_grace_draws != grace_noise_draws
+            or budget_grace_granule != grace_noise_granule):
+        raise ValueError("GRACE-noise provenance differs between the stage-16 "
+                         "budget and NeurMOC_data export")
+
+    export_map_monthly = np.asarray(
+        export["NeurMOC_mapping_uncertainty_monthly"], dtype=np.float64)
+    export_map_unpriced = np.asarray(
+        export["NeurMOC_mapping_uncertainty_monthly_unpriced"], dtype=bool)
+    export_map_nobs = np.asarray(
+        export["NeurMOC_mapping_uncertainty_monthly_nobs"], dtype=np.int64)
+    export_sate_month = np.asarray(
+        export["NeurMOC_satellite_uncertainty_monthly"], dtype=np.float64)
+    export_grace_month = np.asarray(
+        export["NeurMOC_grace_noise_uncertainty_monthly"], dtype=np.float64)
+    export_grace_trend = np.asarray(
+        export["NeurMOC_grace_noise_uncertainty_trend"], dtype=np.float64)
+    for name, source, exported in (
+        ("mapping spread", sigma_map_monthly, export_map_monthly),
+        ("mapping support", monthly_map_unpriced, export_map_unpriced),
+        ("mapping nobs", sigma_map_monthly_nobs, export_map_nobs),
+        ("product spread", sate_month, export_sate_month),
+        ("monthly GRACE noise", grace_month, export_grace_month),
+        ("trend GRACE noise", grace_trend, export_grace_trend),
+    ):
+        if not np.allclose(source, exported, rtol=1e-10, atol=1e-12,
+                           equal_nan=True):
+            raise ValueError(f"{name} differs between its source budget and "
+                             "NeurMOC_data export")
+
+    if not all(np.isfinite(field).all() and np.all(field >= 0)
+               for field in (sigma_map_monthly, epi, sate_month,
+                             grace_month)):
+        raise ValueError("monthly uncertainty terms must be finite and "
+                         "non-negative")
+    std_filled = np.sqrt(
+        sigma_map_monthly[None, :, :] ** 2
+        + epi ** 2
+        + sate_month ** 2
+        + grace_month[None, :, :] ** 2
+    ).astype(np.float32)
+
+    # Cells lacking complete held-out-model support borrow the deepest
+    # directly priced density level above them in the same latitude column.
+    # Mark only cells for which such a source actually exists.
+    lev_of_priced = np.where(~monthly_map_unpriced,
+                             np.arange(nk)[:, None], -1)
     src = np.maximum.accumulate(lev_of_priced, axis=0)
-    scen_fill = np.where(
-        src >= 0,
-        np.take_along_axis(np.nan_to_num(scen, nan=0.0),
-                           np.maximum(src, 0), axis=0),
-        0.0)
-    std_filled = np.sqrt(scen_fill[None] ** 2 + epi ** 2
-                         + sate_month[None] ** 2).astype(np.float32)
+    mapping_filled = monthly_map_unpriced & (src >= 0)
+    if not np.allclose(
+        sigma_map_monthly[mapping_filled],
+        np.take_along_axis(sigma_map_monthly_cell,
+                           np.maximum(src, 0), axis=0)[mapping_filled],
+        rtol=1e-10, atol=1e-12,
+    ):
+        raise ValueError("filled monthly mapping-error cells do not match "
+                         "their priced source level")
 
-    # Full decomposition check: m26r3 fills the transfer term at unpriced
-    # cells in the export too, so every cell must match. The viewer writes
-    # the authoritative exported array after this independent validation.
+    # Full decomposition check: every source term and every cell must match.
+    # The viewer writes the authoritative exported array after validation.
     if not np.allclose(std_filled, std_total, atol=2e-4, equal_nan=True):
         raise ValueError("rebuilt envelope does not reproduce "
                          "NeurMOC_uncertainty - the export and its source "
                          "budget are inconsistent")
-    transfer_filled = unpriced & (src >= 0)
-    print(f"envelope fill: {int(transfer_filled.sum())} unpriced cells take "
+    print(f"mapping fill: {int(mapping_filled.sum())} unpriced cells take "
           f"the deepest priced level above them "
-          f"({int((unpriced & (src < 0)).sum())} columns without any priced "
-          "level keep a zero transfer term); envelope = debiased variant, "
-          "identical in the viewer and the downloadable files")
+          f"({int((monthly_map_unpriced & (src < 0)).sum())} cells without "
+          "any priced level in their column keep a zero mapping term)")
+    print("monthly envelope: mapping + network ensemble + time-dependent "
+          "product spread + GRACE measurement noise; identical in the "
+          "viewer and downloadable files")
 
     rapid = load_rapid_series(cfg.rapid)
     # canonical-axis index of every RAPID month (-1 = outside the record),
@@ -374,7 +488,7 @@ def main(cfg: Config) -> None:
         "latitudes": round_nested(latitudes, 4),
         "densities": round_nested(densities, 4),
         "nan_sentinel": NAN_SENTINEL,
-        "transfer_filled": transfer_filled.astype(int).tolist(),
+        "mapping_filled": mapping_filled.astype(int).tolist(),
         "baseline_yz": round_nested(baseline_j, 4),
         "combo_mean_yz": [round_nested(c.mean(axis=0), 4) for c in stack],
         "products": {
@@ -387,7 +501,68 @@ def main(cfg: Config) -> None:
                      "reconstruction with the same trained network; the "
                      "uncertainty envelope and trend statistics belong to "
                      "the default combination and already include the "
-                     "across-product spread as a budget term."),
+                     "across-product spread as a budget term. Its monthly "
+                     "contribution is evaluated separately at every month."),
+        },
+        "uncertainty_budget": {
+            "combination": ("terms combined in quadrature; independence "
+                            "among terms is not demonstrated"),
+            "monthly": {
+                "units": "Sv",
+                "terms": [
+                    {
+                        "key": "mapping_error",
+                        "label": "held-out-model mapping-error spread",
+                        "time_dependent": False,
+                        "estimator": sigma_map_monthly_estimator,
+                        "centering": sigma_map_monthly_centering,
+                        "cases": sigma_map_cases,
+                        "branch_windows": sigma_map_monthly_n_branch_windows,
+                        "months_per_branch":
+                            sigma_map_monthly_months_per_branch,
+                        "samples_per_priced_cell":
+                            sigma_map_monthly_expected_nobs,
+                        "dependence_note": sigma_map_monthly_dependence,
+                    },
+                    {
+                        "key": "network_ensemble",
+                        "label": "network-ensemble spread",
+                        "time_dependent": True,
+                    },
+                    {
+                        "key": "input_product_choice",
+                        "label": "input-product-combination spread",
+                        "time_dependent": True,
+                        "month_axis": f"{canonical[0]} to {canonical[-1]}",
+                    },
+                    {
+                        "key": "grace_measurement_noise",
+                        "label": "propagated GRACE measurement noise",
+                        "time_dependent": False,
+                        "summary": "RMS monthly spread over the record",
+                        "mode": grace_noise_mode,
+                        "draws": grace_noise_draws,
+                    },
+                ],
+            },
+            "trend": {
+                "units": "Sv yr-1",
+                "terms": [
+                    "serially correlated residual variability",
+                    "network-ensemble member trend spread",
+                    "held-out-model mapping-error trend spread",
+                    "input-product-combination trend spread",
+                    "propagated GRACE measurement-noise trend spread",
+                ],
+            },
+            "grace_noise": {
+                "file": "grace_noise_budget.npz",
+                "mode": grace_noise_mode,
+                "draws": grace_noise_draws,
+                "granule": grace_noise_granule,
+                "source": grace_sigma_source,
+                "relationship_to_product_spread": grace_complementary_to,
+            },
         },
         "trend": {
             "slope_per_year": round_nested(trend_j, 5),
@@ -399,7 +574,8 @@ def main(cfg: Config) -> None:
                        f"{trend_serial_description}, "
                        "measured ensemble-member trend spread, mapping-error "
                        "spread measured in cross-model transfer windows, and "
-                       "observation/reanalysis input-product trend spread; "
+                       "observation/reanalysis input-product trend spread, "
+                       "and propagated GRACE measurement-noise trend spread; "
                        "the map mask applies "
                        "Benjamini-Hochberg false-discovery-rate control and "
                        "is intersected with the +-2 sigma rule"),
@@ -445,8 +621,19 @@ def main(cfg: Config) -> None:
                 (part for part in cfg.rapid.parts
                  if part.lower().startswith("insitu_")), "unknown"),
             "rapid_source": "/".join(cfg.rapid.parts[-3:]),
-            "uncertainty_scenario": uncertainty_scenario,
-            "uncertainty_variant": uncertainty_variant,
+            "sigma_map_estimator": sigma_map_estimator,
+            "sigma_map_cases": sigma_map_cases,
+            "sigma_map_monthly_estimator": sigma_map_monthly_estimator,
+            "sigma_map_monthly_n_branch_windows":
+                sigma_map_monthly_n_branch_windows,
+            "sigma_map_monthly_months_per_branch":
+                sigma_map_monthly_months_per_branch,
+            "sigma_map_monthly_expected_nobs":
+                sigma_map_monthly_expected_nobs,
+            "product_spread_monthly_time_dependent": True,
+            "grace_noise_mode": grace_noise_mode,
+            "grace_noise_draws": grace_noise_draws,
+            "grace_noise_granule": grace_noise_granule,
             "uncertainty_definition": uncertainty_definition,
             "generated_on": date.today().isoformat(),
             "array_order": "[combo, time, density, latitude]",

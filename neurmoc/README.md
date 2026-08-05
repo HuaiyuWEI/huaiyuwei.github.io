@@ -3,11 +3,13 @@
 Browser-based viewer for the NeurMOC reconstruction (published at
 https://huaiyuwei.github.io/neurmoc/). Vanilla HTML/CSS/JS, no build step.
 
-Updated 2026-08-03 to the m26r3 reference network (PCAinY64 ResNet
+Updated 2026-08-04 to the m26r3 reference network (PCAinY64 ResNet
 192x96x48 swish): the reconstruction is now the overturning **anomaly**
 relative to 2004–2009 (GRACE convention), the trend statistics use the
-serial-correlation-aware budget, and the viewer carries **all eight production
-input combinations** so visitors can switch inputs.
+serial-correlation-aware budget with a propagated GRACE measurement-noise
+term, the monthly input-product spread is time-dependent, and the viewer
+carries **all eight production input combinations** so visitors can switch
+inputs.
 
 ## What it shows
 
@@ -30,13 +32,16 @@ input combinations** so visitors can switch inputs.
 - Local anomaly time series with the total uncertainty envelope and the
   linear trend at the clicked cell, plus location presets (RAPID 26.5°N,
   AMOC 40°N/equator/30°S, and Southern Ocean mid-depth/abyssal cells).
-  The envelope and trend belong to the default
-  combination; the across-product spread is already a term of both.
+  The envelope and trend belong to the default combination. The envelope
+  combines held-out-model mapping-error spread, network-ensemble spread,
+  time-dependent across-product spread, and propagated GRACE measurement
+  noise; the across-product and GRACE terms also enter the trend budget in
+  trend space.
 - 2003–2024 trend map: OLS slope with ±2σ from the moving-block bootstrap
   combined with measured ensemble-member trend spread, mapping-error spread
-  measured in the cross-model test, and input-product trend spread; thin
-  diagonal hatching (the fig02 style) marks cells not significant after FDR
-  control.
+  measured in the cross-model test, input-product trend spread, and propagated
+  GRACE measurement-noise trend spread; thin diagonal hatching (the fig02
+  style) marks cells not significant after FDR control.
 - Latitude–time Hovmöller diagram at a selected density level.
 - Month-by-month snapshot with animation.
 
@@ -47,8 +52,8 @@ Hovering over any heatmap shows a value readout; clicking selects the cell.
 - `index.html`, `app.js`, `styles.css` — the static viewer.
 - `prepare_viewer_data.py` — reads the pipeline's RealWorld folder (the
   `NeurMOC_data.mat` export, the eight `Pred_RealWorld*.mat` combination
-  reconstructions, `trend_error_budget.npz`, the matching cross-model test,
-  and the m26r3 `insitu_v2/Rapid_LPF.npz` record)
+  reconstructions, `trend_error_budget.npz`, `grace_noise_budget.npz`, and the
+  m26r3 `insitu_v2/Rapid_LPF.npz` record)
   and writes:
   - `data/neurmoc_meta.json` (~280 KB): axes, exact month labels, baseline
     mean state, per-combination anomaly means, trend statistics (point +
@@ -68,8 +73,10 @@ Hovering over any heatmap shows a value readout; clicking selects the cell.
 
 Regenerate the pipeline products with `scripts/run_stages_12_15_RealWorld.py`
 (it runs stage 14 for every required product combination and stage 15 for the
-budget), then run `scripts/fig02_real_world_test.py` to refresh the export.
-The driver deliberately does not run figure scripts. From this directory:
+mapping/product budget), run `scripts/16_grace_noise_montecarlo.py` to create
+the GRACE measurement-noise budget, and then run
+`scripts/fig02_real_world_test.py` to refresh the export. The driver
+deliberately does not run stage 16 or figure scripts. From this directory:
 
 ```powershell
 py -3 .\prepare_viewer_data.py
@@ -77,8 +84,9 @@ py -3 .\prepare_viewer_data.py --realworld <RealWorld folder>
 ```
 
 The script validates that the default combination reproduces the
-`NeurMOC_data` export and that the exported uncertainty reproduces its three
-source terms before writing anything, then run
+`NeurMOC_data` export, that the time-dependent product-spread month axis is an
+exact match, and that the exported uncertainty reproduces its four source
+terms before writing anything. Then run
 `py -3 .\make_og_image.py` to refresh the social card. Bump the `?v=` query
 strings in `index.html` (stylesheet + script) when changing
 `app.js`/`styles.css`, and the `META_PATH` stamp at the top of `app.js`
@@ -106,11 +114,17 @@ from the m26r3 pipeline defaults before serving them.
   hatching, the time-series label, and the interpretation chip — uses the
   FDR-controlled mask; cells whose per-point ±2σ CI excludes zero but fail
   FDR control are labeled as exactly that.
-- The monthly envelope uses the debiased cross-model transfer-RMSE term (the
-  m26r3 zero-bias display convention) in
-  the viewer AND in the downloadable NeurMOC_data files (the export
-  switched from the full-bias variant on 2026-08-01 for consistency; the
-  conservative full-bias RMSE remains in the pipeline's TestR2 files).
+- The monthly mapping-error term is the grand-centered sample standard
+  deviation of held-out-model errors pooled across 15 MRI scenario-branch
+  windows (3915 serially correlated branch-month values per fully supported
+  cell), not the legacy debiased single-scenario transfer RMSE. The monthly
+  input-product term is evaluated separately at every month.
+- A 500-draw Monte Carlo experiment propagates JPL mascon measurement
+  uncertainty through the reconstruction. Its record-RMS monthly spread and
+  trend spread enter the public budget. This is complementary to the JPL/CSR
+  product swap, which measures sensitivity to processing choices. The GRACE
+  term excludes GIA, geocenter, and C20–C30 correction errors and therefore is
+  not a complete estimate of every GRACE-related error source.
 - The GRACE/GRACE-FO gap window is shaded in the time-series panel.
 - In the local time-series panel, the reconstruction curve and uncertainty
   shading are blue when the default-product trend weakens the local 2004–2009

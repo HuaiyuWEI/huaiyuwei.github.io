@@ -113,9 +113,10 @@
               <p>The ocean-bottom-pressure choice dominates the differences between combinations; sea
                  surface height and wind matter less. The uncertainty envelope and the trend statistics
                  belong to the default combination (GRACE JPL + DUACS + CCMP) and already include the
-                 across-product spread as a budget term. That spread is a standard deviation, not a
-                 range, so an individual alternative reconstruction is not guaranteed to remain inside
-                 the default &plusmn;1&sigma; band.</p>
+                 across-product spread as a budget term. Its monthly contribution is evaluated separately
+                 at every month, rather than represented by one time-mean map. The spread is a standard
+                 deviation, not a range, so an individual alternative reconstruction is not guaranteed to
+                 remain inside the default &plusmn;1&sigma; band.</p>
             </details>
           </div>
         </div>
@@ -140,11 +141,13 @@
               <details class="method-note">
                 <summary>How significance is assessed</summary>
                  <p>The trend belongs to the default-product reconstruction. Its &plusmn;2&sigma; uncertainty combines
-                    serially correlated residual variability (a 48-month circular moving-block bootstrap),
-                     mapping-error spread measured from MRI held-out
-                    trend windows, input-product trend spread，and trend spread due to ensemble training. The terms are combined
-                    in quadrature, although their independence is not demonstrated. Hatching marks cells that
-                    fail the Benjamini&ndash;Hochberg false-discovery-rate gate intersected with the &plusmn;2&sigma; rule.</p>
+                    five one-sigma terms in quadrature: serially correlated residual variability from a
+                    48-month circular moving-block bootstrap; mapping-error trend spread measured in held-out
+                    MRI windows; trend spread across trained network members; input-product trend spread; and
+                    GRACE measurement-noise trend spread propagated through the reconstruction with a 500-draw
+                    Monte Carlo experiment. Independence among these terms is not demonstrated. Hatching marks
+                    cells that fail the Benjamini&ndash;Hochberg false-discovery-rate gate intersected with the
+                    &plusmn;2&sigma; rule.</p>
               </details>
             </div>
           </div>
@@ -163,7 +166,9 @@
                  <p>The solid curve is the selected reconstruction. The curve and uncertainty shading are blue
                     where the default-product trend weakens the local 2004&ndash;2009 mean overturning and red where it strengthens it;
                     A nonsignificant dashed trend remains gray. The shaded band and dashed trend are centered
-                    on the default reconstruction (GRACE JPL + DUACS + CCMP); when another combination is selected,
+                    on the default reconstruction (GRACE JPL + DUACS + CCMP). The &plusmn;1&sigma; band combines
+                    held-out-model mapping-error spread, network-ensemble spread, the time-dependent spread across
+                    the eight input-product combinations, and propagated GRACE measurement noise. When another combination is selected,
                     its default counterpart is also drawn in gray. At 26.5&deg;N the solid dark curve overlays the independent RAPID moored-array
                     observations with their observational uncertainty band, shifted to the
                     selected reconstruction's mean over the shared months &mdash; so the comparison is about variability only. The GRACE/GRACE-FO gap is shaded.
@@ -317,10 +322,16 @@
                The reconstruction uses each dataset's own 2004&ndash;2009 reference-period convention; the
                orientation panel is the frozen ACCESS training-model baseline. RAPID instead uses its available
                April 2004&ndash;December 2009 mean and is mean-matched over shared months for the displayed comparison.
-               The monthly uncertainty envelope combines debiased MRI cross-model transfer RMSE (the downloadable
-               files carry the same envelope), network-ensemble spread, and spread across the eight input-product combinations; where the cross-model truth leaves the transfer term unmeasured
-               (mostly abyssal densities), it is taken from the nearest measured level above in the same latitude
-               column. Trend significance additionally accounts for serial correlation (moving-block bootstrap)
+               The monthly uncertainty envelope combines an empirical mapping-error spread measured across 15
+               held-out MRI scenario-branch windows, network-ensemble spread, the month-specific spread across the
+               eight input-product combinations, and GRACE measurement uncertainty propagated through the full
+               reconstruction with 500 Monte Carlo draws. The downloadable files carry the same envelope. Where
+               the held-out model does not provide complete support (mostly abyssal densities), the mapping-error
+               term is taken from the nearest measured level above in the same latitude column. The GRACE term uses
+               the JPL mascon uncertainty estimates and complements the product-swap term: one represents measurement
+               noise and the other processing choices. It excludes GIA, geocenter, and C20&ndash;C30 correction errors,
+               so it is not a complete estimate of every GRACE-related error source. Trend significance combines
+               corresponding trend-space terms with serially correlated residual variability (moving-block bootstrap)
                and false-discovery-rate control. </p>
           </div>
         </article>
@@ -372,6 +383,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-04a"></script>
+  <script src="./app.js?v=2026-08-04b"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
    background), product-difference view, RAPID 26.5N overlay, mean-state
    trend interpretation, and shareable URL state. */
 
-const META_PATH = "./data/neurmoc_meta.json?v=2026-08-03a";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-08-04b";
 const DATA_DIR = "./data/";
 
 const state = {
@@ -975,7 +975,7 @@ function drawTimeSeries() {
     if (legendRapid) legendRapid.hidden = true;
     return;
   }
-  // the band exists everywhere since the unpriced-cell fill (the transfer
+  // the band exists everywhere since the unpriced-cell fill (the mapping
   // term of abyssal cells is borrowed from the nearest priced level above
   // in the column); keep the NaN fallback for robustness and annotate
   // borrowed cells
@@ -1251,7 +1251,8 @@ function updateTrendReading() {
   }
   // the borrowed-band caveat is a per-cell annotation like the verdict,
   // and the SVG's top line has no room for it beside the trend label
-  const borrowed = d.transfer_filled && d.transfer_filled[k][j] === 1;
+  const mappingFilled = d.mapping_filled || d.transfer_filled;
+  const borrowed = mappingFilled && mappingFilled[k][j] === 1;
   const defaultNote = comboIndex() === 0 ? "" :
     `<span class="tr-sep" aria-hidden="true">·</span><span>trend: default products</span>`;
   el.className = `trend-reading ${cls}`;
@@ -1259,7 +1260,7 @@ function updateTrendReading() {
     + `<span class="tr-sep" aria-hidden="true">·</span><span class="tr-verdict">${verdict}</span>`
     + defaultNote
     + (borrowed
-      ? `<span class="tr-sep" aria-hidden="true">·</span><span>uncertainty band: transfer term borrowed from the σ₂ level above</span>`
+      ? `<span class="tr-sep" aria-hidden="true">·</span><span>uncertainty band: mapping-error term borrowed from the σ₂ level above</span>`
       : "");
   el.hidden = false;
 }
