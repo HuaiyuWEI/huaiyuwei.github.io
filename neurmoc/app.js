@@ -1604,10 +1604,10 @@ const PRESETS = {
     return { latIdx, densityIdx: coreDensityIndex(latIdx, "max") };
   },
   somid: () => {
-    // the SO mid-depth (clockwise) cell at 50.5S, pinned to the sigma2
-    // 35.81 level where the strengthening is FDR-significant (the column
-    // maximum sits two levels deeper but is not significant)
-    return { latIdx: nearestLatIndex(-50.5),
+    // the SO mid-depth (clockwise) cell at 53.5S, pinned to the sigma2
+    // 35.81 level where the strengthening is FDR-significant (the deeper
+    // column maximum is not significant)
+    return { latIdx: nearestLatIndex(-53.5),
              densityIdx: nearestDensityIndex(35.8125) };
   },
   abyssal: () => {
