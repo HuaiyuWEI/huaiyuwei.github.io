@@ -18,6 +18,7 @@ const state = {
   latitudeIndex: 0,
   clim: 20,                             // mean-state panel (full field)
   trendClim: 0.4,
+  sigBasis: "fdr",                      // "fdr" | "point" (see sigField)
   playbackSpeed: "normal",
   playing: false,
   timer: null,
@@ -42,6 +43,7 @@ const controls = {
   presetRow: document.getElementById("preset-row"),
   copyBibtex: document.getElementById("copy-bibtex"),
   trendReading: document.getElementById("trend-reading"),
+  sigControl: document.getElementById("sig-control"),
   selectedLatitude: document.getElementById("selected-latitude"),
   selectedDensity: document.getElementById("selected-density"),
   selectedBaseline: document.getElementById("selected-baseline"),
@@ -308,6 +310,19 @@ function meanStateYZ() {
       (value) => (value <= -900 ? NaN : value)));
   }
   return meanStateMemo;
+}
+
+// Which significance test drives every display: the map's hatching, the
+// time-series label and trend-line color, the interpretation chip, and the
+// trend tooltip. "fdr" (default) is the map-level Benjamini-Hochberg gate
+// intersected with the +-2 sigma rule - the publication convention for a
+// field scanned as a whole. "point" is the +-2 sigma test alone, the
+// convention the manuscript keeps for single cells chosen in advance
+// (fig02's cell panels). FDR is a strict subset of per-point, so switching
+// to "point" only ever ADDS significant cells.
+function sigField() {
+  return state.sigBasis === "point"
+    ? state.data.trend.significant : state.data.trend.significant_fdr;
 }
 
 function stdAt(t, k, j) {
@@ -998,8 +1013,9 @@ function drawTimeSeries() {
   const slope = trendDefined ? rawSlope : 0;
   const sigPoint = trendDefined
     && d.trend.significant[state.densityIndex][state.latitudeIndex];
-  const sigFdr = trendDefined
-    && d.trend.significant_fdr[state.densityIndex][state.latitudeIndex];
+  // the basis the trend panel's control selects (see sigField)
+  const sigShown = trendDefined
+    && sigField()[state.densityIndex][state.latitudeIndex];
   const meanStateValue = meanStateYZ()[state.densityIndex][state.latitudeIndex];
   const direction = trendDefined
     ? relativeTrendDirection(meanStateValue, slope) : "neutral";
@@ -1007,7 +1023,7 @@ function drawTimeSeries() {
     : direction === "increasing" ? theme.increasing : theme.trendNot;
   const directionBand = direction === "declining" ? theme.decliningBand
     : direction === "increasing" ? theme.increasingBand : theme.neutralBand;
-  const trendColor = sigFdr ? directionColor : theme.trendNot;
+  const trendColor = sigShown ? directionColor : theme.trendNot;
   const ci = d.trend.ci95.map((bound) => bound[state.densityIndex][state.latitudeIndex]);
   const xMean = xYears.reduce((sum, value) => sum + value, 0) / xYears.length;
   const yMean = referenceValues.reduce((sum, value) => sum + value, 0)
@@ -1192,8 +1208,8 @@ function drawTimeSeries() {
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>
     <text x="${22 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="${theme.muted}" transform="rotate(-90 ${22 * fs} ${margins.top + plotHeight / 2})">Ψ anomaly (Sv)</text>
     <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${trendColor}">
-      ${sigFdr ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹`
-        : sigPoint ? "Trend not significant after FDR control"
+      ${sigShown ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹`
+        : (state.sigBasis === "fdr" && sigPoint) ? "Trend not significant after FDR control"
           : "Trend not significant (±2σ)"}${comboNote}
     </text>
     ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="${theme.gapText}">Uncertainty unavailable at this cell</text>`}
@@ -1228,9 +1244,9 @@ function updateTrendReading() {
   }
   const rawSlope = d.trend.slope_per_year[k][j];
   const trendDefined = rawSlope > -900;
-  // same convention as the map and the plot label: FDR-controlled mask
+  // same basis as the map hatching and the plot label (sigField)
   const sigPoint = trendDefined && d.trend.significant[k][j];
-  const sigFdr = trendDefined && d.trend.significant_fdr[k][j];
+  const sigShown = trendDefined && sigField()[k][j];
   const sense = base >= 0 ? "clockwise" : "counterclockwise";
   let verdict;
   let cls = "is-neutral";
