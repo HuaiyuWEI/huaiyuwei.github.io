@@ -1252,8 +1252,8 @@ function updateTrendReading() {
   let cls = "is-neutral";
   if (!trendDefined) {
     verdict = "no trend estimate at this cell";
-  } else if (!sigFdr) {
-    verdict = sigPoint
+  } else if (!sigShown) {
+    verdict = (state.sigBasis === "fdr" && sigPoint)
       ? "trend ±2σ excludes zero but fails FDR control — no robust change claimed"
       : "trend not significant — no robust change in cell strength";
   } else if (relativeTrendDirection(base, rawSlope) === "neutral") {
