@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-08-06a">
+  <link rel="stylesheet" href="./styles.css?v=2026-08-06b">
 </head>
 <body>
   <noscript>
@@ -148,20 +148,22 @@
                     GRACE measurement-noise trend spread propagated through the reconstruction with a 500-draw
                     Monte Carlo experiment. Independence among these terms is not demonstrated. Hatching marks
                     cells that fail the selected test.</p>
-                 <p><strong>FDR</strong> (default) is the Benjamini&ndash;Hochberg false-discovery-rate gate
-                    intersected with the &plusmn;2&sigma; rule &mdash; the convention for a field scanned as a whole,
-                    and the one the manuscript's trend map uses. <strong>&plusmn;2&sigma; only</strong> drops the
-                    multiplicity correction and asks solely whether each cell's own interval excludes zero &mdash;
-                    the convention the manuscript keeps for single cells chosen in advance. FDR-significant cells
-                    are a strict subset, so &plusmn;2&sigma; only ever adds significant area. The choice also drives
-                    the time-series label and the mean-state chip, so the panels never disagree.</p>
+                 <p><strong>&plusmn;2&sigma; only</strong> (default) asks solely whether each cell's own
+                    interval excludes zero &mdash; the convention the manuscript keeps for single cells chosen in
+                    advance. <strong>FDR</strong> additionally applies the Benjamini&ndash;Hochberg
+                    false-discovery-rate gate, the multiplicity correction appropriate when a whole field is
+                    scanned at once, and the one the manuscript's trend map uses; because roughly one cell in
+                    twenty passes a &plusmn;2&sigma; test by chance alone, it is the stricter reading of how much of
+                    the ocean is really changing. FDR-significant cells are a strict subset, so switching to it
+                    only ever removes significant area. The choice also drives the time-series label and the
+                    mean-state chip, so the panels never disagree.</p>
               </details>
             </div>
             <div class="sig-control" id="sig-control" role="group" aria-label="Significance test">
               <span class="sig-caption">Significance</span>
               <div class="sig-buttons">
-                <button class="sig-option is-active" type="button" data-sig="fdr" aria-pressed="true">FDR</button>
-                <button class="sig-option" type="button" data-sig="point" aria-pressed="false">&plusmn;2&sigma; only</button>
+                <button class="sig-option is-active" type="button" data-sig="point" aria-pressed="true">&plusmn;2&sigma; only</button>
+                <button class="sig-option" type="button" data-sig="fdr" aria-pressed="false">FDR</button>
               </div>
             </div>
           </div>
@@ -397,6 +399,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-06a"></script>
+  <script src="./app.js?v=2026-08-06b"></script>
 </body>
 </html>

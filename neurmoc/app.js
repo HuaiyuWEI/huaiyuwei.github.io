@@ -18,7 +18,7 @@ const state = {
   latitudeIndex: 0,
   clim: 20,                             // mean-state panel (full field)
   trendClim: 0.4,
-  sigBasis: "fdr",                      // "fdr" | "point" (see sigField)
+  sigBasis: "point",                    // "point" | "fdr" (see sigField)
   playbackSpeed: "normal",
   playing: false,
   timer: null,
@@ -314,12 +314,13 @@ function meanStateYZ() {
 
 // Which significance test drives every display: the map's hatching, the
 // time-series label and trend-line color, the interpretation chip, and the
-// trend tooltip. "fdr" (default) is the map-level Benjamini-Hochberg gate
-// intersected with the +-2 sigma rule - the publication convention for a
-// field scanned as a whole. "point" is the +-2 sigma test alone, the
-// convention the manuscript keeps for single cells chosen in advance
-// (fig02's cell panels). FDR is a strict subset of per-point, so switching
-// to "point" only ever ADDS significant cells.
+// trend tooltip. "point" (default) is the +-2 sigma test alone - does this
+// cell's own interval exclude zero? - the convention the manuscript keeps
+// for single cells chosen in advance (fig02's cell panels). "fdr" adds the
+// map-level Benjamini-Hochberg gate intersected with that rule, the
+// multiplicity correction for a field scanned as a whole (fig02's map).
+// FDR is a strict subset of per-point, so it only ever REMOVES significant
+// cells.
 function sigField() {
   return state.sigBasis === "point"
     ? state.data.trend.significant : state.data.trend.significant_fdr;
@@ -518,8 +519,8 @@ function buildHash() {
   if (state.diff) {
     parts.set("d", "1");
   }
-  if (state.sigBasis === "point") {
-    parts.set("s", "p");
+  if (state.sigBasis === "fdr") {
+    parts.set("s", "f");
   }
   return parts.toString();
 }
@@ -558,7 +559,10 @@ function applyHashState() {
   if (k !== null) state.densityIndex = k;
   if (t !== null) state.timeIndex = t;
   if (a !== null) state.climAnom = a;
-  state.sigBasis = params.get("s") === "p" ? "point" : "fdr";
+  // "f" selects the FDR gate; anything else (including the legacy "p"
+  // that marked the old FDR-default era's per-point choice) is the
+  // +-2 sigma default
+  state.sigBasis = params.get("s") === "f" ? "fdr" : "point";
   // diff only means something against a non-default combination
   const nonDefault = c !== null && c !== 0;
   state.diff = params.get("d") === "1" && nonDefault;
@@ -579,7 +583,7 @@ function applyHashToUi() {
   state.timeIndex = DEFAULT_VIEW.t;
   state.climAnom = 4;
   state.diff = false;
-  state.sigBasis = "fdr";
+  state.sigBasis = "point";
   state.pendingCombo = null;
   applyHashState();
   controls.timeSlider.value = String(state.timeIndex);
@@ -1143,10 +1147,10 @@ function drawTimeSeries() {
   for (let tick = ymin; tick <= ymax; tick += yTickStep) {
     yTicks.push(tick);
   }
-  // One significance convention everywhere: the FDR-controlled mask (the
-  // map's stippling). Curve and band color encode strengthening/weakening
-  // relative to the local mean-state sign; an insignificant dashed trend
-  // stays gray.
+  // One significance convention everywhere: whichever mask the trend
+  // panel's control selects (sigField). Curve and band color encode
+  // strengthening/weakening relative to the local mean-state sign; an
+  // insignificant dashed trend stays gray.
   const comboNote = comboIndex() === 0
     ? "" : " · trend and band: default products";
   const gapStart = d.gap_time_range ? d.gap_time_range[0] : null;
