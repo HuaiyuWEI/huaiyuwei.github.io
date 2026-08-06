@@ -518,6 +518,9 @@ function buildHash() {
   if (state.diff) {
     parts.set("d", "1");
   }
+  if (state.sigBasis === "point") {
+    parts.set("s", "p");
+  }
   return parts.toString();
 }
 
@@ -555,6 +558,7 @@ function applyHashState() {
   if (k !== null) state.densityIndex = k;
   if (t !== null) state.timeIndex = t;
   if (a !== null) state.climAnom = a;
+  state.sigBasis = params.get("s") === "p" ? "point" : "fdr";
   // diff only means something against a non-default combination
   const nonDefault = c !== null && c !== 0;
   state.diff = params.get("d") === "1" && nonDefault;
@@ -564,7 +568,7 @@ function applyHashState() {
   }
 }
 
-const HASH_STATE_KEYS = ["c", "j", "k", "t", "a", "d"];
+const HASH_STATE_KEYS = ["c", "j", "k", "t", "a", "d", "s"];
 
 // editing the hash by hand, or following a shared link while the page is
 // already open, should apply like a fresh load; plain anchors (#cite) are
@@ -575,6 +579,7 @@ function applyHashToUi() {
   state.timeIndex = DEFAULT_VIEW.t;
   state.climAnom = 4;
   state.diff = false;
+  state.sigBasis = "fdr";
   state.pendingCombo = null;
   applyHashState();
   controls.timeSlider.value = String(state.timeIndex);
@@ -583,6 +588,7 @@ function applyHashToUi() {
   if (controls.diffToggle) {
     controls.diffToggle.checked = state.diff;
   }
+  syncSigControl();
   if (state.combosReady) {
     const requested = state.pendingCombo !== null ? state.pendingCombo : 0;
     applyComboIndex(requested);
@@ -1362,7 +1368,7 @@ function hoverText(kind, latIdx, rowIdx) {
     if (slope <= -900) {
       return `${latText} · ${sigmaText}<br><strong>no data</strong>`;
     }
-    const sig = d.trend.significant_fdr[rowIdx][latIdx];
+    const sig = sigField()[rowIdx][latIdx];
     return `${latText} · ${sigmaText}<br><strong>${slope.toFixed(3)} Sv yr⁻¹</strong>${sig ? "" : " (not significant)"}`;
   }
   if (kind === "snapshot") {
@@ -1485,7 +1491,7 @@ function render() {
     rightTitle: "AMOC",
     highlightX: state.latitudeIndex,
     highlightY: state.densityIndex,
-    hatchMask: d.trend.significant_fdr.map((row) => row.map((value) => !value)),
+    hatchMask: sigField().map((row) => row.map((value) => !value)),
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(trendCanvas, trendGeom, "trend");
@@ -1646,6 +1652,17 @@ function applyComboIndex(combo) {
   updateDiffAvailability();
 }
 
+function syncSigControl() {
+  if (!controls.sigControl) {
+    return;
+  }
+  controls.sigControl.querySelectorAll(".sig-option").forEach((button) => {
+    const active = (button.dataset.sig === "point") === (state.sigBasis === "point");
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
 function updateDiffAvailability() {
   if (!controls.diffToggle) {
     return;
@@ -1713,6 +1730,18 @@ function bindControls() {
   if (controls.diffToggle) {
     controls.diffToggle.addEventListener("change", (event) => {
       state.diff = event.target.checked;
+      render();
+    });
+  }
+
+  if (controls.sigControl) {
+    controls.sigControl.addEventListener("click", (event) => {
+      const button = event.target.closest(".sig-option");
+      if (!button || !state.data) {
+        return;
+      }
+      state.sigBasis = button.dataset.sig === "point" ? "point" : "fdr";
+      syncSigControl();
       render();
     });
   }
@@ -1980,6 +2009,7 @@ async function init() {
   controls.productComboLabel.textContent = comboLabel();
   setProductOptionsEnabled(state.combosReady);
   updateDiffAvailability();
+  syncSigControl();
 
   bindControls();
   bindCanvasInteractions();

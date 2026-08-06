@@ -873,14 +873,16 @@ canvas {
   color: var(--muted);
 }
 
-.product-buttons {
+.product-buttons,
+.sig-buttons {
   display: inline-flex;
   border: 1px solid var(--field-border);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
 
-.product-option {
+.product-option,
+.sig-option {
   appearance: none;
   border: none;
   background: var(--toggle-bg);
@@ -892,20 +894,24 @@ canvas {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.product-option + .product-option {
+.product-option + .product-option,
+.sig-option + .sig-option {
   border-left: 1px solid var(--field-border);
 }
 
-.product-option:hover {
+.product-option:hover,
+.sig-option:hover {
   background: var(--accent-soft);
 }
 
-.product-option.is-active {
+.product-option.is-active,
+.sig-option.is-active {
   background: var(--button-start);
   color: var(--toggle-active-text);
 }
 
-.product-option:focus-visible {
+.product-option:focus-visible,
+.sig-option:focus-visible {
   outline: 2px solid var(--accent-deep);
   outline-offset: -2px;
 }
@@ -1217,4 +1223,25 @@ canvas {
   background: var(--chip-bg);
   color: var(--muted);
   text-align: center;
+}
+
+/* ---- trend-map significance selector ---- */
+
+.sig-control {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  justify-items: start;
+  flex: none;
+}
+
+.sig-caption {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.sig-option {
+  font-size: 0.86rem;
+  padding: 7px 13px;
+  white-space: nowrap;
 }

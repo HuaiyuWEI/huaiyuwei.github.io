@@ -24,8 +24,9 @@ inputs.
   RAPID protocol), plus a chip that reads the local trend against the
   mean-state sign (a positive trend on a negative cell = weakening).
 - Light/dark theme (floating toggle, persisted) and shareable URLs: the
-  selected products, cell, month, color limit, and diff mode live in the
-  URL hash ("Copy link to this view").
+  selected products, cell, month, color limit, diff mode, and significance
+  test live in the URL hash ("Copy link to this view"); `s=p` selects the
+  ±2σ-only test, and its absence means the FDR default.
 - Mean overturning state (the 2004–2009 ACCESS training-model baseline),
   split into SMOC and AMOC sectors. This orientation panel is independent
   of the selected input-product reconstruction.
@@ -41,7 +42,12 @@ inputs.
   combined with measured ensemble-member trend spread, mapping-error spread
   measured in the cross-model test, input-product trend spread, and propagated
   GRACE measurement-noise trend spread; thin diagonal hatching (the fig02
-  style) marks cells not significant after FDR control.
+  style) marks cells not significant under the selected test. A
+  "Significance" control in that panel switches between the FDR-controlled
+  gate (default, the manuscript's map convention) and the ±2σ test alone
+  (the manuscript's single-cell convention); the choice drives the hatching,
+  the time-series label and trend-line color, the interpretation chip, and
+  the trend tooltip together, so the panels never disagree.
 - Latitude–time Hovmöller diagram at a selected density level.
 - Month-by-month snapshot with animation.
 
@@ -110,10 +116,13 @@ from the m26r3 pipeline defaults before serving them.
 - Month labels come from the pipeline's explicit `time_month` coordinates
   (the v1 float-derived labels shifted every December into January).
 - Trend, its ±2σ CI, and both significance masks are read directly from
-  the export (no recomputation in the browser). Every panel — the map
-  hatching, the time-series label, and the interpretation chip — uses the
-  FDR-controlled mask; cells whose per-point ±2σ CI excludes zero but fail
-  FDR control are labeled as exactly that.
+  the export (no recomputation in the browser); the trend panel's
+  "Significance" control chooses which mask every panel displays (all of
+  them read `sigField()` in app.js, so they can never diverge). Under the
+  FDR default, cells whose per-point ±2σ CI excludes zero but fail FDR
+  control are labeled as exactly that; FDR-significant cells are a strict
+  subset of per-point ones, so switching to ±2σ only ever adds significant
+  area.
 - The monthly mapping-error term is the grand-centered sample standard
   deviation of held-out-model errors pooled across 15 MRI scenario-branch
   windows (3915 serially correlated branch-month values per fully supported
