@@ -194,6 +194,14 @@ function formatSigned(value, digits = 1) {
   return `${value < 0 ? "−" : "+"}${Math.abs(value).toFixed(digits)}`;
 }
 
+// Trend values run from ~0.001 to ~0.5 Sv/yr, so 2 decimals collapses the
+// small ones to "0.00" (and to a "-0.00" that reads as a bug). Match the
+// trend tooltip's 3 decimals and normalize negative zero away.
+function formatTrend(value, digits = 3) {
+  const text = Number(value).toFixed(digits);
+  return Number(text) === 0 ? (0).toFixed(digits) : text;
+}
+
 function formatColorbarTick(value, digits = 0) {
   return Number(value).toFixed(digits);
 }
@@ -1021,9 +1029,8 @@ function drawTimeSeries() {
   const rawSlope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
   const trendDefined = rawSlope > -900;
   const slope = trendDefined ? rawSlope : 0;
-  const sigPoint = trendDefined
-    && d.trend.significant[state.densityIndex][state.latitudeIndex];
-  // the basis the trend panel's control selects (see sigField)
+  // the basis the trend panel's control selects (see sigField); the
+  // per-point-vs-FDR nuance is spelled out by the interpretation chip
   const sigShown = trendDefined
     && sigField()[state.densityIndex][state.latitudeIndex];
   const meanStateValue = meanStateYZ()[state.densityIndex][state.latitudeIndex];
@@ -1035,6 +1042,15 @@ function drawTimeSeries() {
     : direction === "increasing" ? theme.increasingBand : theme.neutralBand;
   const trendColor = sigShown ? directionColor : theme.trendNot;
   const ci = d.trend.ci95.map((bound) => bound[state.densityIndex][state.latitudeIndex]);
+  // The exported interval is symmetric about the slope and its half-width
+  // IS 2 sigma_total (|slope| > half-width is exactly the per-point test),
+  // so "slope +- half-width" restates the same interval and reads more
+  // directly than a bracketed range. Always annotated, significant or not.
+  const ciHalf = trendDefined ? Math.abs(ci[1] - ci[0]) / 2 : NaN;
+  const trendLabel = trendDefined
+    ? `Trend = ${formatTrend(slope)} ± ${formatTrend(ciHalf)} Sv yr⁻¹`
+      + (sigShown ? "" : " (not significant)")
+    : "No trend estimate at this cell";
   const xMean = xYears.reduce((sum, value) => sum + value, 0) / xYears.length;
   const yMean = referenceValues.reduce((sum, value) => sum + value, 0)
     / referenceValues.length;
@@ -1218,9 +1234,7 @@ function drawTimeSeries() {
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>
     <text x="${22 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="${theme.muted}" transform="rotate(-90 ${22 * fs} ${margins.top + plotHeight / 2})">Ψ anomaly (Sv)</text>
     <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${trendColor}">
-      ${sigShown ? `Trend = [${roundValue(ci[0])}, ${roundValue(ci[1])}] Sv yr⁻¹`
-        : (state.sigBasis === "fdr" && sigPoint) ? "Trend not significant after FDR control"
-          : "Trend not significant (±2σ)"}${comboNote}
+      ${trendLabel}${comboNote}
     </text>
     ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="${theme.gapText}">Uncertainty unavailable at this cell</text>`}
   `;
