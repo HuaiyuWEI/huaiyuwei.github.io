@@ -81,6 +81,7 @@ class Config:
     meta_path: Path
     core_path: Path
     combos_path: Path
+    trends_path: Path
 
 
 def round_nested(values: np.ndarray, decimals: int = 4) -> list:
@@ -352,7 +353,11 @@ def main(cfg: Config) -> None:
 
     grace_file = rw / "grace_noise_budget.npz"
     with np.load(grace_file, allow_pickle=False) as fh:
-        grace_month = np.asarray(fh["sigma_grace_month"], dtype=np.float64)
+        #: time-resolved [t, k, j] - the granule uncertainty is per month
+        #: and spikes across the GRACE/GRACE-FO gap, so fig02 stopped
+        #: using the RMS-over-time sigma_grace_month; match it here or the
+        #: envelope decomposition below will not reproduce the export
+        grace_month = np.asarray(fh["sigma_grace_month_t"], dtype=np.float64)
         grace_trend = np.asarray(fh["sigma_grace"], dtype=np.float64)
         grace_month_axis = np.char.strip(
             np.asarray(fh["time_month"]).astype(str).ravel())
@@ -362,9 +367,14 @@ def main(cfg: Config) -> None:
         grace_sigma_source = str(np.asarray(fh["sigma_source"]).item()).strip()
         grace_complementary_to = str(
             np.asarray(fh["complementary_to"]).item()).strip()
+    if grace_month.shape != (nt,) + plane_shape:
+        raise ValueError(
+            f"monthly GRACE noise shape {grace_month.shape} != "
+            f"{(nt,) + plane_shape} - rerun 16_grace_noise_montecarlo.py "
+            "for the time-resolved term")
     for name, field in (("monthly GRACE noise", grace_month),
                         ("trend GRACE noise", grace_trend)):
-        if field.shape != plane_shape:
+        if name == "trend GRACE noise" and field.shape != plane_shape:
             raise ValueError(f"{name} shape {field.shape} != {plane_shape}")
         if not np.isfinite(field).all() or np.any(field < 0):
             raise ValueError(f"{name} contains non-finite or negative values")
@@ -411,7 +421,7 @@ def main(cfg: Config) -> None:
         sigma_map_monthly[None, :, :] ** 2
         + epi ** 2
         + sate_month ** 2
-        + grace_month[None, :, :] ** 2
+        + grace_month ** 2
     ).astype(np.float32)
 
     # Cells lacking complete held-out-model support borrow the deepest
@@ -460,6 +470,81 @@ def main(cfg: Config) -> None:
     cfg.core_path.parent.mkdir(parents=True, exist_ok=True)
     cfg.core_path.write_bytes(core_blob)
     cfg.combos_path.write_bytes(combos_blob)
+
+    # ---- per-combination trend statistics (stage 18) --------------------
+    # The viewer lets a visitor switch input products, so its map,
+    # hatching and per-cell trend readouts must follow that choice. Stage
+    # 17 re-runs the project's trend estimator on each combination with
+    # the published budget terms held fixed (sigma_sate included), so only
+    # the slope and the bootstrap serial term move. Combination 0 is
+    # validated against the export both there and again here.
+    trend_stats_file = rw / "combination_trend_stats.npz"
+    if not trend_stats_file.is_file():
+        raise SystemExit(
+            f"{trend_stats_file.name} missing - run "
+            "scripts/18_combination_trends.py for this network")
+    with np.load(trend_stats_file, allow_pickle=False) as fh:
+        ct_slope = np.asarray(fh["slope_per_year"], dtype=np.float32)
+        ct_interval = np.asarray(fh["slope_interval_2sigma"], dtype=np.float32)
+        ct_sig = np.asarray(fh["significant"]).astype(bool)
+        ct_sig_fdr = np.asarray(fh["significant_fdr"]).astype(bool)
+        ct_testable = np.asarray(fh["testable"]).astype(bool)
+        ct_tags = [str(t) for t in np.asarray(fh["combo_tags"])]
+        ct_run_id = str(np.asarray(fh["run_id"]).item())
+        ct_months = np.asarray(fh["time_month_int"], dtype=np.int64)
+        ct_trimmed = np.asarray(fh["months_trimmed"], dtype=int).tolist()
+        ct_n_boot = int(np.asarray(fh["n_boot"]).item())
+        ct_block = int(np.asarray(fh["block_months"]).item())
+        ct_sate_included = bool(np.asarray(fh["sigma_sate_included"]).item())
+    if ct_slope.shape != (len(combos), nk, nj):
+        raise SystemExit(
+            f"combination_trend_stats has shape {ct_slope.shape}; expected "
+            f"{(len(combos), nk, nj)} - rerun stage 18 for this network")
+    if ct_run_id != run_id:
+        raise SystemExit(
+            f"combination_trend_stats is from run {ct_run_id} but the export "
+            f"is {run_id} - rerun stage 18")
+    if ct_months.size != nt:
+        raise SystemExit(
+            f"combination_trend_stats covers {ct_months.size} months, the "
+            f"export {nt} - rerun stage 18 against this reconstruction")
+    # combination 0 IS the exported trend (stage 18 asserts the masks too)
+    _finite = np.isfinite(trend) & np.isfinite(ct_slope[0])
+    if not np.allclose(ct_slope[0][_finite], trend[_finite], atol=1e-6):
+        raise SystemExit(
+            "combination 0 of combination_trend_stats does not reproduce "
+            "NeurMOC_trend_mean - stale files?")
+    # half-width of the +-2 sigma interval; symmetric by construction, so
+    # "slope +- half" restates the interval the significance rule uses.
+    # The stored interval is [combo, bound, k, j] - index the BOUND axis,
+    # not the combination axis
+    if ct_interval.shape != (len(combos), 2, nk, nj):
+        raise SystemExit(
+            f"slope_interval_2sigma has shape {ct_interval.shape}; expected "
+            f"{(len(combos), 2, nk, nj)} - rerun stage 18")
+    ct_half = np.abs(ct_interval[:, 1] - ct_interval[:, 0]) / 2.0
+    if ct_half.shape != ct_slope.shape:
+        raise SystemExit(
+            f"interval half-width shape {ct_half.shape} != slope shape "
+            f"{ct_slope.shape}")
+    # the half-width IS the per-point rule: |slope| > half <=> significant
+    _chk = np.isfinite(ct_slope) & ct_testable
+    if not np.array_equal(np.abs(ct_slope[_chk]) > ct_half[_chk],
+                          ct_sig[_chk]):
+        raise SystemExit(
+            "the +-2 sigma interval and the per-point mask disagree - the "
+            "significance rule and the exported interval have drifted")
+    # cells outside the tested domain are reported as insignificant, the
+    # same convention the export's NaN masks decode to in the viewer
+    ct_sig = ct_sig & ct_testable
+    ct_sig_fdr = ct_sig_fdr & ct_testable
+    trends_blob = (
+        ct_slope.astype("<f4").tobytes()
+        + ct_half.astype("<f4").tobytes()
+        + ct_sig.astype(np.uint8).tobytes()
+        + ct_sig_fdr.astype(np.uint8).tobytes()
+    )
+    cfg.trends_path.write_bytes(trends_blob)
     # the v2 single-file binary this split replaces
     (cfg.core_path.parent / "neurmoc_series.bin").unlink(missing_ok=True)
 
@@ -608,6 +693,31 @@ def main(cfg: Config) -> None:
             "byte_length": len(combos_blob),
             "version": hashlib.sha1(combos_blob).hexdigest()[:10],
         },
+        "trend_combos": {
+            "file": cfg.trends_path.name,
+            "order": ["slope[c,k,j] float32-le",
+                      "half_width_2sigma[c,k,j] float32-le",
+                      "significant[c,k,j] uint8",
+                      "significant_fdr[c,k,j] uint8"],
+            "shape": [len(combos), nk, nj],
+            "byte_length": len(trends_blob),
+            "version": hashlib.sha1(trends_blob).hexdigest()[:10],
+            "combo_tags": ct_tags,
+            "months_trimmed_to_default_window": ct_trimmed,
+            "sigma_sate_included": ct_sate_included,
+            "note": ("Per-combination trend statistics from stage 18: the "
+                     "same estimator and the same published budget terms as "
+                     "the manuscript, re-run on each combination's "
+                     "reconstruction over the DEFAULT combination's window. "
+                     "Only the OLS slope and the moving-block-bootstrap "
+                     "serial term depend on the combination; the "
+                     "mapping-error, ensemble, input-product and GRACE "
+                     "terms are properties of the network and observing "
+                     "system and are held fixed. Combination 0 reproduces "
+                     "the NeurMOC_data export exactly. Slopes are NaN "
+                     f"outside the valid plane. MBB {ct_block}-month "
+                     f"blocks, {ct_n_boot} draws."),
+        },
         "metadata": {
             "source_folder": f"{run_id} reference-network RealWorld products",
             "network": training_experiment,
@@ -650,8 +760,14 @@ def main(cfg: Config) -> None:
 
     err = np.abs(np.round(stack / SCALE) * SCALE - stack).max()
     print(f"wrote {cfg.core_path} ({len(core_blob) / 1e6:.2f} MB), "
-          f"{cfg.combos_path} ({len(combos_blob) / 1e6:.2f} MB) and "
+          f"{cfg.combos_path} ({len(combos_blob) / 1e6:.2f} MB), "
+          f"{cfg.trends_path} ({len(trends_blob) / 1e3:.0f} KB) and "
           f"{cfg.meta_path} ({cfg.meta_path.stat().st_size / 1e3:.0f} KB)")
+    _fdr_frac = [float((ct_sig_fdr[c] & ct_testable[c]).sum()
+                       / max(ct_testable[c].sum(), 1))
+                 for c in range(len(combos))]
+    print("per-combination FDR-significant fraction: "
+          + ", ".join(f"{tag}={f:.1%}" for tag, f in zip(ct_tags, _fdr_frac)))
     print(f"combos x [t,k,j] = {stack.shape}; period {canonical[0]}..; "
           f"max quantization error {err:.4f} Sv; RAPID overlay "
           f"{rapid['months'][0]}..{rapid['months'][-1]}")
@@ -664,9 +780,10 @@ def parse_args() -> Config:
     parser.add_argument("--meta", default="data/neurmoc_meta.json")
     parser.add_argument("--core", default="data/neurmoc_core.bin")
     parser.add_argument("--combos", default="data/neurmoc_combos.bin")
+    parser.add_argument("--trends", default="data/neurmoc_trends.bin")
     args = parser.parse_args()
     return Config(Path(args.realworld), Path(args.rapid), Path(args.meta),
-                  Path(args.core), Path(args.combos))
+                  Path(args.core), Path(args.combos), Path(args.trends))
 
 
 if __name__ == "__main__":

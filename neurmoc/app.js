@@ -3,7 +3,7 @@
    background), product-difference view, RAPID 26.5N overlay, mean-state
    trend interpretation, and shareable URL state. */
 
-const META_PATH = "./data/neurmoc_meta.json?v=2026-08-04b";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-08-06b";
 const DATA_DIR = "./data/";
 
 const state = {
@@ -332,6 +332,80 @@ function meanStateYZ() {
 function sigField() {
   return state.sigBasis === "point"
     ? state.data.trend.significant : state.data.trend.significant_fdr;
+}
+
+/* ------- per-combination trend statistics (stage 18) ------- */
+
+// The trend map, its hatching and every per-cell trend readout follow the
+// selected input combination: stage 18 re-runs the project's estimator on
+// each combination with the published budget terms held fixed, so only the
+// slope and the bootstrap serial term move. Until that binary arrives (it
+// streams with the combination cubes) the exported default stands in - and
+// the default IS combination 0, so the fallback is never wrong, only
+// less specific.
+let trendFieldMemo = null;
+
+function trendBase(c) {
+  const { nk, nj } = state.data.dims;
+  return c * nk * nj;
+}
+
+function trendSlopeAt(k, j) {
+  const pack = state.data.trendPack;
+  const { nj } = state.data.dims;
+  if (pack) {
+    return pack.slope[trendBase(comboIndex()) + k * nj + j];
+  }
+  const raw = state.data.trend.slope_per_year[k][j];
+  return raw > -900 ? raw : NaN;
+}
+
+function trendHalfAt(k, j) {
+  const pack = state.data.trendPack;
+  const { nj } = state.data.dims;
+  if (pack) {
+    return pack.half[trendBase(comboIndex()) + k * nj + j];
+  }
+  const lo = state.data.trend.ci95[0][k][j];
+  const hi = state.data.trend.ci95[1][k][j];
+  return lo > -900 && hi > -900 ? Math.abs(hi - lo) / 2 : NaN;
+}
+
+function trendSigAt(k, j, basis) {
+  const useFdr = (basis || state.sigBasis) === "fdr";
+  const pack = state.data.trendPack;
+  const { nj } = state.data.dims;
+  if (pack) {
+    const arr = useFdr ? pack.sigFdr : pack.sig;
+    return arr[trendBase(comboIndex()) + k * nj + j] === 1;
+  }
+  const field = useFdr ? state.data.trend.significant_fdr
+    : state.data.trend.significant;
+  return Boolean(field[k][j]);
+}
+
+// the heatmap and its hatch mask want nested arrays; rebuild them only
+// when the combination, the significance basis, or the data source changes
+function ensureTrendFields() {
+  const key = `${comboIndex()}|${state.sigBasis}|${state.data.trendPack ? 1 : 0}`;
+  if (trendFieldMemo && trendFieldMemo.key === key) {
+    return trendFieldMemo;
+  }
+  const { nk, nj } = state.data.dims;
+  const slope = [];
+  const hatch = [];
+  for (let k = 0; k < nk; k += 1) {
+    const srow = new Array(nj);
+    const hrow = new Array(nj);
+    for (let j = 0; j < nj; j += 1) {
+      srow[j] = trendSlopeAt(k, j);
+      hrow[j] = !trendSigAt(k, j);
+    }
+    slope.push(srow);
+    hatch.push(hrow);
+  }
+  trendFieldMemo = { key, slope, hatch };
+  return trendFieldMemo;
 }
 
 function stdAt(t, k, j) {
@@ -1026,13 +1100,13 @@ function drawTimeSeries() {
   // that point estimate when another input combination is selected.
   const referenceValues = showDefault ? defaultValues : values;
   const xYears = d.time_years;
-  const rawSlope = d.trend.slope_per_year[state.densityIndex][state.latitudeIndex];
-  const trendDefined = rawSlope > -900;
+  const rawSlope = trendSlopeAt(state.densityIndex, state.latitudeIndex);
+  const trendDefined = Number.isFinite(rawSlope);
   const slope = trendDefined ? rawSlope : 0;
-  // the basis the trend panel's control selects (see sigField); the
-  // per-point-vs-FDR nuance is spelled out by the interpretation chip
+  // the basis the trend panel's control selects; the per-point-vs-FDR
+  // nuance is spelled out by the interpretation chip
   const sigShown = trendDefined
-    && sigField()[state.densityIndex][state.latitudeIndex];
+    && trendSigAt(state.densityIndex, state.latitudeIndex);
   const meanStateValue = meanStateYZ()[state.densityIndex][state.latitudeIndex];
   const direction = trendDefined
     ? relativeTrendDirection(meanStateValue, slope) : "neutral";
@@ -1041,12 +1115,12 @@ function drawTimeSeries() {
   const directionBand = direction === "declining" ? theme.decliningBand
     : direction === "increasing" ? theme.increasingBand : theme.neutralBand;
   const trendColor = sigShown ? directionColor : theme.trendNot;
-  const ci = d.trend.ci95.map((bound) => bound[state.densityIndex][state.latitudeIndex]);
+  const ciHalfRaw = trendHalfAt(state.densityIndex, state.latitudeIndex);
   // The exported interval is symmetric about the slope and its half-width
   // IS 2 sigma_total (|slope| > half-width is exactly the per-point test),
   // so "slope +- half-width" restates the same interval and reads more
   // directly than a bracketed range. Always annotated, significant or not.
-  const ciHalf = trendDefined ? Math.abs(ci[1] - ci[0]) / 2 : NaN;
+  const ciHalf = trendDefined ? ciHalfRaw : NaN;
   const trendLabel = trendDefined
     ? `Trend = ${formatTrend(slope)} ± ${formatTrend(ciHalf)} Sv yr⁻¹`
       + (sigShown ? "" : " (not significant)")
@@ -1167,8 +1241,7 @@ function drawTimeSeries() {
   // panel's control selects (sigField). Curve and band color encode
   // strengthening/weakening relative to the local mean-state sign; an
   // insignificant dashed trend stays gray.
-  const comboNote = comboIndex() === 0
-    ? "" : " · trend and band: default products";
+  const comboNote = comboIndex() === 0 ? "" : " · band: default products";
   const gapStart = d.gap_time_range ? d.gap_time_range[0] : null;
   const gapEnd = d.gap_time_range ? d.gap_time_range[1] : null;
   const gapX1 = gapStart !== null ? margins.left + ((gapStart - xYears[0]) / (xYears[xYears.length - 1] - xYears[0])) * plotWidth : null;
@@ -1266,11 +1339,11 @@ function updateTrendReading() {
     el.hidden = true;
     return;
   }
-  const rawSlope = d.trend.slope_per_year[k][j];
-  const trendDefined = rawSlope > -900;
-  // same basis as the map hatching and the plot label (sigField)
-  const sigPoint = trendDefined && d.trend.significant[k][j];
-  const sigShown = trendDefined && sigField()[k][j];
+  const rawSlope = trendSlopeAt(k, j);
+  const trendDefined = Number.isFinite(rawSlope);
+  // same combination and basis as the map hatching and the plot label
+  const sigPoint = trendDefined && trendSigAt(k, j, "point");
+  const sigShown = trendDefined && trendSigAt(k, j);
   const sense = base >= 0 ? "clockwise" : "counterclockwise";
   let verdict;
   let cls = "is-neutral";
@@ -1293,8 +1366,7 @@ function updateTrendReading() {
   // and the SVG's top line has no room for it beside the trend label
   const mappingFilled = d.mapping_filled || d.transfer_filled;
   const borrowed = mappingFilled && mappingFilled[k][j] === 1;
-  const defaultNote = comboIndex() === 0 ? "" :
-    `<span class="tr-sep" aria-hidden="true">·</span><span>trend: default products</span>`;
+  const defaultNote = "";
   el.className = `trend-reading ${cls}`;
   el.innerHTML = `<span>Mean state <strong>${formatSigned(base)} Sv</strong> (${sense} cell)</span>`
     + `<span class="tr-sep" aria-hidden="true">·</span><span class="tr-verdict">${verdict}</span>`
@@ -1382,11 +1454,11 @@ function hoverText(kind, latIdx, rowIdx) {
   }
   const sigmaText = `σ₂ ${formatDensity(d.densities[rowIdx])}`;
   if (kind === "trend") {
-    const slope = d.trend.slope_per_year[rowIdx][latIdx];
+    const slope = trendSlopeAt(rowIdx, latIdx);
     if (slope <= -900) {
       return `${latText} · ${sigmaText}<br><strong>no data</strong>`;
     }
-    const sig = sigField()[rowIdx][latIdx];
+    const sig = trendSigAt(rowIdx, latIdx);
     return `${latText} · ${sigmaText}<br><strong>${slope.toFixed(3)} Sv yr⁻¹</strong>${sig ? "" : " (not significant)"}`;
   }
   if (kind === "snapshot") {
@@ -1499,7 +1571,8 @@ function render() {
   });
   registerHover(hovmollerCanvas, hovmollerGeom, "hovmoller");
 
-  const trendGeom = drawDualBasinHeatmap(trendCanvas, d.trend.slope_per_year, d.latitudes, d.densities, {
+  const trendFields = ensureTrendFields();
+  const trendGeom = drawDualBasinHeatmap(trendCanvas, trendFields.slope, d.latitudes, d.densities, {
     clim: state.trendClim,
     colorbarTickDigits: 1,
     yTitle: "Density σ₂ (kg/m³)",
@@ -1509,7 +1582,7 @@ function render() {
     rightTitle: "AMOC",
     highlightX: state.latitudeIndex,
     highlightY: state.densityIndex,
-    hatchMask: sigField().map((row) => row.map((value) => !value)),
+    hatchMask: trendFields.hatch,
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(trendCanvas, trendGeom, "trend");
@@ -1940,10 +2013,36 @@ async function loadData() {
   return meta;
 }
 
+// Per-combination trend statistics: small enough to fetch before the
+// combination cubes, so the map is ready the moment the buttons unlock.
+async function loadTrendCombos() {
+  const d = state.data;
+  const info = d.trend_combos;
+  if (!info) {
+    return;                       // data predates stage 18; default stands in
+  }
+  const bytes = await fetchWithProgress(
+    `${DATA_DIR}${info.file}?v=${info.version}`, info.byte_length, () => {});
+  if (bytes.byteLength !== info.byte_length) {
+    throw new Error(`Trend file has ${bytes.byteLength} bytes; expected ${info.byte_length}.`);
+  }
+  const [nCombos, nk, nj] = info.shape;
+  const n = nCombos * nk * nj;
+  const base = bytes.byteOffset;
+  d.trendPack = {
+    slope: new Float32Array(bytes.buffer, base, n),
+    half: new Float32Array(bytes.buffer, base + n * 4, n),
+    sig: new Uint8Array(bytes.buffer, base + n * 8, n),
+    sigFdr: new Uint8Array(bytes.buffer, base + n * 8 + n, n),
+  };
+  trendFieldMemo = null;
+}
+
 async function loadCombos() {
   const d = state.data;
   const info = d.series_combos;
   try {
+    await loadTrendCombos();
     const bytes = await fetchWithProgress(
       `${DATA_DIR}${info.file}?v=${info.version}`, info.byte_length, () => {});
     if (bytes.byteLength !== info.byte_length) {

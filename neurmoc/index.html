@@ -141,7 +141,10 @@
                  significant under the selected test.</p>
               <details class="method-note">
                 <summary>How significance is assessed</summary>
-                 <p>The trend belongs to the default-product reconstruction. Its &plusmn;2&sigma; uncertainty combines
+                 <p>The trend is that of the selected input combination: each of the eight is fitted with the
+                    same estimator, and only its slope and its bootstrap serial term differ &mdash; the other budget
+                    terms describe the network and the observing system, so they are held fixed. Its
+                    &plusmn;2&sigma; uncertainty combines
                     five one-sigma terms in quadrature: serially correlated residual variability from a
                     48-month circular moving-block bootstrap; mapping-error trend spread measured in held-out
                     MRI windows; trend spread across trained network members; input-product trend spread; and
@@ -180,9 +183,10 @@
               <details class="method-note">
                 <summary>What the curves show</summary>
                  <p>The solid curve is the selected reconstruction. The curve and uncertainty shading are blue
-                    where the default-product trend weakens the local 2004&ndash;2009 mean overturning and red where it strengthens it;
-                    A nonsignificant dashed trend remains gray. The shaded band and dashed trend are centered
-                    on the default reconstruction (GRACE JPL + DUACS + CCMP). The &plusmn;1&sigma; band combines
+                    where the trend weakens the local 2004&ndash;2009 mean overturning and red where it strengthens it;
+                    A nonsignificant dashed trend remains gray. The dashed trend is that of the selected
+                    combination; the shaded band remains the default reconstruction's
+                    (GRACE JPL + DUACS + CCMP). The &plusmn;1&sigma; band combines
                     held-out-model mapping-error spread, network-ensemble spread, the time-dependent spread across
                     the eight input-product combinations, and propagated GRACE measurement noise. When another combination is selected,
                     its default counterpart is also drawn in gray. At 26.5&deg;N the solid dark curve overlays the independent RAPID moored-array
@@ -208,7 +212,7 @@
           <div class="ts-legend" role="list" aria-label="Time-series legend">
             <span class="legend-item" role="listitem"><span class="swatch swatch-recon" id="legend-reconstruction-swatch" aria-hidden="true"></span>Selected reconstruction (blue declining/weakening; red increasing/strengthening)</span>
             <span class="legend-item" role="listitem"><span class="swatch swatch-uncertainty" id="legend-uncertainty-swatch" aria-hidden="true"></span>Default-products &plusmn;1&sigma; total</span>
-            <span class="legend-item" role="listitem"><span class="swatch swatch-trend" id="legend-trend-swatch" aria-hidden="true"></span>Default-products linear trend</span>
+            <span class="legend-item" role="listitem"><span class="swatch swatch-trend" id="legend-trend-swatch" aria-hidden="true"></span>Linear trend of the selection</span>
             <span class="legend-item" role="listitem" id="legend-default" hidden><span class="swatch swatch-default" aria-hidden="true"></span>Default reconstruction</span>
             <span class="legend-item" role="listitem" id="legend-rapid" hidden><span class="swatch swatch-rapid" aria-hidden="true"></span>RAPID observations &plusmn; uncertainty (mean-matched)</span>
             <span class="legend-item" role="listitem"><span class="swatch swatch-gap" aria-hidden="true"></span>GRACE/GRACE-FO gap</span>
@@ -402,6 +406,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-06c"></script>
+  <script src="./app.js?v=2026-08-06f"></script>
 </body>
 </html>

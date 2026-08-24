@@ -42,7 +42,11 @@ inputs.
   combined with measured ensemble-member trend spread, mapping-error spread
   measured in the cross-model test, input-product trend spread, and propagated
   GRACE measurement-noise trend spread; thin diagonal hatching (the fig02
-  style) marks cells not significant under the selected test. A
+  style) marks cells not significant under the selected test. The map,
+  its hatching and every per-cell trend readout belong to the SELECTED
+  input combination (stage 18 in the pipeline repo re-runs the project's
+  trend estimator on all eight); the monthly uncertainty band in the time
+  series remains the default combination's. A
   "Significance" control in that panel switches between the ±2σ test alone
   (default, the manuscript's single-cell convention) and the FDR-controlled
   gate (the manuscript's map convention); the choice drives the hatching,
@@ -72,6 +76,15 @@ Hovering over any heatmap shows a value readout; clicking selects the cell.
     `pred[c,t,k,j]` (index = obp·4 + ssh·2 + wind), streamed in the
     background after first paint. NaN cells encode as int16 min.
   - refreshed copies of `NeurMOC_data.mat` / `.nc` for the download links.
+- `data/neurmoc_trends.bin` (~200 KB) — per-combination trend statistics
+  from the pipeline's `scripts/18_combination_trends.py`: float32
+  `slope[c,k,j]`, float32 half-width of the ±2σ interval, then the
+  per-point and FDR masks as uint8. Combination 0 reproduces the
+  `NeurMOC_data` export exactly (asserted in both scripts). Only the slope
+  and the bootstrap serial term vary by combination; the mapping-error,
+  ensemble, input-product and GRACE terms are network/observing-system
+  properties and are held fixed, so σ_sate stays in every combination's
+  budget and the viewer never claims more significance than the paper.
 - `make_og_image.py` — renders `og_image.png` (the social-link preview
   card) from the meta file's trend map; rerun after regenerating data.
 
