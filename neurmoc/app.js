@@ -1,9 +1,9 @@
 /* NeurMOC viewer (v3): themed (light/dark) canvas rendering, progressive
-   data loading (default combination first, the other seven streamed in the
+   data loading (default combination first, the others streamed in the
    background), product-difference view, RAPID 26.5N overlay, mean-state
    trend interpretation, and shareable URL state. */
 
-const META_PATH = "./data/neurmoc_meta.json?v=2026-08-06b";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-08-06c";
 const DATA_DIR = "./data/";
 
 const state = {
@@ -1733,7 +1733,11 @@ const PRESETS = {
 };
 
 function applyComboIndex(combo) {
-  state.combo = { obp: (combo >> 2) & 1, ssh: (combo >> 1) & 1, wind: combo & 1 };
+  // mixed radix, not a bit field: obp has three options since GSFC was
+  // added, so index = obp*4 + ssh*2 + wind with obp in 0..2
+  state.combo = {
+    obp: Math.floor(combo / 4), ssh: (combo >> 1) & 1, wind: combo & 1,
+  };
   controls.productBar.querySelectorAll(".product-option").forEach((item) => {
     const axis = item.dataset.axis;
     item.classList.toggle("is-active",

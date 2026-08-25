@@ -17,11 +17,11 @@
     })();
   </script>
   <title>NeurMOC — Satellite-based reconstruction of the ocean overturning circulation</title>
-  <meta name="description" content="NeurMOC is a neural-network reconstruction of Atlantic and Southern Ocean overturning circulation anomalies from GRACE, satellite altimetry, and zonal surface winds, April 2003 to December 2024. Explore all eight production input combinations, uncertainty, and trends interactively.">
+  <meta name="description" content="NeurMOC is a neural-network reconstruction of Atlantic and Southern Ocean overturning circulation anomalies from GRACE, satellite altimetry, and zonal surface winds, April 2003 to December 2024. Explore all twelve production input combinations, uncertainty, and trends interactively.">
   <link rel="canonical" href="https://huaiyuwei.github.io/neurmoc/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="NeurMOC — satellite-based monitoring of the ocean overturning circulation">
-  <meta property="og:description" content="Interactive viewer for the NeurMOC reconstruction: monthly overturning anomalies in latitude–density space for all eight production input combinations, with uncertainty and 2003–2024 trends.">
+  <meta property="og:description" content="Interactive viewer for the NeurMOC reconstruction: monthly overturning anomalies in latitude–density space for all twelve production input combinations, with uncertainty and 2003–2024 trends.">
   <meta property="og:url" content="https://huaiyuwei.github.io/neurmoc/">
   <meta property="og:image" content="https://huaiyuwei.github.io/neurmoc/og_image.png">
   <meta property="og:image:width" content="1200">
@@ -106,7 +106,7 @@
         <div class="panel-header">
           <div>
             <h2>Input products</h2>
-            <p>Pick the input products &mdash; each of the eight production combinations is separately
+            <p>Pick the input products &mdash; each of the twelve production combinations is separately
                reconstructed by the same trained network. Showing: <strong id="product-combo-label">&hellip;</strong></p>
             <details class="method-note">
               <summary>For additional details</summary>
@@ -141,7 +141,7 @@
                  significant under the selected test.</p>
               <details class="method-note">
                 <summary>How significance is assessed</summary>
-                 <p>The trend is that of the selected input combination: each of the eight is fitted with the
+                 <p>The trend is that of the selected input combination: each of the twelve is fitted with the
                     same estimator, and only its slope and its bootstrap serial term differ &mdash; the other budget
                     terms describe the network and the observing system, so they are held fixed. Its
                     &plusmn;2&sigma; uncertainty combines
@@ -188,7 +188,7 @@
                     combination; the shaded band remains the default reconstruction's
                     (GRACE JPL + DUACS + CCMP). The &plusmn;1&sigma; band combines
                     held-out-model mapping-error spread, network-ensemble spread, the time-dependent spread across
-                    the eight input-product combinations, and propagated GRACE measurement noise. When another combination is selected,
+                    the twelve input-product combinations, and propagated GRACE measurement noise. When another combination is selected,
                     its default counterpart is also drawn in gray. At 26.5&deg;N the solid dark curve overlays the independent RAPID moored-array
                     observations with their observational uncertainty band, shifted to the
                     selected reconstruction's mean over the shared months &mdash; so the comparison is about variability only. The GRACE/GRACE-FO gap is shaded.
@@ -347,7 +347,7 @@
                April 2004&ndash;December 2009 mean and is mean-matched over shared months for the displayed comparison.
                The monthly uncertainty envelope combines an empirical mapping-error spread measured across 15
                held-out MRI scenario-branch windows, network-ensemble spread, the month-specific spread across the
-               eight input-product combinations, and GRACE measurement uncertainty propagated through the full
+               twelve input-product combinations, and GRACE measurement uncertainty propagated through the full
                reconstruction with 500 Monte Carlo draws. The downloadable files carry the same envelope. Where
                the held-out model does not provide complete support (mostly abyssal densities), the mapping-error
                term is taken from the nearest measured level above in the same latitude column. The GRACE term uses
@@ -406,6 +406,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-06f"></script>
+  <script src="./app.js?v=2026-08-06g"></script>
 </body>
 </html>
