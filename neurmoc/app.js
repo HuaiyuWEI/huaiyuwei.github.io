@@ -350,14 +350,20 @@ function trendBase(c) {
   return c * nk * nj;
 }
 
-function trendSlopeAt(k, j) {
+function trendSlopeAtCombo(c, k, j) {
   const pack = state.data.trendPack;
   const { nj } = state.data.dims;
   if (pack) {
-    return pack.slope[trendBase(comboIndex()) + k * nj + j];
+    return pack.slope[trendBase(c) + k * nj + j];
   }
+  // fallback before the per-combination file arrives: the exported
+  // default trend stands in for every combination
   const raw = state.data.trend.slope_per_year[k][j];
   return raw > -900 ? raw : NaN;
+}
+
+function trendSlopeAt(k, j) {
+  return trendSlopeAtCombo(comboIndex(), k, j);
 }
 
 function trendHalfAt(k, j) {
@@ -1095,9 +1101,12 @@ function drawTimeSeries() {
       defaultValues.push(predAtCombo(0, t, state.densityIndex, state.latitudeIndex));
     }
   }
-  // The distributed uncertainty and trend statistics are estimates for
-  // the default JPL + DUACS + CCMP reconstruction. Keep both centered on
-  // that point estimate when another input combination is selected.
+  // The uncertainty band is an estimate for the default
+  // JPL + DUACS + CCMP reconstruction, so it stays centered on that
+  // series (the gray curve) when another combination is selected. The
+  // TREND is the selected combination's own (stage 18), so it is centered
+  // on the selected series - drawing it through the default's mean would
+  // combine one combination's slope with another's offset.
   const referenceValues = showDefault ? defaultValues : values;
   const xYears = d.time_years;
   const rawSlope = trendSlopeAt(state.densityIndex, state.latitudeIndex);
@@ -1126,8 +1135,7 @@ function drawTimeSeries() {
       + (sigShown ? "" : " (not significant)")
     : "No trend estimate at this cell";
   const xMean = xYears.reduce((sum, value) => sum + value, 0) / xYears.length;
-  const yMean = referenceValues.reduce((sum, value) => sum + value, 0)
-    / referenceValues.length;
+  const yMean = values.reduce((sum, value) => sum + value, 0) / values.length;
   const intercept = yMean - slope * xMean;
   const trendValues = xYears.map((x) => slope * x + intercept);
 
@@ -1159,19 +1167,38 @@ function drawTimeSeries() {
   const margins = { left: 72 * fs, right: 22, top: 24 * fs, bottom: 38 * fs };
   const plotWidth = width - margins.left - margins.right;
   const plotHeight = height - margins.top - margins.bottom;
-  // Fixed axis across the selector: span every combination, plus the one
-  // uncertainty band (centered on the default reconstruction).
-  let yMinRaw = Math.min(...trendValues,
-    ...referenceValues.map((v, i) => v - safeStd[i]));
-  let yMaxRaw = Math.max(...trendValues,
-    ...referenceValues.map((v, i) => v + safeStd[i]));
+  // Fixed axis across the selector: span every combination's series, the
+  // one uncertainty band (centered on the default reconstruction), AND
+  // every combination's trend line - each is now centered on its own
+  // series, so the axis must not jump when the selection changes.
+  let yMinRaw = Math.min(...referenceValues.map((v, i) => v - safeStd[i]));
+  let yMaxRaw = Math.max(...referenceValues.map((v, i) => v + safeStd[i]));
+  const xFirst = xYears[0];
+  const xLast = xYears[xYears.length - 1];
   for (let c = 0; c < d.dims.nCombos; c += 1) {
+    let sum = 0;
+    let count = 0;
     for (let i = 0; i < nt; i += 1) {
       const v = predAtCombo(c, i, state.densityIndex, state.latitudeIndex);
       if (Number.isFinite(v)) {
         yMinRaw = Math.min(yMinRaw, v);
         yMaxRaw = Math.max(yMaxRaw, v);
+        sum += v;
+        count += 1;
       }
+    }
+    if (!count) {
+      continue;
+    }
+    const slopeC = trendSlopeAtCombo(c, state.densityIndex, state.latitudeIndex);
+    if (!Number.isFinite(slopeC)) {
+      continue;
+    }
+    const interceptC = sum / count - slopeC * xMean;
+    for (const x of [xFirst, xLast]) {
+      const y = slopeC * x + interceptC;
+      yMinRaw = Math.min(yMinRaw, y);
+      yMaxRaw = Math.max(yMaxRaw, y);
     }
   }
   if (showRapid) {
