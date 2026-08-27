@@ -3,18 +3,18 @@
 Browser-based viewer for the NeurMOC reconstruction (published at
 https://huaiyuwei.github.io/neurmoc/). Vanilla HTML/CSS/JS, no build step.
 
-Updated 2026-08-04 to the m26r4 reference network (PCAinY64 ResNet
+Updated 2026-08-04 to the m26r3 reference network (PCAinY64 ResNet
 192x96x48 swish): the reconstruction is now the overturning **anomaly**
 relative to 2004–2009 (GRACE convention), the trend statistics use the
 serial-correlation-aware budget with a propagated GRACE measurement-noise
 term, the monthly input-product spread is time-dependent, and the viewer
-carries **all twelve production input combinations** so visitors can switch
+carries **all eight production input combinations** so visitors can switch
 inputs.
 
 ## What it shows
 
-- An input-product selector (GRACE JPL/CSR/GSFC × DUACS/NASA-SSH ×
-  CCMP/ERA5): each of the twelve production combinations is a separately
+- An input-product selector (GRACE JPL/CSR × DUACS/NASA-SSH ×
+  CCMP/ERA5): each of the eight production combinations is a separately
   generated stage-14 reconstruction by the same trained network. ERA5 is a
   reanalysis sensitivity input; all anomaly-series panels follow the selection.
   A "difference vs. default" toggle switches the anomaly heatmaps to
@@ -45,7 +45,7 @@ inputs.
   style) marks cells not significant under the selected test. The map,
   its hatching and every per-cell trend readout belong to the SELECTED
   input combination (stage 18 in the pipeline repo re-runs the project's
-  trend estimator on all twelve); the monthly uncertainty band in the time
+  trend estimator on all eight); the monthly uncertainty band in the time
   series remains the default combination's. A
   "Significance" control in that panel switches between the ±2σ test alone
   (default, the manuscript's single-cell convention) and the FDR-controlled
@@ -61,7 +61,7 @@ Hovering over any heatmap shows a value readout; clicking selects the cell.
 
 - `index.html`, `app.js`, `styles.css` — the static viewer.
 - `prepare_viewer_data.py` — reads the pipeline's RealWorld folder (the
-  `NeurMOC_data.mat` export, the twelve `Pred_RealWorld*.mat` combination
+  `NeurMOC_data.mat` export, the eight `Pred_RealWorld*.mat` combination
   reconstructions, `trend_error_budget.npz`, `grace_noise_budget.npz`, and the
   m26r3 `insitu_v2/Rapid_LPF.npz` record)
   and writes:
@@ -158,7 +158,7 @@ from the m26r3 pipeline defaults before serving them.
   is `m26r3` (`access_hist_ssp585_v4`, `satellite_2026m05_v2`,
   `insitu_v2`).
 - The MAT/NetCDF downloads contain the default JPL + DUACS + CCMP product.
-  The compact viewer binaries contain all twelve production combinations.
+  The compact viewer binaries contain all eight production combinations.
 - The linked v1 preprint provides the original scientific context; the current
   `m26r3` reconstruction and revised uncertainty/trend workflow postdate it.
 - Plot fonts auto-enlarge (and ticks thin out) when panels are displayed

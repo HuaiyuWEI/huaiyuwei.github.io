@@ -1,6 +1,6 @@
 """Prepare the NeurMOC viewer data files (v3: product ensemble, split binaries, RAPID overlay).
 
-Reads the m26r4 reference-network products from the pipeline's RealWorld
+Reads the m26r3 reference-network products from the pipeline's RealWorld
 folder and emits the files consumed by app.js:
 
 - ``data/neurmoc_meta.json``: axes, exact month labels, the 2004-2009
@@ -18,8 +18,9 @@ folder and emits the files consumed by app.js:
   - ``data/neurmoc_combos.bin``: the non-default combinations
     ``pred[c,t,k,j]`` for c = 1..N-1.
   The combination index is obp*4 + ssh*2 + wind over the option axes
-  [GRACE JPL, GRACE CSR, GRACE GSFC] x [DUACS, NASA-SSH] x [CCMP, ERA5]
-  (12 combinations since m26r4 added the GSFC mascons); index 0 is
+  [GRACE JPL, GRACE CSR] x [DUACS, NASA-SSH] x [CCMP, ERA5] (8
+  combinations; the GSFC mascons are tested in the manuscript but
+  excluded from the observing-system ensemble); index 0 is
   the default (JPL + DUACS + CCMP), whose trimmed series must match the
   NeurMOC_data export bit-for-bit (validated here).
 
@@ -53,7 +54,7 @@ EDGE_MONTHS = 12
 
 #: default pipeline location of the reference network's real-world products
 REALWORLD_DEFAULT = (
-    r"E:\NeurMOC_2026_data\results\m26r4\ACCESS_hist+SSP585"
+    r"E:\NeurMOC_2026_data\results\m26r3\ACCESS_hist+SSP585"
     r"\FullDepth_PCAinY64_ResNet_Neur192x96x48_5foldCV_Reg0.01Drop0.2"
     r"_swishActivation_LPF2Year\obp_mascon_V7+ssh_mascon_V7+uas_mascon_V7"
     r"\RealWorld"
@@ -61,7 +62,7 @@ REALWORLD_DEFAULT = (
 
 #: the pipeline's low-pass-filtered RAPID 26.5N transport record
 RAPID_DEFAULT = (
-    r"E:\NeurMOC_2026_data\processed\observations\insitu_v3\rapid"
+    r"E:\NeurMOC_2026_data\processed\observations\insitu_v2\rapid"
     r"\Rapid_LPF.npz"
 )
 
@@ -69,8 +70,7 @@ RAPID_DEFAULT = (
 #: The first option of each axis is the pipeline default (empty tag);
 #: stage 14 suffixes concatenate in obp -> ssh -> wind order.
 PRODUCT_AXES = [
-    ("obp", "Ocean bottom pressure", [("GRACE JPL", ""), ("GRACE CSR", "_obpCSR"),
-                                      ("GRACE GSFC", "_obpGSFC")]),
+    ("obp", "Ocean bottom pressure", [("GRACE JPL", ""), ("GRACE CSR", "_obpCSR")]),
     ("ssh", "Sea surface height", [("DUACS", ""), ("NASA-SSH", "_sshNASASSH")]),
     ("wind", "Zonal surface wind", [("CCMP", ""), ("ERA5", "_ERA5wind")]),
 ]
