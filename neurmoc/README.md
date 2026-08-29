@@ -3,7 +3,7 @@
 Browser-based viewer for the NeurMOC reconstruction (published at
 https://huaiyuwei.github.io/neurmoc/). Vanilla HTML/CSS/JS, no build step.
 
-Updated 2026-08-04 to the m26r3 reference network (PCAinY64 ResNet
+Updated 2026-08-04 to the m26r5 reference network (PCAinY64 ResNet
 192x96x48 swish): the reconstruction is now the overturning **anomaly**
 relative to 2004–2009 (GRACE convention), the trend statistics use the
 serial-correlation-aware budget with a propagated GRACE measurement-noise
@@ -63,7 +63,7 @@ Hovering over any heatmap shows a value readout; clicking selects the cell.
 - `prepare_viewer_data.py` — reads the pipeline's RealWorld folder (the
   `NeurMOC_data.mat` export, the eight `Pred_RealWorld*.mat` combination
   reconstructions, `trend_error_budget.npz`, `grace_noise_budget.npz`, and the
-  m26r3 `insitu_v2/Rapid_LPF.npz` record)
+  m26r5 `insitu_v4/Rapid_LPF.npz` record)
   and writes:
   - `data/neurmoc_meta.json` (~280 KB): axes, exact month labels, baseline
     mean state, per-combination anomaly means, trend statistics (point +
@@ -120,7 +120,7 @@ py -3 -m http.server 8000     # from this directory, then open localhost:8000
 
 or `powershell -ExecutionPolicy Bypass -File .\start_viewer.ps1`. Add
 `-RefreshData` only when you intentionally want to regenerate the viewer files
-from the m26r3 pipeline defaults before serving them.
+from the m26r5 pipeline defaults before serving them.
 
 ## Notes
 
@@ -155,12 +155,13 @@ from the m26r3 pipeline defaults before serving them.
   mean-state cells use neutral gray. Nonsignificant dashed trends remain gray.
 - The generated metadata records the exact pipeline run, dataset IDs, network,
   trend settings, uncertainty convention, and data hashes. The current release
-  is `m26r3` (`access_hist_ssp585_v4`, `satellite_2026m05_v2`,
-  `insitu_v2`).
+  is `m26r5` (`access_hist_ssp585_v4`, `satellite_2026m08_v4`,
+  `insitu_v4`; a real-world observation extension of the frozen m26r3
+  training run).
 - The MAT/NetCDF downloads contain the default JPL + DUACS + CCMP product.
   The compact viewer binaries contain all eight production combinations.
 - The linked v1 preprint provides the original scientific context; the current
-  `m26r3` reconstruction and revised uncertainty/trend workflow postdate it.
+  `m26r5` reconstruction and revised uncertainty/trend workflow postdate it.
 - Plot fonts auto-enlarge (and ticks thin out) when panels are displayed
   much narrower than their 1200 px drawing resolution, so phones stay
   readable.

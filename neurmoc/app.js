@@ -3,7 +3,7 @@
    background), product-difference view, RAPID 26.5N overlay, mean-state
    trend interpretation, and shareable URL state. */
 
-const META_PATH = "./data/neurmoc_meta.json?v=2026-08-06d";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-08-29a";
 const DATA_DIR = "./data/";
 
 const state = {
