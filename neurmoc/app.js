@@ -22,6 +22,12 @@ const state = {
   playbackSpeed: "normal",
   playing: false,
   timer: null,
+  lrp: {
+    meta: null,                         // ./data/neurmoc_lrp.json
+    chunks: new Map(),                  // density index -> decoded chunk
+    pending: new Map(),                 // density index -> in-flight promise
+    failed: false,
+  },
 };
 
 let DEFAULT_VIEW = { j: 0, k: 0, t: 0 };
@@ -49,6 +55,9 @@ const controls = {
   selectedBaseline: document.getElementById("selected-baseline"),
   selectedValue: document.getElementById("selected-value"),
   selectedStd: document.getElementById("selected-std"),
+  lrpNote: document.getElementById("lrp-note"),
+  lrpStatus: document.getElementById("lrp-status"),
+  lrpBody: document.getElementById("lrp-body"),
   loadingOverlay: document.getElementById("loading-overlay"),
   loadingBarFill: document.getElementById("loading-bar-fill"),
   loadingStatus: document.getElementById("loading-status"),
@@ -65,6 +74,9 @@ const sectionCanvas = document.getElementById("section-canvas");
 const snapshotCanvas = document.getElementById("snapshot-canvas");
 const hovmollerCanvas = document.getElementById("hovmoller-canvas");
 const trendCanvas = document.getElementById("trend-canvas");
+const lrpMapsCanvas = document.getElementById("lrp-maps-canvas");
+const lrpProfileCanvas = document.getElementById("lrp-profile-canvas");
+const lrpAccountingCanvas = document.getElementById("lrp-accounting-canvas");
 const timeseriesSvg = document.getElementById("timeseries-svg");
 const BASIN_BOUNDARY = -34;
 
@@ -100,6 +112,10 @@ const PLOT_COLORS = {
     rapidBand: "rgba(57, 66, 76, 0.13)",
     trendNot: "#7f8b92",
     cursor: "#162238",
+    // one hue per input covariate, shared by the relevance profile and the
+    // accounting panel so a curve means the same thing in both
+    lrp: ["#1f6f8b", "#c2661b", "#4c7a34"],
+    lrpBias: "#8593a1",
   },
   dark: {
     bg: "#0f1a2b",
@@ -126,6 +142,8 @@ const PLOT_COLORS = {
     rapidBand: "rgba(195, 208, 221, 0.16)",
     trendNot: "#8b98a5",
     cursor: "#dbe6f2",
+    lrp: ["#67b6cf", "#e8a05a", "#8fc46a"],
+    lrpBias: "#94a3b3",
   },
 };
 
@@ -1527,6 +1545,625 @@ function bindHover(canvas) {
   });
 }
 
+/* ---------------- LRP attribution ---------------- */
+
+const LRP_META_PATH = "./data/neurmoc_lrp.json?v=2026-08-30a";
+
+// ColorBrewer Reds - the manuscript's sequential magnitude map
+const REDS = [
+  [255, 245, 240], [254, 224, 210], [252, 187, 161], [252, 146, 114],
+  [251, 106, 74], [239, 59, 44], [203, 24, 29], [165, 15, 21], [103, 0, 13],
+];
+
+function redsColor(value, clim) {
+  if (!Number.isFinite(value) || clim <= 0) {
+    return pc().mask;
+  }
+  const t = Math.max(0, Math.min(1, value / clim));
+  const x = t * (REDS.length - 1);
+  const i = Math.min(REDS.length - 2, Math.floor(x));
+  const local = x - i;
+  const a = REDS[i];
+  const b = REDS[i + 1];
+  return `rgb(${Math.round(a[0] + local * (b[0] - a[0]))}, `
+    + `${Math.round(a[1] + local * (b[1] - a[1]))}, `
+    + `${Math.round(a[2] + local * (b[2] - a[2]))})`;
+}
+
+function formatLongitude(value) {
+  const rounded = Math.round(value);
+  if (rounded === 0) {
+    return "0°";
+  }
+  if (Math.abs(rounded) === 180) {
+    return "180°";
+  }
+  return `${Math.abs(rounded)}°${rounded > 0 ? "E" : "W"}`;
+}
+
+async function loadLrpMeta() {
+  const response = await fetch(LRP_META_PATH);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} while fetching the LRP descriptor`);
+  }
+  const meta = await response.json();
+  const d = meta.dimensions;
+  if (d.latitude !== state.data.dims.nj || d.density !== state.data.dims.nk) {
+    throw new Error("the LRP descriptor is on a different latitude-density plane");
+  }
+  if (d.time !== state.data.dims.nt) {
+    throw new Error("the LRP accounting has a different month axis");
+  }
+  // unpack once: the geometry is read on every map redraw
+  const g = meta.mascons;
+  meta.geom = {
+    lon1: Float32Array.from(g.lon_bound1),
+    lon2: Float32Array.from(g.lon_bound2),
+    lat1: Float32Array.from(g.lat_bound1),
+    lat2: Float32Array.from(g.lat_bound2),
+    across: g.across_180,
+    latMin: Math.min(...g.lat_bound1),
+    latMax: Math.max(...g.lat_bound2),
+  };
+  const bands = meta.latitude_bands;
+  meta.bands = {
+    latitude: Float64Array.from(bands.latitude),
+    index: Int16Array.from(bands.mascon_band_index),
+    count: Float64Array.from(bands.mascon_count),
+  };
+  meta.unlearnable = new Set(meta.unlearnable_cells);
+  return meta;
+}
+
+// One chunk per density level: a visitor who clicks a cell pays for that
+// level once and then moves along the whole latitude row for free.
+async function ensureLrpChunk(k) {
+  const lrp = state.lrp;
+  if (lrp.chunks.has(k) || lrp.pending.has(k) || !lrp.meta) {
+    return lrp.pending.get(k);
+  }
+  const entry = lrp.meta.chunks[k];
+  const promise = (async () => {
+    const bytes = await fetchWithProgress(
+      `${DATA_DIR}${entry.file}?v=${entry.version}`, entry.byte_length, () => {});
+    if (bytes.byteLength !== entry.byte_length) {
+      throw new Error(
+        `LRP chunk ${k} has ${bytes.byteLength} bytes; expected ${entry.byte_length}.`);
+    }
+    const d = lrp.meta.dimensions;
+    const headerLength = d.latitude * 3 * 4;
+    const mapLength = d.latitude * d.covariates * d.mascons * 2;
+    // typed-array views need their own alignment; copy if the fetch handed
+    // back a slice that does not start on a 4-byte boundary
+    const buffer = bytes.byteOffset % 4 === 0
+      ? bytes.buffer : bytes.slice().buffer;
+    const base = bytes.byteOffset % 4 === 0 ? bytes.byteOffset : 0;
+    lrp.chunks.set(k, {
+      header: new Float32Array(buffer, base, d.latitude * 3),
+      maps: new Int16Array(buffer, base + headerLength,
+                           d.latitude * d.covariates * d.mascons),
+      acct: new Int16Array(buffer, base + headerLength + mapLength,
+                           d.latitude * d.terms * d.time),
+    });
+    lrp.pending.delete(k);
+    if (k === state.densityIndex) {
+      renderLrp();
+    }
+  })().catch((error) => {
+    lrp.pending.delete(k);
+    console.error(error);
+    lrp.failed = true;
+    renderLrp();
+  });
+  lrp.pending.set(k, promise);
+  return promise;
+}
+
+// Decode the selected cell out of its chunk: 3 maps and 4 accounting terms.
+function lrpCellValues() {
+  const lrp = state.lrp;
+  const chunk = lrp.chunks.get(state.densityIndex);
+  if (!chunk) {
+    return null;
+  }
+  const d = lrp.meta.dimensions;
+  const j = state.latitudeIndex;
+  const mapScale = chunk.header[j * 3];
+  const clim99 = chunk.header[j * 3 + 1];
+  const acctScale = chunk.header[j * 3 + 2];
+
+  const maps = [];
+  for (let c = 0; c < d.covariates; c += 1) {
+    const out = new Float32Array(d.mascons);
+    const offset = (j * d.covariates + c) * d.mascons;
+    for (let m = 0; m < d.mascons; m += 1) {
+      out[m] = chunk.maps[offset + m] * mapScale;
+    }
+    maps.push(out);
+  }
+  const terms = [];
+  for (let s = 0; s < d.terms; s += 1) {
+    const out = new Float32Array(d.time);
+    const offset = (j * d.terms + s) * d.time;
+    for (let t = 0; t < d.time; t += 1) {
+      out[t] = chunk.acct[offset + t] * acctScale;
+    }
+    terms.push(out);
+  }
+  return { maps, terms, clim99 };
+}
+
+function lrpCovariateLabels() {
+  return state.lrp.meta.covariates.map((item) => item.label);
+}
+
+function drawLrpMaps(cell) {
+  const { ctx, width, height, fs } = setupCanvasResolution(lrpMapsCanvas);
+  const fonts = plotFonts(fs);
+  const theme = pc();
+  const meta = state.lrp.meta;
+  const geom = meta.geom;
+  const nMascon = meta.dimensions.mascons;
+  const labels = lrpCovariateLabels();
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, width, height);
+
+  const margins = { left: 42 * fs, right: 104 * fs, top: 30 * fs, bottom: 32 * fs };
+  const gap = 16 * fs;
+  const mapCount = meta.dimensions.covariates;
+  const mapW = (width - margins.left - margins.right - gap * (mapCount - 1)) / mapCount;
+  const latSpan = geom.latMax - geom.latMin;
+  const mapH = Math.min(mapW * (latSpan / 360),
+                        height - margins.top - margins.bottom);
+  const top = margins.top + (height - margins.top - margins.bottom - mapH) / 2;
+  const targetLat = state.data.latitudes[state.latitudeIndex];
+
+  for (let c = 0; c < mapCount; c += 1) {
+    const x0 = margins.left + c * (mapW + gap);
+    const toX = (lon) => x0 + ((lon + 180) / 360) * mapW;
+    const toY = (lat) => top + ((geom.latMax - lat) / latSpan) * mapH;
+
+    ctx.fillStyle = theme.mask;
+    ctx.fillRect(x0, top, mapW, mapH);
+
+    const values = cell.maps[c];
+    for (let m = 0; m < nMascon; m += 1) {
+      ctx.fillStyle = redsColor(values[m], cell.clim99);
+      const yTop = toY(geom.lat2[m]);
+      const boxH = toY(geom.lat1[m]) - yTop + 0.6;
+      if (geom.across[m]) {
+        // the box wraps the date line: draw it as two rectangles
+        ctx.fillRect(toX(geom.lon1[m]), yTop, toX(180) - toX(geom.lon1[m]) + 0.6, boxH);
+        ctx.fillRect(toX(-180), yTop, toX(geom.lon2[m]) - toX(-180) + 0.6, boxH);
+      } else {
+        const xLeft = toX(geom.lon1[m]);
+        ctx.fillRect(xLeft, yTop, toX(geom.lon2[m]) - xLeft + 0.6, boxH);
+      }
+    }
+
+    // the cell being explained, marked the way the manuscript marks it
+    ctx.save();
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 1.3 * fs;
+    ctx.setLineDash([7 * fs, 3 * fs, 2 * fs, 3 * fs]);
+    ctx.beginPath();
+    ctx.moveTo(x0, toY(targetLat));
+    ctx.lineTo(x0 + mapW, toY(targetLat));
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.strokeStyle = theme.frame;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x0, top, mapW, mapH);
+
+    // The map is only ~390 px wide on a desktop and narrower still once
+    // setupCanvasResolution scales the fonts up for a small screen, so every
+    // label here is fitted to the space it actually has. The profile's
+    // legend below names the product behind each colour.
+    ctx.fillStyle = theme.ink;
+    ctx.textAlign = "center";
+    const basePx = Math.round(15.5 * fs);
+    ctx.font = `${basePx}px ${FONT_STACK}`;
+    const titleWidth = ctx.measureText(labels[c]).width;
+    if (titleWidth > mapW - 8 * fs) {
+      ctx.font = `${Math.max(9, Math.floor(basePx * (mapW - 8 * fs) / titleWidth))}`
+        + `px ${FONT_STACK}`;
+    }
+    ctx.fillText(labels[c], x0 + mapW / 2, top - 9 * fs);
+
+    ctx.fillStyle = theme.muted;
+    ctx.font = `${basePx}px ${FONT_STACK}`;
+    const lonTicks = ctx.measureText("120°W").width * 3.2 < mapW ? [-120, 0, 120] : [0];
+    lonTicks.forEach((lon) => {
+      ctx.fillText(formatLongitude(lon), toX(lon), top + mapH + 17 * fs);
+    });
+
+    if (c === 0) {
+      ctx.textAlign = "right";
+      // 139.5 degrees of latitude in ~150 px: three labels at most, and
+      // only one if the scaled-up font would make them collide
+      const latTicks = mapH / 2 > basePx * 1.25 ? [-60, 0, 60] : [0];
+      latTicks.forEach((lat) => {
+        if (lat < geom.latMin || lat > geom.latMax) {
+          return;
+        }
+        ctx.fillText(formatLatitude(lat), x0 - 6 * fs, toY(lat) + 4 * fs);
+      });
+    }
+  }
+
+  // shared colour bar: 0 .. the 99th percentile of this cell's three maps
+  const cbW = 11 * fs;
+  const cbX = width - margins.right + 34 * fs;
+  const cbH = mapH;
+  for (let p = 0; p < cbH; p += 1) {
+    ctx.fillStyle = redsColor(cell.clim99 * (1 - p / cbH), cell.clim99);
+    ctx.fillRect(cbX, top + p, cbW, 1);
+  }
+  ctx.strokeStyle = theme.frame;
+  ctx.strokeRect(cbX, top, cbW, cbH);
+  ctx.fillStyle = theme.muted;
+  ctx.font = fonts.colorbar;
+  ctx.textAlign = "left";
+  ctx.fillText(cell.clim99.toExponential(1), cbX + cbW + 5 * fs, top + 10 * fs);
+  ctx.fillText("0", cbX + cbW + 5 * fs, top + cbH - 1);
+  ctx.textAlign = "center";
+  ctx.fillText("Sv", cbX + cbW / 2, top - 9 * fs);
+}
+
+function drawLrpProfile(cell) {
+  const { ctx, width, height, fs } = setupCanvasResolution(lrpProfileCanvas);
+  const fonts = plotFonts(fs);
+  const theme = pc();
+  const meta = state.lrp.meta;
+  const bands = meta.bands;
+  const nBand = bands.latitude.length;
+  const labels = meta.covariates.map((item) => item.product);
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, width, height);
+
+  // sum within each native latitude band, then divide by its mascon count
+  const profiles = cell.maps.map((values) => {
+    const sums = new Float64Array(nBand);
+    for (let m = 0; m < values.length; m += 1) {
+      sums[bands.index[m]] += values[m];
+    }
+    for (let b = 0; b < nBand; b += 1) {
+      sums[b] /= bands.count[b];
+    }
+    return sums;
+  });
+
+  let peak = 0;
+  profiles.forEach((row) => row.forEach((v) => { peak = Math.max(peak, v); }));
+  if (!(peak > 0)) {
+    peak = 1;
+  }
+  const yMax = peak * 1.12;
+
+  // the title sits on the first line and the legend on the second, so the
+  // top margin has to clear both
+  const margins = { left: 74 * fs, right: 16 * fs, top: 52 * fs, bottom: 44 * fs };
+  const plotW = width - margins.left - margins.right;
+  const plotH = height - margins.top - margins.bottom;
+  const latMin = bands.latitude[0];
+  const latMax = bands.latitude[nBand - 1];
+  const toX = (lat) => margins.left + ((lat - latMin) / (latMax - latMin)) * plotW;
+  const toY = (v) => margins.top + plotH - (v / yMax) * plotH;
+
+  ctx.strokeStyle = theme.grid;
+  ctx.lineWidth = 1;
+  for (let g = 1; g <= 3; g += 1) {
+    const y = margins.top + (plotH * g) / 4;
+    ctx.beginPath();
+    ctx.moveTo(margins.left, y);
+    ctx.lineTo(margins.left + plotW, y);
+    ctx.stroke();
+  }
+
+  // the explained cell's latitude
+  const targetLat = state.data.latitudes[state.latitudeIndex];
+  if (targetLat >= latMin && targetLat <= latMax) {
+    ctx.save();
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 1.2 * fs;
+    ctx.setLineDash([7 * fs, 3 * fs, 2 * fs, 3 * fs]);
+    ctx.beginPath();
+    ctx.moveTo(toX(targetLat), margins.top);
+    ctx.lineTo(toX(targetLat), margins.top + plotH);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  profiles.forEach((row, c) => {
+    ctx.strokeStyle = theme.lrp[c];
+    ctx.lineWidth = 1.9 * fs;
+    ctx.beginPath();
+    for (let b = 0; b < nBand; b += 1) {
+      const x = toX(bands.latitude[b]);
+      const y = toY(row[b]);
+      if (b === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.stroke();
+  });
+
+  ctx.strokeStyle = theme.frame;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(margins.left, margins.top, plotW, plotH);
+
+  ctx.fillStyle = theme.muted;
+  ctx.font = fonts.colorbar;
+  ctx.textAlign = "center";
+  [-60, -30, 0, 30, 60].forEach((lat) => {
+    if (lat < latMin || lat > latMax) {
+      return;
+    }
+    ctx.fillText(formatLatitude(lat), toX(lat), margins.top + plotH + 18 * fs);
+  });
+  ctx.textAlign = "right";
+  [0, yMax / 2, yMax].forEach((v) => {
+    ctx.fillText(v === 0 ? "0" : v.toExponential(1), margins.left - 6 * fs, toY(v) + 4 * fs);
+  });
+
+  ctx.fillStyle = theme.ink;
+  ctx.font = fonts.tick;
+  ctx.textAlign = "center";
+  ctx.fillText("Mean |relevance| per mascon (Sv)", width / 2, 15 * fs);
+  ctx.fillStyle = theme.muted;
+  ctx.font = fonts.colorbar;
+  ctx.fillText("Latitude", margins.left + plotW / 2, height - 8 * fs);
+
+  drawLrpLegend(ctx, fs, fonts, margins.left, margins.top - 16 * fs,
+                labels.map((label, c) => ({ label, color: theme.lrp[c], dash: false })));
+}
+
+// a compact one-row legend, used by both lower panels
+function drawLrpLegend(ctx, fs, fonts, x0, y, entries) {
+  ctx.font = fonts.colorbar;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  let x = x0;
+  entries.forEach((entry) => {
+    ctx.save();
+    ctx.strokeStyle = entry.color;
+    ctx.lineWidth = 2.2 * fs;
+    if (entry.dash) {
+      ctx.setLineDash([5 * fs, 3 * fs]);
+    }
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 16 * fs, y);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = pc().muted;
+    ctx.fillText(entry.label, x + 21 * fs, y);
+    x += 26 * fs + ctx.measureText(entry.label).width;
+  });
+  ctx.textBaseline = "alphabetic";
+}
+
+function drawLrpAccounting(cell) {
+  const { ctx, width, height, fs } = setupCanvasResolution(lrpAccountingCanvas);
+  const fonts = plotFonts(fs);
+  const theme = pc();
+  const d = state.data;
+  const meta = state.lrp.meta;
+  const nTime = meta.dimensions.time;
+  const labels = meta.covariates.map((item) => item.product);
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, width, height);
+
+  // The attribution is for the DEFAULT combination, so the curve it must
+  // account for is the default reconstruction - not whichever product the
+  // visitor has selected above. Demeaned over the same window the exporter
+  // demeaned the terms over.
+  const target = new Float64Array(nTime);
+  let sum = 0;
+  let count = 0;
+  for (let t = 0; t < nTime; t += 1) {
+    const value = predAtCombo(0, t, state.densityIndex, state.latitudeIndex);
+    target[t] = value;
+    if (Number.isFinite(value)) {
+      sum += value;
+      count += 1;
+    }
+  }
+  const mean = count ? sum / count : 0;
+  for (let t = 0; t < nTime; t += 1) {
+    target[t] -= mean;
+  }
+
+  let limit = 0;
+  const scan = (row) => row.forEach((v) => {
+    if (Number.isFinite(v)) {
+      limit = Math.max(limit, Math.abs(v));
+    }
+  });
+  cell.terms.forEach(scan);
+  scan(target);
+  if (!(limit > 0)) {
+    limit = 1;
+  }
+  limit *= 1.1;
+
+  const margins = { left: 60 * fs, right: 14 * fs, top: 52 * fs, bottom: 44 * fs };
+  const plotW = width - margins.left - margins.right;
+  const plotH = height - margins.top - margins.bottom;
+  const years = d.time_years;
+  const xMin = years[0];
+  const xMax = years[years.length - 1];
+  const toX = (year) => margins.left + ((year - xMin) / (xMax - xMin)) * plotW;
+  const toY = (v) => margins.top + plotH / 2 - (v / limit) * (plotH / 2);
+
+  if (d.gap_time_range) {
+    ctx.fillStyle = theme.gap;
+    const gx0 = toX(d.gap_time_range[0]);
+    ctx.fillRect(gx0, margins.top, toX(d.gap_time_range[1]) - gx0, plotH);
+  }
+
+  ctx.strokeStyle = theme.zero;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(margins.left, toY(0));
+  ctx.lineTo(margins.left + plotW, toY(0));
+  ctx.stroke();
+
+  const drawSeries = (values, color, lineWidth, dash) => {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth * fs;
+    if (dash) {
+      ctx.setLineDash([5 * fs, 3 * fs]);
+    }
+    ctx.beginPath();
+    let started = false;
+    for (let t = 0; t < nTime; t += 1) {
+      if (!Number.isFinite(values[t])) {
+        started = false;
+        continue;
+      }
+      const x = toX(years[t]);
+      const y = toY(values[t]);
+      if (started) {
+        ctx.lineTo(x, y);
+      } else {
+        ctx.moveTo(x, y);
+        started = true;
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  drawSeries(target, theme.recon, 2.4, false);
+  cell.terms.slice(0, 3).forEach((row, c) => drawSeries(row, theme.lrp[c], 1.6, false));
+  drawSeries(cell.terms[3], theme.lrpBias, 1.5, true);
+
+  // where the animation currently sits
+  ctx.strokeStyle = theme.cursor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(toX(years[state.timeIndex]), margins.top);
+  ctx.lineTo(toX(years[state.timeIndex]), margins.top + plotH);
+  ctx.stroke();
+
+  ctx.strokeStyle = theme.frame;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(margins.left, margins.top, plotW, plotH);
+
+  ctx.fillStyle = theme.muted;
+  ctx.font = fonts.colorbar;
+  ctx.textAlign = "center";
+  const yearTicks = buildYearAxisTicks(years);
+  yearTicks.majorTicks.forEach((idx) => {
+    ctx.fillText(String(Math.floor(years[idx])), toX(years[idx]),
+                 margins.top + plotH + 18 * fs);
+  });
+  ctx.textAlign = "right";
+  [limit, 0, -limit].forEach((v) => {
+    ctx.fillText(formatSigned(v, 1), margins.left - 6 * fs, toY(v) + 4 * fs);
+  });
+
+  ctx.fillStyle = theme.ink;
+  ctx.font = fonts.tick;
+  ctx.textAlign = "center";
+  ctx.fillText("Signed relevance (Sv, demeaned)", width / 2, 15 * fs);
+
+  drawLrpLegend(ctx, fs, fonts, margins.left, margins.top - 16 * fs, [
+    { label: "Reconstruction", color: theme.recon, dash: false },
+    ...labels.map((label, c) => ({ label, color: theme.lrp[c], dash: false })),
+    { label: "Bias", color: theme.lrpBias, dash: true },
+  ]);
+}
+
+function setLrpStatus(message) {
+  if (!controls.lrpStatus) {
+    return;
+  }
+  controls.lrpStatus.textContent = message;
+  controls.lrpStatus.hidden = !message;
+  if (controls.lrpBody) {
+    controls.lrpBody.hidden = Boolean(message);
+  }
+}
+
+let lrpDrawnKey = null;
+
+function renderLrp() {
+  if (!controls.lrpStatus || !state.data) {
+    return;
+  }
+  const lrp = state.lrp;
+  if (controls.lrpNote) {
+    // the attribution deliberately does not follow the product selection,
+    // so say so louder once the visitor has changed it
+    controls.lrpNote.classList.toggle("is-emphasised", comboIndex() !== 0);
+  }
+  if (lrp.failed) {
+    lrpDrawnKey = null;
+    setLrpStatus("The attribution data could not be loaded — reload the page to retry.");
+    return;
+  }
+  if (!lrp.meta) {
+    lrpDrawnKey = null;
+    setLrpStatus("Loading attribution…");
+    return;
+  }
+  const cellIndex = state.densityIndex * state.data.dims.nj + state.latitudeIndex;
+  if (lrp.meta.unlearnable.has(cellIndex)) {
+    lrpDrawnKey = null;
+    setLrpStatus("This cell had no variance in the training simulations, so the network "
+      + "never learned it and it carries no attribution.");
+    return;
+  }
+  const cell = lrpCellValues();
+  if (!cell) {
+    lrpDrawnKey = null;
+    setLrpStatus(`Loading attribution for ${hovmollerDensityTitle(
+      state.data.densities[state.densityIndex])}…`);
+    ensureLrpChunk(state.densityIndex);
+    return;
+  }
+  setLrpStatus("");
+
+  // Maps and profile depend only on the cell; the accounting panel also
+  // carries the month cursor, so it always redraws. The key has to cover
+  // everything setupCanvasResolution reads - theme, device pixel ratio and
+  // the displayed width - or a zoom, a monitor change or a window resize
+  // would leave these two canvases at the old resolution while the
+  // accounting panel re-sharpened beside them.
+  const key = [cellIndex, currentTheme(), window.devicePixelRatio || 1,
+               lrpMapsCanvas.clientWidth, lrpProfileCanvas.clientWidth].join(":");
+  if (key !== lrpDrawnKey) {
+    drawLrpMaps(cell);
+    drawLrpProfile(cell);
+    lrpDrawnKey = key;
+  }
+  drawLrpAccounting(cell);
+}
+
+async function loadLrp() {
+  try {
+    state.lrp.meta = await loadLrpMeta();
+    renderLrp();
+    await ensureLrpChunk(state.densityIndex);
+  } catch (error) {
+    console.error(error);
+    state.lrp.failed = true;
+    renderLrp();
+  }
+}
+
 /* ---------------- render ---------------- */
 
 function render() {
@@ -1617,6 +2254,7 @@ function render() {
   drawTimeSeries();
   updateTrendReading();
   updatePresetHighlight();
+  renderLrp();
   scheduleUrlUpdate();
 }
 
@@ -2189,6 +2827,7 @@ async function init() {
   }
 
   loadCombos();
+  loadLrp();
 }
 
 init().catch((error) => {

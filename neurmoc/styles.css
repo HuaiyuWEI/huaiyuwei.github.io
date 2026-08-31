@@ -532,6 +532,51 @@ button {
   margin: 0;
 }
 
+/* ---- LRP attribution ---- */
+
+.lrp-panel {
+  margin: 0;
+}
+
+.lrp-note {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+/* raised when the visitor picks a non-default combination, since the
+   attribution deliberately does not follow that choice */
+.lrp-note.is-emphasised {
+  color: var(--ink);
+  background: var(--chip-bg);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+}
+
+.lrp-status {
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--chip-bg);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.lrp-body > canvas {
+  margin-bottom: 12px;
+}
+
+.lrp-lower-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .lrp-lower-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .panel {
   border-radius: var(--radius-lg);
   padding: 16px;

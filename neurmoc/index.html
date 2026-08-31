@@ -314,6 +314,41 @@
         </div>
       </article>
 
+      <article class="panel lrp-panel" id="lrp-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Where the network looks</h2>
+            <p>Layer-wise relevance propagation for the selected cell &mdash; how much each satellite
+               observation contributed to reconstructing it. Click any map above to move the cell.</p>
+            <details class="method-note">
+              <summary>What this panel shows</summary>
+              <p>Branch-wise LRP-0 (z-rule) decomposes the network's prediction at one
+                 latitude&ndash;density cell into a contribution from every input mascon, averaged over
+                 the 25 network members and over the record. The maps show the mean
+                 <em>magnitude</em> of that contribution; their shared colour limit is the 99th
+                 percentile of the three maps, as in the manuscript figure. The profile sums each
+                 latitude band and divides by the number of mascons in it &mdash; a plain count, never
+                 an area weight, because relevance is additive across inputs. The accounting panel
+                 shows the <em>signed</em> contributions, which sum to the reconstruction itself.</p>
+            </details>
+          </div>
+        </div>
+        <p class="lrp-note" id="lrp-note">Relevance depends on the input values, so it is a property of
+           one input combination: these maps are for the default GRACE JPL + DUACS + CCMP inputs and do
+           not follow the product selection above.</p>
+        <div class="lrp-status" id="lrp-status">Loading attribution&hellip;</div>
+        <div class="lrp-body" id="lrp-body" hidden>
+          <canvas id="lrp-maps-canvas" width="1320" height="250" role="img"
+                  aria-label="Mean relevance magnitude per input mascon"></canvas>
+          <div class="lrp-lower-grid">
+            <canvas id="lrp-profile-canvas" width="660" height="330" role="img"
+                    aria-label="Mean relevance by latitude"></canvas>
+            <canvas id="lrp-accounting-canvas" width="660" height="330" role="img"
+                    aria-label="Signed relevance accounting over time"></canvas>
+          </div>
+        </div>
+      </article>
+
       <section class="info-grid">
         <article class="panel" id="about">
           <div class="panel-header">
