@@ -535,46 +535,99 @@ button {
 /* ---- section tabs ---- */
 
 /* One workspace at a time. Every tab shares the selection and the loaded
-   data, so switching is a visibility change, not a page load. */
+   data, so switching is a visibility change, not a page load.
+
+   This is the page's primary navigation, so it is styled as a bar rather
+   than a row of chips, and it sticks to the top: a visitor who scrolls
+   into a panel keeps the other sections in sight instead of having to
+   remember they exist. */
 .tab-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
-  margin: 2px 0 2px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+.tab-bar-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tab-bar-options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
 }
 
 .tab-option {
   appearance: none;
   width: auto;                 /* the generic button rule pins 120px */
-  border: 1px solid var(--hairline);
-  background: var(--chip-bg);
-  color: var(--muted);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
   border-radius: var(--radius-md);
-  padding: 9px 16px;
+  padding: 0 18px;
+  min-height: 42px;
   font: inherit;
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 1rem;
   cursor: pointer;
-  min-height: 40px;
+  white-space: nowrap;
 }
 
 .tab-option:hover {
-  color: var(--ink);
+  background: var(--accent-soft);
+  border-color: var(--button-border);
 }
 
 .tab-option.is-active {
-  background: var(--accent, #4d90c2);
+  background: linear-gradient(135deg, var(--button-start), var(--button-end));
   border-color: transparent;
   color: #ffffff;
+  box-shadow: 0 4px 12px rgba(53, 88, 122, 0.22);
 }
 
 .tab-option:focus-visible {
-  outline: 2px solid var(--accent, #4d90c2);
+  outline: 2px solid var(--accent-deep);
   outline-offset: 2px;
 }
 
 .tab-panel[hidden] {
   display: none;
+}
+
+@media (max-width: 640px) {
+  /* keep all five reachable without wrapping into a tall block */
+  .tab-bar {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .tab-bar-options {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-bar-options::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-option {
+    padding: 0 14px;
+    font-size: 0.94rem;
+  }
 }
 
 /* ---- LRP attribution ---- */
