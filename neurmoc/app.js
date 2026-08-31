@@ -75,6 +75,7 @@ const sectionCanvas = document.getElementById("section-canvas");
 const snapshotCanvas = document.getElementById("snapshot-canvas");
 const hovmollerCanvas = document.getElementById("hovmoller-canvas");
 const trendCanvas = document.getElementById("trend-canvas");
+const lrpPanel = document.getElementById("lrp-panel");
 const lrpMapsCanvas = document.getElementById("lrp-maps-canvas");
 const lrpProfileCanvas = document.getElementById("lrp-profile-canvas");
 const lrpAccountingCanvas = document.getElementById("lrp-accounting-canvas");
@@ -2460,6 +2461,11 @@ function renderLrp() {
     // so say so louder once the visitor has changed it
     controls.lrpNote.classList.toggle("is-emphasised", comboIndex() !== 0);
   }
+  // gated on the article, not its canvases: those sit inside a hidden
+  // wrapper until the data arrives, so they would never report as visible
+  if (!shouldPaint(lrpPanel)) {
+    return;
+  }
   if (lrp.failed) {
     lrpDrawnKey = null;
     setLrpStatus("The attribution data could not be loaded — reload the page to retry.");
@@ -2525,13 +2531,78 @@ async function loadLrp() {
   try {
     state.lrp.meta = await loadLrpMeta();
     await loadLrpLand();
+    // renderLrp pulls the density level's 1.4 MB chunk the first time the
+    // panel is actually near the viewport, so a visitor who never scrolls
+    // this far never pays for it
     renderLrp();
-    await ensureLrpChunk(state.densityIndex);
   } catch (error) {
     console.error(error);
     state.lrp.failed = true;
     renderLrp();
   }
+}
+
+/* ---------------- visibility gating ---------------- */
+
+/* render() repaints every panel, and it runs on each month during
+   playback. The Hovmoller alone costs about 40 ms of the 42 ms frame
+   budget because it fills 140 x 261 cells, so panels scrolled far out of
+   sight were setting the animation's frame rate. Each panel is now
+   painted only while it is near the viewport; one that changes while
+   hidden is marked dirty and repainted when it scrolls back in.        */
+
+const paintRecords = new Map();          // element -> { visible, dirty }
+const PAINT_MARGIN_PX = 300;             // paint just before it is seen
+
+function nearViewport(element) {
+  const box = element.getBoundingClientRect();
+  return box.bottom > -PAINT_MARGIN_PX
+    && box.top < window.innerHeight + PAINT_MARGIN_PX;
+}
+
+function registerPaintTarget(element) {
+  if (element && !paintRecords.has(element)) {
+    // seeded synchronously: the observer's first callback is async, and
+    // the initial render happens before it arrives
+    paintRecords.set(element, { visible: nearViewport(element), dirty: false });
+  }
+}
+
+function shouldPaint(element) {
+  const record = paintRecords.get(element);
+  if (!record) {
+    return true;                         // never registered: always paint
+  }
+  if (!record.visible) {
+    record.dirty = true;
+    return false;
+  }
+  record.dirty = false;
+  return true;
+}
+
+function startPaintObserver() {
+  if (typeof IntersectionObserver !== "function") {
+    paintRecords.forEach((record) => { record.visible = true; });
+    return;
+  }
+  const observer = new IntersectionObserver((entries) => {
+    let repaint = false;
+    entries.forEach((entry) => {
+      const record = paintRecords.get(entry.target);
+      if (!record) {
+        return;
+      }
+      record.visible = entry.isIntersecting;
+      if (record.visible && record.dirty) {
+        repaint = true;
+      }
+    });
+    if (repaint && state.data) {
+      render();
+    }
+  }, { rootMargin: `${PAINT_MARGIN_PX}px 0px` });
+  paintRecords.forEach((_record, element) => observer.observe(element));
 }
 
 /* ---------------- render ---------------- */
@@ -2561,6 +2632,7 @@ function render() {
   controls.selectedStd.textContent = Number.isFinite(selectedStd)
     ? `${selectedStd.toFixed(2)} Sv` : "no data";
 
+  if (shouldPaint(snapshotCanvas)) {
   const snapshotGeom = drawDualBasinHeatmap(snapshotCanvas, sliceKJ(state.timeIndex), d.latitudes, d.densities, {
     clim: anomClim,
     colorbarTickDigits: 0,
@@ -2574,7 +2646,9 @@ function render() {
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(snapshotCanvas, snapshotGeom, "snapshot");
+  }
 
+  if (shouldPaint(sectionCanvas)) {
   const sectionGeom = drawDualBasinHeatmap(sectionCanvas, meanState, d.latitudes, d.densities, {
     clim: state.clim,
     colorbarTickDigits: 0,
@@ -2588,7 +2662,9 @@ function render() {
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(sectionCanvas, sectionGeom, "mean");
+  }
 
+  if (shouldPaint(hovmollerCanvas)) {
   const hovmollerGeom = drawDualBasinHovmoller(hovmollerCanvas, sliceTJ(state.densityIndex), d.latitudes, d.time_labels, {
     clim: anomClim,
     colorbarTickDigits: 0,
@@ -2604,8 +2680,10 @@ function render() {
     yMinorTickIndices: hovmollerYearTicks.minorTickIndices,
   });
   registerHover(hovmollerCanvas, hovmollerGeom, "hovmoller");
+  }
 
   const trendFields = ensureTrendFields();
+  if (shouldPaint(trendCanvas)) {
   const trendGeom = drawDualBasinHeatmap(trendCanvas, trendFields.slope, d.latitudes, d.densities, {
     clim: state.trendClim,
     colorbarTickDigits: 1,
@@ -2620,8 +2698,11 @@ function render() {
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(trendCanvas, trendGeom, "trend");
+  }
 
-  drawTimeSeries();
+  if (shouldPaint(timeseriesSvg)) {
+    drawTimeSeries();
+  }
   updateTrendReading();
   updatePresetHighlight();
   renderLrp();
@@ -3169,7 +3250,10 @@ async function init() {
 
   bindControls();
   bindCanvasInteractions();
+  [trendCanvas, timeseriesSvg, sectionCanvas, lrpPanel, hovmollerCanvas,
+   snapshotCanvas].forEach(registerPaintTarget);
   render();
+  startPaintObserver();
   renderHeroSpark();
   // the first render can measure the SVG box before the flex/grid layout
   // has settled; one more pass on the next frame locks the aspect in
