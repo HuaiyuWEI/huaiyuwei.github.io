@@ -1564,24 +1564,87 @@ const REDS = [
   [251, 106, 74], [239, 59, 44], [203, 24, 29], [165, 15, 21], [103, 0, 13],
 ];
 
-function redsAt(t) {
-  const x = Math.max(0, Math.min(1, t)) * (REDS.length - 1);
-  const i = Math.min(REDS.length - 2, Math.floor(x));
-  const local = x - i;
-  const a = REDS[i];
-  const b = REDS[i + 1];
-  return [Math.round(a[0] + local * (b[0] - a[0])),
-          Math.round(a[1] + local * (b[1] - a[1])),
-          Math.round(a[2] + local * (b[2] - a[2]))];
+/* ---- manuscript-figure typography ----
+
+   The figure names the covariates by symbol (p_b, eta, u^wind), which
+   canvas has no markup for, so a label is a list of parts and the
+   sub/superscripts are drawn at a reduced size with a baseline shift.   */
+
+function mathSegments(ctx, parts, px) {
+  const segments = [];
+  let width = 0;
+  parts.forEach((part) => {
+    const small = part.sub || part.sup;
+    const size = small ? Math.max(7, Math.round(px * 0.72)) : px;
+    const font = `${part.it ? "italic " : ""}${size}px ${FONT_STACK}`;
+    ctx.font = font;
+    segments.push({ text: part.t, font, dx: width,
+                    dy: part.sub ? px * 0.2 : part.sup ? -px * 0.34 : 0 });
+    width += ctx.measureText(part.t).width;
+  });
+  return { segments, width };
 }
 
-function redsColor(value, clim) {
-  if (!Number.isFinite(value) || clim <= 0) {
-    return pc().mask;
-  }
-  const [r, g, b] = redsAt(value / clim);
-  return `rgb(${r}, ${g}, ${b})`;
+function measureMathLabel(ctx, parts, px) {
+  return mathSegments(ctx, parts, px).width;
 }
+
+function drawMathLabel(ctx, parts, x, y, px, align) {
+  const { segments, width } = mathSegments(ctx, parts, px);
+  const x0 = align === "center" ? x - width / 2 : align === "right" ? x - width : x;
+  const previous = ctx.textAlign;
+  ctx.textAlign = "left";
+  segments.forEach((segment) => {
+    ctx.font = segment.font;
+    ctx.fillText(segment.text, x0 + segment.dx, y + segment.dy);
+  });
+  ctx.textAlign = previous;
+  return width;
+}
+
+//: the manuscript's symbols; `withSource` appends the product, which
+//: panels A-D carry and the accounting legend drops for room
+function lrpSymbol(index, withSource) {
+  const item = state.lrp.meta.covariates[index];
+  const source = withSource ? [{ t: ` (${item.product.replace(/^GRACE .*/, "GRACE")})` }] : [];
+  if (item.key === "obp") {
+    return [{ t: "p", it: true }, { t: "b", it: true, sub: true }, ...source];
+  }
+  if (item.key === "ssh") {
+    return [{ t: "η", it: true }, ...source];
+  }
+  return [{ t: "u", it: true }, { t: "wind", sup: true }, ...source];
+}
+
+// rounded axis steps, so the ticks read 0.01 / 0.02 rather than 4.3e-2
+function niceStep(range, target) {
+  const raw = Math.abs(range) / Math.max(1, target);
+  if (!(raw > 0)) {
+    return 1;
+  }
+  const magnitude = Math.pow(10, Math.floor(Math.log10(raw)));
+  const normalised = raw / magnitude;
+  const step = normalised <= 1 ? 1 : normalised <= 2 ? 2 : normalised <= 5 ? 5 : 10;
+  return step * magnitude;
+}
+
+// Rotated axis labels and map titles are long enough to overrun their
+// panel once setupCanvasResolution scales fonts up for a small screen, so
+// every one of them is fitted to the span it actually has.
+function fitPx(ctx, text, maxSpan, basePx) {
+  ctx.font = `${basePx}px ${FONT_STACK}`;
+  const measured = ctx.measureText(text).width;
+  return measured <= maxSpan
+    ? basePx : Math.max(8, Math.floor(basePx * (maxSpan / measured)));
+}
+
+function formatTickValue(value, step) {
+  const decimals = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  const text = value.toFixed(decimals);
+  return text === `-${(0).toFixed(decimals)}` ? (0).toFixed(decimals) : text;
+}
+
+
 
 // 256-step ramp, so the per-pixel loop below never interpolates
 let REDS_LUT = null;
@@ -1589,7 +1652,9 @@ function redsLut() {
   if (!REDS_LUT) {
     REDS_LUT = new Uint8Array(256 * 3);
     for (let i = 0; i < 256; i += 1) {
-      const [r, g, b] = redsAt(i / 255);
+      // discrete levels, matching the manuscript figure's stepped bar
+      const bin = Math.min(REDS.length - 1, Math.floor((i / 255) * REDS.length));
+      const [r, g, b] = REDS[bin];
       REDS_LUT[i * 3] = r;
       REDS_LUT[i * 3 + 1] = g;
       REDS_LUT[i * 3 + 2] = b;
@@ -1858,23 +1923,18 @@ function lrpCellValues() {
   return { maps, terms, clim99 };
 }
 
-function lrpCovariateLabels() {
-  return state.lrp.meta.covariates.map((item) => item.label);
-}
 
 function drawLrpMaps(cell) {
   const { ctx, width, height, fs } = setupCanvasResolution(lrpMapsCanvas);
-  const fonts = plotFonts(fs);
   const theme = pc();
   const meta = state.lrp.meta;
-  const labels = lrpCovariateLabels();
 
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, width, height);
 
-  const margins = { left: 20 * fs, right: 104 * fs, top: 28 * fs, bottom: 20 * fs };
-  const gap = 16 * fs;
+  const margins = { left: 30 * fs, right: 124 * fs, top: 32 * fs, bottom: 16 * fs };
+  const gap = 14 * fs;
   const mapCount = meta.dimensions.covariates;
   const side = Math.min(
     (width - margins.left - margins.right - gap * (mapCount - 1)) / mapCount,
@@ -1893,6 +1953,7 @@ function drawLrpMaps(cell) {
   const landRgb = theme.lrpLand;
   const oceanRgb = theme.lrpOcean;
   const scale = cell.clim99 > 0 ? 255 / cell.clim99 : 0;
+  const basePx = Math.round(15.5 * fs);
 
   for (let c = 0; c < mapCount; c += 1) {
     const x0 = margins.left + c * (side + gap);
@@ -1910,11 +1971,10 @@ function drawLrpMaps(cell) {
     for (let p = 0; p < cache.pixels.length; p += 1) {
       const which = cache.pixels[p];
       const o = p * 4;
-      let rgb;
       if (which >= 0) {
-        // the value is clamped into the ramp, not into the data: the
-        // colour limit is the 99th percentile, so the top percentile
-        // saturates exactly as it does in the manuscript figure
+        // clamped into the ramp, not into the data: the colour limit is the
+        // 99th percentile, so the top percentile saturates exactly as it
+        // does in the manuscript figure
         let step = Math.round(values[which] * scale);
         step = step < 0 ? 0 : step > 255 ? 255 : step;
         data[o] = lut[step * 3];
@@ -1925,7 +1985,7 @@ function drawLrpMaps(cell) {
       }
       // land, ocean the network does not read, and everything beyond the
       // projection's radius all take the backdrop m_map would leave
-      rgb = which === PX_LAND ? landRgb : oceanRgb;
+      const rgb = which === PX_LAND ? landRgb : oceanRgb;
       data[o] = rgb[0];
       data[o + 1] = rgb[1];
       data[o + 2] = rgb[2];
@@ -1938,8 +1998,6 @@ function drawLrpMaps(cell) {
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.clip();
 
-    // m_grid's dashed graticule; it carries no tick labels in the
-    // manuscript figure either
     const strokeGeoLine = (points) => {
       ctx.beginPath();
       let started = false;
@@ -1964,6 +2022,8 @@ function drawLrpMaps(cell) {
       }
       return points;
     };
+
+    // m_grid's dashed graticule, unlabelled as in the manuscript figure
     ctx.strokeStyle = theme.lrpGrid;
     ctx.lineWidth = 0.6 * fs;
     ctx.setLineDash([4 * fs, 4 * fs]);
@@ -1979,58 +2039,84 @@ function drawLrpMaps(cell) {
     // the explained cell's latitude - curved in this projection, so it is
     // projected point by point rather than drawn as a straight rule
     ctx.strokeStyle = theme.ink;
-    ctx.lineWidth = 1.4 * fs;
-    ctx.setLineDash([7 * fs, 3 * fs, 2 * fs, 3 * fs]);
+    ctx.lineWidth = 1.5 * fs;
+    ctx.setLineDash([8 * fs, 3 * fs, 2 * fs, 3 * fs]);
     strokeGeoLine(parallel(targetLat));
     ctx.restore();
 
-    ctx.strokeStyle = theme.frame;
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 1.1 * fs;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.stroke();
 
-    // the title is fitted to the map it labels, which narrows further once
-    // setupCanvasResolution scales fonts up for a small screen
+    // panel letter, then the symbol the manuscript uses for this covariate.
+    // The title is centred in whatever the letter leaves.
     ctx.fillStyle = theme.ink;
-    ctx.textAlign = "center";
-    const basePx = Math.round(15.5 * fs);
-    ctx.font = `${basePx}px ${FONT_STACK}`;
-    const titleWidth = ctx.measureText(labels[c]).width;
-    if (titleWidth > side - 8 * fs) {
-      ctx.font = `${Math.max(9, Math.floor(basePx * (side - 8 * fs) / titleWidth))}`
-        + `px ${FONT_STACK}`;
+    ctx.textAlign = "left";
+    ctx.font = `700 ${Math.round(basePx * 1.15)}px ${FONT_STACK}`;
+    const letter = String.fromCharCode(65 + c);
+    const letterWidth = ctx.measureText(letter).width;
+    ctx.fillText(letter, x0, top - 9 * fs);
+    const room = side - 2 * (letterWidth + 6 * fs);
+    let titlePx = basePx;
+    if (measureMathLabel(ctx, lrpSymbol(c, true), titlePx) > room) {
+      titlePx = Math.max(8, Math.floor(
+        titlePx * room / measureMathLabel(ctx, lrpSymbol(c, true), titlePx)));
     }
-    ctx.fillText(labels[c], cx, top - 8 * fs);
+    drawMathLabel(ctx, lrpSymbol(c, true), cx, top - 9 * fs, titlePx, "center");
   }
 
   // shared colour bar: 0 .. the 99th percentile of this cell's three maps
-  const cbW = 11 * fs;
-  const cbX = width - margins.right + 34 * fs;
-  const cbH = side;
-  for (let p = 0; p < cbH; p += 1) {
-    ctx.fillStyle = redsColor(cell.clim99 * (1 - p / cbH), cell.clim99);
-    ctx.fillRect(cbX, top + p, cbW, 1);
+  const cbW = 13 * fs;
+  const cbX = margins.left + mapCount * side + (mapCount - 1) * gap + 26 * fs;
+  const cbH = side * 0.86;
+  const cbTop = top + (side - cbH) / 2;
+  const steps = REDS.length;
+  for (let s = 0; s < steps; s += 1) {
+    const [r, g, b] = REDS[s];
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    const y1 = cbTop + cbH * (1 - (s + 1) / steps);
+    const y2 = cbTop + cbH * (1 - s / steps);
+    ctx.fillRect(cbX, y1, cbW, y2 - y1 + 0.5);
   }
-  ctx.strokeStyle = theme.frame;
-  ctx.strokeRect(cbX, top, cbW, cbH);
+  ctx.strokeStyle = theme.ink;
+  ctx.lineWidth = 0.8 * fs;
+  ctx.strokeRect(cbX, cbTop, cbW, cbH);
+
+  // rounded ticks, as the manuscript's colour bar carries
   ctx.fillStyle = theme.muted;
-  ctx.font = fonts.colorbar;
+  ctx.font = `${Math.round(13.5 * fs)}px ${FONT_STACK}`;
   ctx.textAlign = "left";
-  ctx.fillText(cell.clim99.toExponential(1), cbX + cbW + 5 * fs, top + 10 * fs);
-  ctx.fillText("0", cbX + cbW + 5 * fs, top + cbH - 1);
+  const step = niceStep(cell.clim99, 4);
+  for (let v = 0; v <= cell.clim99 + 1e-12; v += step) {
+    const y = cbTop + cbH * (1 - v / cell.clim99);
+    ctx.beginPath();
+    ctx.moveTo(cbX + cbW, y);
+    ctx.lineTo(cbX + cbW + 4 * fs, y);
+    ctx.strokeStyle = theme.ink;
+    ctx.stroke();
+    ctx.fillText(formatTickValue(v, step), cbX + cbW + 7 * fs, y + 4 * fs);
+  }
+
+  const barLabel = "Mean |relevance| (Sv per mascon)";
+  const barPx = fitPx(ctx, barLabel, cbH, Math.round(14 * fs));
+  ctx.save();
+  ctx.translate(cbX + cbW + 44 * fs + barPx, cbTop + cbH / 2);
+  ctx.rotate(Math.PI / 2);
   ctx.textAlign = "center";
-  ctx.fillText("Sv", cbX + cbW / 2, top - 9 * fs);
+  ctx.fillStyle = theme.ink;
+  ctx.font = `${barPx}px ${FONT_STACK}`;
+  ctx.fillText(barLabel, 0, 0);
+  ctx.restore();
 }
 
 function drawLrpProfile(cell) {
   const { ctx, width, height, fs } = setupCanvasResolution(lrpProfileCanvas);
-  const fonts = plotFonts(fs);
   const theme = pc();
   const meta = state.lrp.meta;
   const bands = meta.bands;
   const nBand = bands.latitude.length;
-  const labels = meta.covariates.map((item) => item.product);
 
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = theme.bg;
@@ -2053,11 +2139,11 @@ function drawLrpProfile(cell) {
   if (!(peak > 0)) {
     peak = 1;
   }
-  const yMax = peak * 1.12;
+  const step = niceStep(peak * 1.12, 4);
+  const yMax = Math.ceil((peak * 1.12) / step) * step;
 
-  // the title sits on the first line and the legend on the second, so the
-  // top margin has to clear both
-  const margins = { left: 74 * fs, right: 16 * fs, top: 52 * fs, bottom: 44 * fs };
+  const basePx = Math.round(15.5 * fs);
+  const margins = { left: 78 * fs, right: 14 * fs, top: 54 * fs, bottom: 46 * fs };
   const plotW = width - margins.left - margins.right;
   const plotH = height - margins.top - margins.bottom;
   const latMin = bands.latitude[0];
@@ -2067,15 +2153,24 @@ function drawLrpProfile(cell) {
 
   ctx.strokeStyle = theme.grid;
   ctx.lineWidth = 1;
-  for (let g = 1; g <= 3; g += 1) {
-    const y = margins.top + (plotH * g) / 4;
+  for (let v = step; v <= yMax + 1e-12; v += step) {
     ctx.beginPath();
-    ctx.moveTo(margins.left, y);
-    ctx.lineTo(margins.left + plotW, y);
+    ctx.moveTo(margins.left, toY(v));
+    ctx.lineTo(margins.left + plotW, toY(v));
     ctx.stroke();
   }
 
-  // the explained cell's latitude
+  // the equator, then the explained cell's latitude
+  ctx.save();
+  ctx.strokeStyle = theme.lrpGrid;
+  ctx.lineWidth = 0.8 * fs;
+  ctx.setLineDash([1.5 * fs, 2.5 * fs]);
+  ctx.beginPath();
+  ctx.moveTo(toX(0), margins.top);
+  ctx.lineTo(toX(0), margins.top + plotH);
+  ctx.stroke();
+  ctx.restore();
+
   const targetLat = state.data.latitudes[state.latitudeIndex];
   if (targetLat >= latMin && targetLat <= latMax) {
     ctx.save();
@@ -2087,6 +2182,11 @@ function drawLrpProfile(cell) {
     ctx.lineTo(toX(targetLat), margins.top + plotH);
     ctx.stroke();
     ctx.restore();
+    ctx.fillStyle = theme.ink;
+    ctx.font = `${Math.round(13 * fs)}px ${FONT_STACK}`;
+    ctx.textAlign = targetLat > (latMin + latMax) / 2 ? "right" : "left";
+    const pad = (targetLat > (latMin + latMax) / 2 ? -1 : 1) * 5 * fs;
+    ctx.fillText(formatLatitude(targetLat), toX(targetLat) + pad, margins.top + 13 * fs);
   }
 
   profiles.forEach((row, c) => {
@@ -2109,79 +2209,89 @@ function drawLrpProfile(cell) {
   ctx.lineWidth = 1;
   ctx.strokeRect(margins.left, margins.top, plotW, plotH);
 
+  // latitude ticks every 15 degrees, thinned when the labels would collide
   ctx.fillStyle = theme.muted;
-  ctx.font = fonts.colorbar;
+  ctx.font = `${Math.round(13.5 * fs)}px ${FONT_STACK}`;
   ctx.textAlign = "center";
-  [-60, -30, 0, 30, 60].forEach((lat) => {
+  const everyFifteen = [];
+  for (let lat = -60; lat <= 60; lat += 15) {
+    everyFifteen.push(lat);
+  }
+  const labelRoom = plotW / everyFifteen.length;
+  const latTicks = ctx.measureText("45°S").width * 1.35 < labelRoom
+    ? everyFifteen : everyFifteen.filter((lat) => lat % 30 === 0);
+  latTicks.forEach((lat) => {
     if (lat < latMin || lat > latMax) {
       return;
     }
-    ctx.fillText(formatLatitude(lat), toX(lat), margins.top + plotH + 18 * fs);
+    ctx.fillText(formatLatitude(lat), toX(lat), margins.top + plotH + 17 * fs);
   });
   ctx.textAlign = "right";
-  [0, yMax / 2, yMax].forEach((v) => {
-    ctx.fillText(v === 0 ? "0" : v.toExponential(1), margins.left - 6 * fs, toY(v) + 4 * fs);
-  });
+  for (let v = 0; v <= yMax + 1e-12; v += step) {
+    ctx.fillText(formatTickValue(v, step), margins.left - 6 * fs, toY(v) + 4 * fs);
+  }
 
   ctx.fillStyle = theme.ink;
-  ctx.font = fonts.tick;
-  ctx.textAlign = "center";
-  ctx.fillText("Mean |relevance| per mascon (Sv)", width / 2, 15 * fs);
+  ctx.textAlign = "left";
+  ctx.font = `700 ${Math.round(basePx * 1.15)}px ${FONT_STACK}`;
+  ctx.fillText("D", 4 * fs, 16 * fs);
   ctx.fillStyle = theme.muted;
-  ctx.font = fonts.colorbar;
+  ctx.font = `${Math.round(14 * fs)}px ${FONT_STACK}`;
+  ctx.textAlign = "center";
   ctx.fillText("Latitude", margins.left + plotW / 2, height - 8 * fs);
+  const yLabel = "Mean |relevance| (Sv per mascon)";
+  ctx.save();
+  ctx.translate(18 * fs, margins.top + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = theme.ink;
+  ctx.font = `${fitPx(ctx, yLabel, plotH, Math.round(14 * fs))}px ${FONT_STACK}`;
+  ctx.fillText(yLabel, 0, 0);
+  ctx.restore();
 
-  drawLrpLegend(ctx, fs, fonts, margins.left, margins.top - 16 * fs,
-                labels.map((label, c) => ({ label, color: theme.lrp[c], dash: false })),
-                width - margins.left - margins.right);
+  drawLrpLegend(ctx, fs, margins.left + plotW / 2, 20 * fs,
+                [0, 1, 2].map((c) => ({ parts: lrpSymbol(c, true), color: theme.lrp[c] })),
+                plotW);
 }
 
-// a compact one-row legend, used by both lower panels
-function drawLrpLegend(ctx, fs, fonts, x0, y, entries, available) {
-  ctx.font = fonts.colorbar;
-  // the accounting panel needs five entries, which overrun the canvas once
-  // setupCanvasResolution scales fonts up for a small screen: fit the row
-  // to the width it actually has rather than letting it clip
-  const basePx = Math.round(15.5 * fs);
-  if (available > 0) {
-    const needed = entries.reduce(
-      (sum, entry) => sum + 26 * fs + ctx.measureText(entry.label).width, 0);
-    if (needed > available) {
-      const px = Math.max(8, Math.floor(basePx * (available / needed)));
-      ctx.font = `${px}px ${FONT_STACK}`;
-      fs *= px / basePx;
-    }
+// one centred row, as the manuscript figure's legends are laid out. The
+// entries carry math parts rather than plain strings so the accounting and
+// profile legends name the covariates the same way the axes do.
+function drawLrpLegend(ctx, fs, centreX, y, entries, available) {
+  let px = Math.round(15.5 * fs);
+  const measure = () => entries.reduce(
+    (sum, entry) => sum + 30 * fs + measureMathLabel(ctx, entry.parts, px), 0);
+  let total = measure();
+  if (available > 0 && total > available) {
+    // five entries overrun a narrow canvas once fonts are scaled up
+    px = Math.max(8, Math.floor(px * (available / total)));
+    total = measure();
   }
-  ctx.textAlign = "left";
+  let x = centreX - total / 2;
   ctx.textBaseline = "middle";
-  let x = x0;
   entries.forEach((entry) => {
     ctx.save();
     ctx.strokeStyle = entry.color;
-    ctx.lineWidth = 2.2 * fs;
+    ctx.lineWidth = (entry.wide ? 3 : 2.2) * fs;
     if (entry.dash) {
-      ctx.setLineDash([5 * fs, 3 * fs]);
+      ctx.setLineDash([6 * fs, 3 * fs]);
     }
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.lineTo(x + 16 * fs, y);
+    ctx.lineTo(x + 20 * fs, y);
     ctx.stroke();
     ctx.restore();
-    ctx.fillStyle = pc().muted;
-    ctx.fillText(entry.label, x + 21 * fs, y);
-    x += 26 * fs + ctx.measureText(entry.label).width;
+    ctx.fillStyle = pc().ink;
+    x += 25 * fs + drawMathLabel(ctx, entry.parts, x + 25 * fs, y, px, "left") + 5 * fs;
   });
   ctx.textBaseline = "alphabetic";
 }
 
 function drawLrpAccounting(cell) {
   const { ctx, width, height, fs } = setupCanvasResolution(lrpAccountingCanvas);
-  const fonts = plotFonts(fs);
   const theme = pc();
   const d = state.data;
   const meta = state.lrp.meta;
   const nTime = meta.dimensions.time;
-  const labels = meta.covariates.map((item) => item.product);
 
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = theme.bg;
@@ -2218,9 +2328,11 @@ function drawLrpAccounting(cell) {
   if (!(limit > 0)) {
     limit = 1;
   }
-  limit *= 1.1;
+  const step = niceStep(limit * 1.1, 3);
+  limit = Math.ceil((limit * 1.1) / step) * step;
 
-  const margins = { left: 60 * fs, right: 14 * fs, top: 52 * fs, bottom: 44 * fs };
+  const basePx = Math.round(15.5 * fs);
+  const margins = { left: 64 * fs, right: 14 * fs, top: 54 * fs, bottom: 46 * fs };
   const plotW = width - margins.left - margins.right;
   const plotH = height - margins.top - margins.bottom;
   const years = d.time_years;
@@ -2235,19 +2347,21 @@ function drawLrpAccounting(cell) {
     ctx.fillRect(gx0, margins.top, toX(d.gap_time_range[1]) - gx0, plotH);
   }
 
-  ctx.strokeStyle = theme.zero;
+  ctx.strokeStyle = theme.grid;
   ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(margins.left, toY(0));
-  ctx.lineTo(margins.left + plotW, toY(0));
-  ctx.stroke();
+  for (let v = -limit; v <= limit + 1e-12; v += step) {
+    ctx.beginPath();
+    ctx.moveTo(margins.left, toY(v));
+    ctx.lineTo(margins.left + plotW, toY(v));
+    ctx.stroke();
+  }
 
   const drawSeries = (values, color, lineWidth, dash) => {
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth * fs;
     if (dash) {
-      ctx.setLineDash([5 * fs, 3 * fs]);
+      ctx.setLineDash([7 * fs, 4 * fs]);
     }
     ctx.beginPath();
     let started = false;
@@ -2269,45 +2383,58 @@ function drawLrpAccounting(cell) {
     ctx.restore();
   };
 
-  drawSeries(target, theme.recon, 2.4, false);
-  cell.terms.slice(0, 3).forEach((row, c) => drawSeries(row, theme.lrp[c], 1.6, false));
-  drawSeries(cell.terms[3], theme.lrpBias, 1.5, true);
+  cell.terms.slice(0, 3).forEach((row, c) => drawSeries(row, theme.lrp[c], 1.7, false));
+  drawSeries(cell.terms[3], theme.ink, 1.4, true);
+  drawSeries(target, theme.ink, 2.8, false);
 
   // where the animation currently sits
   ctx.strokeStyle = theme.cursor;
   ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.45;
   ctx.beginPath();
   ctx.moveTo(toX(years[state.timeIndex]), margins.top);
   ctx.lineTo(toX(years[state.timeIndex]), margins.top + plotH);
   ctx.stroke();
+  ctx.globalAlpha = 1;
 
   ctx.strokeStyle = theme.frame;
   ctx.lineWidth = 1;
   ctx.strokeRect(margins.left, margins.top, plotW, plotH);
 
   ctx.fillStyle = theme.muted;
-  ctx.font = fonts.colorbar;
+  ctx.font = `${Math.round(13.5 * fs)}px ${FONT_STACK}`;
   ctx.textAlign = "center";
-  const yearTicks = buildYearAxisTicks(years);
-  yearTicks.majorTicks.forEach((idx) => {
-    ctx.fillText(String(Math.floor(years[idx])), toX(years[idx]),
-                 margins.top + plotH + 18 * fs);
-  });
+  const firstYear = Math.ceil(xMin / 4) * 4;
+  for (let year = firstYear; year <= xMax; year += 4) {
+    ctx.fillText(String(year), toX(year), margins.top + plotH + 17 * fs);
+  }
   ctx.textAlign = "right";
-  [limit, 0, -limit].forEach((v) => {
-    ctx.fillText(formatSigned(v, 1), margins.left - 6 * fs, toY(v) + 4 * fs);
-  });
+  for (let v = -limit; v <= limit + 1e-12; v += step) {
+    ctx.fillText(formatTickValue(v, step), margins.left - 6 * fs, toY(v) + 4 * fs);
+  }
 
   ctx.fillStyle = theme.ink;
-  ctx.font = fonts.tick;
+  ctx.textAlign = "left";
+  ctx.font = `700 ${Math.round(basePx * 1.15)}px ${FONT_STACK}`;
+  ctx.fillText("E", 4 * fs, 16 * fs);
+  ctx.fillStyle = theme.muted;
+  ctx.font = `${Math.round(14 * fs)}px ${FONT_STACK}`;
   ctx.textAlign = "center";
-  ctx.fillText("Signed relevance (Sv, demeaned)", width / 2, 15 * fs);
+  ctx.fillText("Year", margins.left + plotW / 2, height - 8 * fs);
+  const yLabel = "Relevance contributions (Sv)";
+  ctx.save();
+  ctx.translate(18 * fs, margins.top + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = theme.ink;
+  ctx.font = `${fitPx(ctx, yLabel, plotH, Math.round(14 * fs))}px ${FONT_STACK}`;
+  ctx.fillText(yLabel, 0, 0);
+  ctx.restore();
 
-  drawLrpLegend(ctx, fs, fonts, margins.left, margins.top - 16 * fs, [
-    { label: "Reconstruction", color: theme.recon, dash: false },
-    ...labels.map((label, c) => ({ label, color: theme.lrp[c], dash: false })),
-    { label: "Bias", color: theme.lrpBias, dash: true },
-  ], width - margins.left - margins.right);
+  drawLrpLegend(ctx, fs, margins.left + plotW / 2, 20 * fs, [
+    { parts: [{ t: "NeurMOC" }], color: theme.ink, wide: true },
+    ...[0, 1, 2].map((c) => ({ parts: lrpSymbol(c, false), color: theme.lrp[c] })),
+    { parts: [{ t: "Residual" }], color: theme.ink, dash: true },
+  ], plotW);
 }
 
 function setLrpStatus(message) {
