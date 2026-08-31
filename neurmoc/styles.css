@@ -669,6 +669,26 @@ button {
 
 /* ---- LRP attribution ---- */
 
+/* The attribution maps answer "where does this cell come from", so the
+   visitor needs to choose the cell without leaving the tab. These are the
+   same two maps the Explore tab carries, drawn into their own canvases. */
+.lrp-picker-panel {
+  margin: 0 0 16px;
+}
+
+.lrp-picker-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .lrp-picker-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
 .lrp-panel {
   margin: 0;
 }

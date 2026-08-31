@@ -78,6 +78,8 @@ const snapshotCanvas = document.getElementById("snapshot-canvas");
 const hovmollerCanvas = document.getElementById("hovmoller-canvas");
 const trendCanvas = document.getElementById("trend-canvas");
 const lrpPanel = document.getElementById("lrp-panel");
+const lrpTrendCanvas = document.getElementById("lrp-trend-canvas");
+const lrpMeanCanvas = document.getElementById("lrp-mean-canvas");
 const lrpMapsCanvas = document.getElementById("lrp-maps-canvas");
 const lrpProfileCanvas = document.getElementById("lrp-profile-canvas");
 const lrpAccountingCanvas = document.getElementById("lrp-accounting-canvas");
@@ -2760,6 +2762,44 @@ function render() {
   if (shouldPaint(timeseriesSvg)) {
     drawTimeSeries();
   }
+
+  // The Attribution tab carries its own copies of these two maps so the
+  // explained cell can be moved without leaving the tab. Same fields, same
+  // click handling; the paint gate keeps them idle while that tab is shut.
+  if (shouldPaint(lrpTrendCanvas)) {
+    const geom = drawDualBasinHeatmap(lrpTrendCanvas, trendFields.slope,
+                                      d.latitudes, d.densities, {
+      clim: state.trendClim,
+      colorbarTickDigits: 1,
+      yTitle: "Density σ₂ (kg/m³)",
+      title: "Linear trend",
+      colorbarTitle: "Sv yr⁻¹",
+      leftTitle: "SMOC",
+      rightTitle: "AMOC",
+      highlightX: state.latitudeIndex,
+      highlightY: state.densityIndex,
+      hatchMask: trendFields.hatch,
+      yTickIndices: [0, 4, 8, 12, 16],
+    });
+    registerHover(lrpTrendCanvas, geom, "trend");
+  }
+  if (shouldPaint(lrpMeanCanvas)) {
+    const geom = drawDualBasinHeatmap(lrpMeanCanvas, meanState,
+                                      d.latitudes, d.densities, {
+      clim: state.clim,
+      colorbarTickDigits: 0,
+      yTitle: "Density σ₂ (kg/m³)",
+      title: "2004–2009 mean",
+      colorbarTitle: "Sv",
+      leftTitle: "SMOC",
+      rightTitle: "AMOC",
+      highlightX: state.latitudeIndex,
+      highlightY: state.densityIndex,
+      yTickIndices: [0, 4, 8, 12, 16],
+    });
+    registerHover(lrpMeanCanvas, geom, "mean");
+  }
+
   updateTrendReading();
   updatePresetHighlight();
   renderLrp();
@@ -2795,7 +2835,8 @@ function updateSelectionFromDualBasin(geom, x, y) {
 }
 
 function bindCanvasInteractions() {
-  [snapshotCanvas, sectionCanvas, trendCanvas].forEach((canvas) => {
+  [snapshotCanvas, sectionCanvas, trendCanvas,
+   lrpTrendCanvas, lrpMeanCanvas].forEach((canvas) => {
     canvas.addEventListener("click", (event) => {
       const entry = hoverRegistry.get(canvas);
       if (!entry) {
@@ -3309,7 +3350,7 @@ async function init() {
   bindCanvasInteractions();
   bindTabs();
   [trendCanvas, timeseriesSvg, sectionCanvas, lrpPanel, hovmollerCanvas,
-   snapshotCanvas].forEach(registerPaintTarget);
+   snapshotCanvas, lrpTrendCanvas, lrpMeanCanvas].forEach(registerPaintTarget);
   setTab(state.tab);                    // renders, and reveals the right tab
   renderHeroSpark();
   // the first render can measure the SVG box before the flex/grid layout
