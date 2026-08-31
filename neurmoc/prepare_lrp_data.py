@@ -79,6 +79,31 @@ SWEEP_DEFAULT = (
     r"\RealWorld\LRP\all_cells\lrp0_z_rule\RelevanceAllCells.npz"
 )
 GEOMETRY_DEFAULT = r"E:\NeurMOC_2026_data\reference\grids\Mascon_AtlSO.npz"
+#: the GRACE JPL granule carries the 0.5-degree land mask the pipeline already
+#: uses for map backdrops; it is the coastline behind the viewer's maps
+LAND_DEFAULT = (
+    r"E:\NeurMOC_2026_data\raw\satellite\OBP\grace-jpl"
+    r"\GRCTellus.JPL.200204_202605.GLO.RL06.3M.MSCNv04CRI.nc"
+)
+
+#: m_map settings the manuscript figure uses (Plot_LRP_manuscript.m). The
+#: viewer reproduces these rather than inventing its own projection: an
+#: azimuthal equal-area view, chosen by which side of the transition
+#: latitude the explained cell sits on.
+PROJECTION = {
+    "name": "azimuthal_equal_area",
+    "transition_latitude": -35.0,
+    "northern": {"lat": -10.0, "lon": -30.0, "radius": 80.0, "rotation": 0.0},
+    "southern": {"lat": -40.0, "lon": -25.0, "radius": 110.0, "rotation": 20.0},
+    "graticule": {"parallels": [-60, -30, 0, 30, 60],
+                  "meridians": [-180, -120, -60, 0, 60, 120, 180]},
+    "coast_color": "#d1d1d1",
+    "grid_color": "#9e9e9e",
+    "note": ("Azimuthal equal-area, matching m_proj('Azimuthal Equal-area') "
+             "in Plot_LRP_manuscript.m. A cell south of the transition "
+             "latitude gets the circumpolar view, everything else the "
+             "Atlantic-centred one."),
+}
 #: the stage-17 single-cell products, used to validate this export
 PRODUCT_ROOT_DEFAULT = (
     r"E:\NeurMOC_2026_data\results\m26r5\ACCESS_hist+SSP585"
@@ -109,6 +134,7 @@ IDENTITY_STEP_TOLERANCE = 1.0
 class Config:
     sweep: Path
     geometry: Path
+    land: Path
     product_root: Path
     meta_path: Path
     out_json: Path
@@ -132,6 +158,39 @@ def load_geometry(path: Path) -> dict:
     out = {k: np.asarray(raw[k]).squeeze()[select] for k in need[1:]}
     out["n"] = int(select.sum())
     return out
+
+
+def pack_land_mask(path: Path) -> tuple[bytes, dict]:
+    """The 0.5-degree land mask, as one bit per cell.
+
+    Mirrors neurmoc.grids.load_grace_land: the granule's longitudes run
+    0..360, so the halves are swapped to put the Atlantic in the middle.
+    Row-major from the south-west corner, bit set = land. 259200 cells fit
+    in 32 kB, which is smaller than any coastline polygon set and comes
+    from data the pipeline already depends on.
+    """
+    import netCDF4
+
+    with netCDF4.Dataset(path) as nc:
+        lon = np.asarray(nc["lon"][:])
+        lat = np.asarray(nc["lat"][:])
+        land = np.asarray(nc["land_mask"][:])
+    half = lon.size // 2
+    lon = np.concatenate([lon[half:] - 360, lon[:half]])
+    land = np.concatenate([land[:, half:], land[:, :half]], axis=1)
+    is_land = land > 0.5
+    if np.diff(lat).min() <= 0 or np.diff(lon).min() <= 0:
+        raise ValueError(f"{path}: land-mask axes are not ascending")
+    blob = np.packbits(is_land.astype(np.uint8), axis=None).tobytes()
+    descriptor = {
+        "shape": [int(is_land.shape[0]), int(is_land.shape[1])],
+        "lat_first": float(lat[0]), "lon_first": float(lon[0]),
+        "lat_step": float(np.diff(lat)[0]), "lon_step": float(np.diff(lon)[0]),
+        "byte_length": len(blob),
+        "order": "row-major from the south-west corner, one bit per cell, "
+                 "set = land; MSB first within each byte",
+    }
+    return blob, descriptor
 
 
 def latitude_bands(geometry: dict) -> dict:
@@ -344,6 +403,12 @@ def main(cfg: Config) -> None:
         })
     total_bytes = sum(c["byte_length"] for c in chunks)
 
+    land_blob, land = pack_land_mask(cfg.land)
+    land_path = cfg.out_dir / "land_mask.bin"
+    land_path.write_bytes(land_blob)
+    land["file"] = f"{cfg.out_dir.name}/{land_path.name}"
+    land["version"] = hashlib.sha1(land_blob).hexdigest()[:10]
+
     unlearnable = np.flatnonzero(~learnable).astype(int).tolist()
     descriptor = {
         "title": "NeurMOC layer-wise relevance propagation",
@@ -408,6 +473,8 @@ def main(cfg: Config) -> None:
             "stabilizer_identically_zero": True,
             "stabilizer_worst_sv": stabilizer_worst,
         },
+        "projection": PROJECTION,
+        "land": land,
         "chunks": chunks,
         "unlearnable_cells": unlearnable,
         "unlearnable_note": (
@@ -439,6 +506,9 @@ def main(cfg: Config) -> None:
     print(f"wrote {len(chunks)} chunks in {cfg.out_dir.name}/ "
           f"({total_bytes / 1e6:.1f} MB total, "
           f"{chunks[0]['byte_length'] / 1e6:.2f} MB each)")
+    print(f"wrote {land_path.name} ({len(land_blob) / 1e3:.0f} kB, "
+          f"{land['shape'][0]} x {land['shape'][1]} at "
+          f"{land['lat_step']} degrees)")
     print(f"cells without attribution: {len(unlearnable)} of {n_cells}")
 
 
@@ -447,6 +517,7 @@ def parse_args() -> Config:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--sweep", type=Path, default=Path(SWEEP_DEFAULT))
     parser.add_argument("--geometry", type=Path, default=Path(GEOMETRY_DEFAULT))
+    parser.add_argument("--land", type=Path, default=Path(LAND_DEFAULT))
     parser.add_argument("--products", type=Path, default=Path(PRODUCT_ROOT_DEFAULT))
     parser.add_argument("--meta", type=Path,
                         default=here / "data" / "neurmoc_meta.json")
@@ -454,7 +525,7 @@ def parse_args() -> Config:
                         default=here / "data" / "neurmoc_lrp.json")
     parser.add_argument("--out-dir", type=Path, default=here / "data" / "lrp")
     args = parser.parse_args()
-    return Config(sweep=args.sweep, geometry=args.geometry,
+    return Config(sweep=args.sweep, geometry=args.geometry, land=args.land,
                   product_root=args.products, meta_path=args.meta,
                   out_json=args.out_json, out_dir=args.out_dir)
 

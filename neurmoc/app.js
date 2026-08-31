@@ -26,6 +26,7 @@ const state = {
     meta: null,                         // ./data/neurmoc_lrp.json
     chunks: new Map(),                  // density index -> decoded chunk
     pending: new Map(),                 // density index -> in-flight promise
+    landBits: null,                     // packed 0.5-degree land mask
     failed: false,
   },
 };
@@ -116,6 +117,11 @@ const PLOT_COLORS = {
     // accounting panel so a curve means the same thing in both
     lrp: ["#1f6f8b", "#c2661b", "#4c7a34"],
     lrpBias: "#8593a1",
+    // m_coast's [0.82 0.82 0.82] land patch, and the axes white behind
+    // ocean the network does not read
+    lrpLand: [209, 209, 209],
+    lrpOcean: [255, 255, 255],
+    lrpGrid: "rgba(110, 110, 110, 0.75)",
   },
   dark: {
     bg: "#0f1a2b",
@@ -144,6 +150,9 @@ const PLOT_COLORS = {
     cursor: "#dbe6f2",
     lrp: ["#67b6cf", "#e8a05a", "#8fc46a"],
     lrpBias: "#94a3b3",
+    lrpLand: [58, 70, 88],
+    lrpOcean: [15, 26, 43],
+    lrpGrid: "rgba(190, 202, 216, 0.55)",
   },
 };
 
@@ -1555,30 +1564,177 @@ const REDS = [
   [251, 106, 74], [239, 59, 44], [203, 24, 29], [165, 15, 21], [103, 0, 13],
 ];
 
-function redsColor(value, clim) {
-  if (!Number.isFinite(value) || clim <= 0) {
-    return pc().mask;
-  }
-  const t = Math.max(0, Math.min(1, value / clim));
-  const x = t * (REDS.length - 1);
+function redsAt(t) {
+  const x = Math.max(0, Math.min(1, t)) * (REDS.length - 1);
   const i = Math.min(REDS.length - 2, Math.floor(x));
   const local = x - i;
   const a = REDS[i];
   const b = REDS[i + 1];
-  return `rgb(${Math.round(a[0] + local * (b[0] - a[0]))}, `
-    + `${Math.round(a[1] + local * (b[1] - a[1]))}, `
-    + `${Math.round(a[2] + local * (b[2] - a[2]))})`;
+  return [Math.round(a[0] + local * (b[0] - a[0])),
+          Math.round(a[1] + local * (b[1] - a[1])),
+          Math.round(a[2] + local * (b[2] - a[2]))];
 }
 
-function formatLongitude(value) {
-  const rounded = Math.round(value);
-  if (rounded === 0) {
-    return "0°";
+function redsColor(value, clim) {
+  if (!Number.isFinite(value) || clim <= 0) {
+    return pc().mask;
   }
-  if (Math.abs(rounded) === 180) {
-    return "180°";
+  const [r, g, b] = redsAt(value / clim);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+// 256-step ramp, so the per-pixel loop below never interpolates
+let REDS_LUT = null;
+function redsLut() {
+  if (!REDS_LUT) {
+    REDS_LUT = new Uint8Array(256 * 3);
+    for (let i = 0; i < 256; i += 1) {
+      const [r, g, b] = redsAt(i / 255);
+      REDS_LUT[i * 3] = r;
+      REDS_LUT[i * 3 + 1] = g;
+      REDS_LUT[i * 3 + 2] = b;
+    }
   }
-  return `${Math.abs(rounded)}°${rounded > 0 ? "E" : "W"}`;
+  return REDS_LUT;
+}
+
+/* ---- azimuthal equal-area, as m_map draws it ----
+
+   Plot_LRP_manuscript.m projects these maps with
+   m_proj('Azimuthal Equal-area', ...) and swaps to a circumpolar view for
+   targets south of -35. A lat-lon rectangle is curved in that projection,
+   so the maps are rasterised: every pixel is inverse-projected once, and
+   the result cached, since all three covariates and every cell on the
+   same side of the transition share one projection.                     */
+
+const DEG = Math.PI / 180;
+//: pixel classes in the projection cache
+const PX_OUTSIDE = -3;
+const PX_LAND = -1;
+const PX_OCEAN = -2;
+
+function lrpProjection() {
+  const spec = state.lrp.meta.projection;
+  const targetLat = state.data.latitudes[state.latitudeIndex];
+  return targetLat > spec.transition_latitude ? spec.northern : spec.southern;
+}
+
+function projectLaea(latDeg, lonDeg, preset) {
+  const lat = latDeg * DEG;
+  const lat0 = preset.lat * DEG;
+  const dLon = (lonDeg - preset.lon) * DEG;
+  const cosC = Math.sin(lat0) * Math.sin(lat)
+    + Math.cos(lat0) * Math.cos(lat) * Math.cos(dLon);
+  if (cosC < Math.cos(preset.radius * DEG)) {
+    return null;                       // beyond the projection's radius
+  }
+  const k = Math.sqrt(2 / (1 + cosC));
+  const x = k * Math.cos(lat) * Math.sin(dLon);
+  const y = k * (Math.cos(lat0) * Math.sin(lat)
+    - Math.sin(lat0) * Math.cos(lat) * Math.cos(dLon));
+  const rhoMax = 2 * Math.sin((preset.radius * DEG) / 2);
+  const rot = preset.rotation * DEG;
+  return {
+    x: (x * Math.cos(rot) + y * Math.sin(rot)) / rhoMax,
+    y: (-x * Math.sin(rot) + y * Math.cos(rot)) / rhoMax,
+  };
+}
+
+// 0.5-degree lookup on the land mask's own grid: which mascon covers a cell
+let masconIndexGrid = null;
+function ensureMasconIndexGrid() {
+  if (masconIndexGrid) {
+    return masconIndexGrid;
+  }
+  const land = state.lrp.meta.land;
+  const [nLat, nLon] = land.shape;
+  const grid = new Int16Array(nLat * nLon).fill(-1);
+  const g = state.lrp.meta.geom;
+  const n = state.lrp.meta.dimensions.mascons;
+  const cell = (value, first, step) => Math.round((value - first) / step);
+  for (let m = 0; m < n; m += 1) {
+    const j0 = Math.max(0, cell(g.lat1[m], land.lat_first, land.lat_step));
+    const j1 = Math.min(nLat - 1, cell(g.lat2[m], land.lat_first, land.lat_step) - 1);
+    // a box that wraps the date line covers two longitude runs
+    const runs = g.across[m]
+      ? [[g.lon1[m], 180], [-180, g.lon2[m]]]
+      : [[g.lon1[m], g.lon2[m]]];
+    runs.forEach(([west, east]) => {
+      const i0 = Math.max(0, cell(west, land.lon_first, land.lon_step));
+      const i1 = Math.min(nLon - 1, cell(east, land.lon_first, land.lon_step) - 1);
+      for (let j = j0; j <= j1; j += 1) {
+        grid.fill(m, j * nLon + i0, j * nLon + i1 + 1);
+      }
+    });
+  }
+  masconIndexGrid = grid;
+  return grid;
+}
+
+// pixel -> mascon index, or one of the PX_* classes; cached per projection
+// preset and raster size
+let projectionCache = null;
+function ensureProjectionCache(preset, size) {
+  const key = `${preset.lat}:${preset.lon}:${preset.radius}:${preset.rotation}:${size}`;
+  if (projectionCache && projectionCache.key === key) {
+    return projectionCache;
+  }
+  const land = state.lrp.meta.land;
+  const [nLat, nLon] = land.shape;
+  const mascons = ensureMasconIndexGrid();
+  const landBits = state.lrp.landBits;
+  const out = new Int16Array(size * size);
+  const lat0 = preset.lat * DEG;
+  const sinLat0 = Math.sin(lat0);
+  const cosLat0 = Math.cos(lat0);
+  const rhoMax = 2 * Math.sin((preset.radius * DEG) / 2);
+  const rot = preset.rotation * DEG;
+  const cosRot = Math.cos(rot);
+  const sinRot = Math.sin(rot);
+
+  for (let py = 0; py < size; py += 1) {
+    // sample pixel centres; +y is north, so the row index is flipped
+    const yr = 1 - (2 * (py + 0.5)) / size;
+    for (let px = 0; px < size; px += 1) {
+      const xr = (2 * (px + 0.5)) / size - 1;
+      const slot = py * size + px;
+      if (xr * xr + yr * yr > 1) {
+        out[slot] = PX_OUTSIDE;
+        continue;
+      }
+      // undo the rotation, then scale back out of the unit disc
+      const x = (xr * cosRot - yr * sinRot) * rhoMax;
+      const y = (xr * sinRot + yr * cosRot) * rhoMax;
+      const rho = Math.hypot(x, y);
+      let lat;
+      let lon;
+      if (rho < 1e-12) {
+        lat = preset.lat;
+        lon = preset.lon;
+      } else {
+        const c = 2 * Math.asin(Math.min(1, rho / 2));
+        const sinC = Math.sin(c);
+        const cosC = Math.cos(c);
+        lat = Math.asin(cosC * sinLat0 + (y * sinC * cosLat0) / rho) / DEG;
+        lon = preset.lon + Math.atan2(
+          x * sinC, rho * cosLat0 * cosC - y * sinLat0 * sinC) / DEG;
+      }
+      lon = ((lon + 180) % 360 + 360) % 360 - 180;
+      const j = Math.min(nLat - 1, Math.max(0,
+        Math.round((lat - land.lat_first) / land.lat_step)));
+      const i = Math.min(nLon - 1, Math.max(0,
+        Math.round((lon - land.lon_first) / land.lon_step)));
+      const cellIndex = j * nLon + i;
+      if (landBits && (landBits[cellIndex >> 3] >> (7 - (cellIndex & 7))) & 1) {
+        out[slot] = PX_LAND;
+      } else {
+        const mascon = mascons[cellIndex];
+        out[slot] = mascon >= 0 ? mascon : PX_OCEAN;
+      }
+    }
+  }
+  projectionCache = { key, size, pixels: out };
+  return projectionCache;
 }
 
 async function loadLrpMeta() {
@@ -1702,102 +1858,147 @@ function drawLrpMaps(cell) {
   const fonts = plotFonts(fs);
   const theme = pc();
   const meta = state.lrp.meta;
-  const geom = meta.geom;
-  const nMascon = meta.dimensions.mascons;
   const labels = lrpCovariateLabels();
 
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, width, height);
 
-  const margins = { left: 42 * fs, right: 104 * fs, top: 30 * fs, bottom: 32 * fs };
+  const margins = { left: 20 * fs, right: 104 * fs, top: 28 * fs, bottom: 20 * fs };
   const gap = 16 * fs;
   const mapCount = meta.dimensions.covariates;
-  const mapW = (width - margins.left - margins.right - gap * (mapCount - 1)) / mapCount;
-  const latSpan = geom.latMax - geom.latMin;
-  const mapH = Math.min(mapW * (latSpan / 360),
-                        height - margins.top - margins.bottom);
-  const top = margins.top + (height - margins.top - margins.bottom - mapH) / 2;
+  const side = Math.min(
+    (width - margins.left - margins.right - gap * (mapCount - 1)) / mapCount,
+    height - margins.top - margins.bottom);
+  const top = margins.top + (height - margins.top - margins.bottom - side) / 2;
   const targetLat = state.data.latitudes[state.latitudeIndex];
+  const preset = lrpProjection();
+  const spec = meta.projection;
+
+  // Rasterise at device resolution: putImageData ignores the canvas
+  // transform, so the buffer is in device pixels and is placed there too.
+  const dpr = window.devicePixelRatio || 1;
+  const rasterSize = Math.max(48, Math.round(side * dpr));
+  const cache = ensureProjectionCache(preset, rasterSize);
+  const lut = redsLut();
+  const landRgb = theme.lrpLand;
+  const oceanRgb = theme.lrpOcean;
+  const scale = cell.clim99 > 0 ? 255 / cell.clim99 : 0;
 
   for (let c = 0; c < mapCount; c += 1) {
-    const x0 = margins.left + c * (mapW + gap);
-    const toX = (lon) => x0 + ((lon + 180) / 360) * mapW;
-    const toY = (lat) => top + ((geom.latMax - lat) / latSpan) * mapH;
-
-    ctx.fillStyle = theme.mask;
-    ctx.fillRect(x0, top, mapW, mapH);
+    const x0 = margins.left + c * (side + gap);
+    const cx = x0 + side / 2;
+    const cy = top + side / 2;
+    const radius = side / 2;
+    const toScreen = (lat, lon) => {
+      const p = projectLaea(lat, lon, preset);
+      return p === null ? null : { x: cx + p.x * radius, y: cy - p.y * radius };
+    };
 
     const values = cell.maps[c];
-    for (let m = 0; m < nMascon; m += 1) {
-      ctx.fillStyle = redsColor(values[m], cell.clim99);
-      const yTop = toY(geom.lat2[m]);
-      const boxH = toY(geom.lat1[m]) - yTop + 0.6;
-      if (geom.across[m]) {
-        // the box wraps the date line: draw it as two rectangles
-        ctx.fillRect(toX(geom.lon1[m]), yTop, toX(180) - toX(geom.lon1[m]) + 0.6, boxH);
-        ctx.fillRect(toX(-180), yTop, toX(geom.lon2[m]) - toX(-180) + 0.6, boxH);
-      } else {
-        const xLeft = toX(geom.lon1[m]);
-        ctx.fillRect(xLeft, yTop, toX(geom.lon2[m]) - xLeft + 0.6, boxH);
+    const image = ctx.createImageData(rasterSize, rasterSize);
+    const data = image.data;
+    for (let p = 0; p < cache.pixels.length; p += 1) {
+      const which = cache.pixels[p];
+      const o = p * 4;
+      let rgb;
+      if (which >= 0) {
+        // the value is clamped into the ramp, not into the data: the
+        // colour limit is the 99th percentile, so the top percentile
+        // saturates exactly as it does in the manuscript figure
+        let step = Math.round(values[which] * scale);
+        step = step < 0 ? 0 : step > 255 ? 255 : step;
+        data[o] = lut[step * 3];
+        data[o + 1] = lut[step * 3 + 1];
+        data[o + 2] = lut[step * 3 + 2];
+        data[o + 3] = 255;
+        continue;
       }
+      // land, ocean the network does not read, and everything beyond the
+      // projection's radius all take the backdrop m_map would leave
+      rgb = which === PX_LAND ? landRgb : oceanRgb;
+      data[o] = rgb[0];
+      data[o + 1] = rgb[1];
+      data[o + 2] = rgb[2];
+      data[o + 3] = 255;
     }
+    ctx.putImageData(image, Math.round(x0 * dpr), Math.round(top * dpr));
 
-    // the cell being explained, marked the way the manuscript marks it
     ctx.save();
-    ctx.strokeStyle = theme.ink;
-    ctx.lineWidth = 1.3 * fs;
-    ctx.setLineDash([7 * fs, 3 * fs, 2 * fs, 3 * fs]);
     ctx.beginPath();
-    ctx.moveTo(x0, toY(targetLat));
-    ctx.lineTo(x0 + mapW, toY(targetLat));
-    ctx.stroke();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.clip();
+
+    // m_grid's dashed graticule; it carries no tick labels in the
+    // manuscript figure either
+    const strokeGeoLine = (points) => {
+      ctx.beginPath();
+      let started = false;
+      points.forEach((point) => {
+        if (point === null) {
+          started = false;
+          return;
+        }
+        if (started) {
+          ctx.lineTo(point.x, point.y);
+        } else {
+          ctx.moveTo(point.x, point.y);
+          started = true;
+        }
+      });
+      ctx.stroke();
+    };
+    const parallel = (lat) => {
+      const points = [];
+      for (let lon = -180; lon <= 180; lon += 2) {
+        points.push(toScreen(lat, lon));
+      }
+      return points;
+    };
+    ctx.strokeStyle = theme.lrpGrid;
+    ctx.lineWidth = 0.6 * fs;
+    ctx.setLineDash([4 * fs, 4 * fs]);
+    spec.graticule.parallels.forEach((lat) => strokeGeoLine(parallel(lat)));
+    spec.graticule.meridians.forEach((lon) => {
+      const points = [];
+      for (let lat = -88; lat <= 88; lat += 2) {
+        points.push(toScreen(lat, lon));
+      }
+      strokeGeoLine(points);
+    });
+
+    // the explained cell's latitude - curved in this projection, so it is
+    // projected point by point rather than drawn as a straight rule
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 1.4 * fs;
+    ctx.setLineDash([7 * fs, 3 * fs, 2 * fs, 3 * fs]);
+    strokeGeoLine(parallel(targetLat));
     ctx.restore();
 
     ctx.strokeStyle = theme.frame;
     ctx.lineWidth = 1;
-    ctx.strokeRect(x0, top, mapW, mapH);
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.stroke();
 
-    // The map is only ~390 px wide on a desktop and narrower still once
-    // setupCanvasResolution scales the fonts up for a small screen, so every
-    // label here is fitted to the space it actually has. The profile's
-    // legend below names the product behind each colour.
+    // the title is fitted to the map it labels, which narrows further once
+    // setupCanvasResolution scales fonts up for a small screen
     ctx.fillStyle = theme.ink;
     ctx.textAlign = "center";
     const basePx = Math.round(15.5 * fs);
     ctx.font = `${basePx}px ${FONT_STACK}`;
     const titleWidth = ctx.measureText(labels[c]).width;
-    if (titleWidth > mapW - 8 * fs) {
-      ctx.font = `${Math.max(9, Math.floor(basePx * (mapW - 8 * fs) / titleWidth))}`
+    if (titleWidth > side - 8 * fs) {
+      ctx.font = `${Math.max(9, Math.floor(basePx * (side - 8 * fs) / titleWidth))}`
         + `px ${FONT_STACK}`;
     }
-    ctx.fillText(labels[c], x0 + mapW / 2, top - 9 * fs);
-
-    ctx.fillStyle = theme.muted;
-    ctx.font = `${basePx}px ${FONT_STACK}`;
-    const lonTicks = ctx.measureText("120°W").width * 3.2 < mapW ? [-120, 0, 120] : [0];
-    lonTicks.forEach((lon) => {
-      ctx.fillText(formatLongitude(lon), toX(lon), top + mapH + 17 * fs);
-    });
-
-    if (c === 0) {
-      ctx.textAlign = "right";
-      // 139.5 degrees of latitude in ~150 px: three labels at most, and
-      // only one if the scaled-up font would make them collide
-      const latTicks = mapH / 2 > basePx * 1.25 ? [-60, 0, 60] : [0];
-      latTicks.forEach((lat) => {
-        if (lat < geom.latMin || lat > geom.latMax) {
-          return;
-        }
-        ctx.fillText(formatLatitude(lat), x0 - 6 * fs, toY(lat) + 4 * fs);
-      });
-    }
+    ctx.fillText(labels[c], cx, top - 8 * fs);
   }
 
   // shared colour bar: 0 .. the 99th percentile of this cell's three maps
   const cbW = 11 * fs;
   const cbX = width - margins.right + 34 * fs;
-  const cbH = mapH;
+  const cbH = side;
   for (let p = 0; p < cbH; p += 1) {
     ctx.fillStyle = redsColor(cell.clim99 * (1 - p / cbH), cell.clim99);
     ctx.fillRect(cbX, top + p, cbW, 1);
@@ -1922,12 +2123,26 @@ function drawLrpProfile(cell) {
   ctx.fillText("Latitude", margins.left + plotW / 2, height - 8 * fs);
 
   drawLrpLegend(ctx, fs, fonts, margins.left, margins.top - 16 * fs,
-                labels.map((label, c) => ({ label, color: theme.lrp[c], dash: false })));
+                labels.map((label, c) => ({ label, color: theme.lrp[c], dash: false })),
+                width - margins.left - margins.right);
 }
 
 // a compact one-row legend, used by both lower panels
-function drawLrpLegend(ctx, fs, fonts, x0, y, entries) {
+function drawLrpLegend(ctx, fs, fonts, x0, y, entries, available) {
   ctx.font = fonts.colorbar;
+  // the accounting panel needs five entries, which overrun the canvas once
+  // setupCanvasResolution scales fonts up for a small screen: fit the row
+  // to the width it actually has rather than letting it clip
+  const basePx = Math.round(15.5 * fs);
+  if (available > 0) {
+    const needed = entries.reduce(
+      (sum, entry) => sum + 26 * fs + ctx.measureText(entry.label).width, 0);
+    if (needed > available) {
+      const px = Math.max(8, Math.floor(basePx * (available / needed)));
+      ctx.font = `${px}px ${FONT_STACK}`;
+      fs *= px / basePx;
+    }
+  }
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   let x = x0;
@@ -2083,7 +2298,7 @@ function drawLrpAccounting(cell) {
     { label: "Reconstruction", color: theme.recon, dash: false },
     ...labels.map((label, c) => ({ label, color: theme.lrp[c], dash: false })),
     { label: "Bias", color: theme.lrpBias, dash: true },
-  ]);
+  ], width - margins.left - margins.right);
 }
 
 function setLrpStatus(message) {
@@ -2152,9 +2367,28 @@ function renderLrp() {
   drawLrpAccounting(cell);
 }
 
+// the 0.5-degree land mask behind every map, one bit per cell (32 kB)
+async function loadLrpLand() {
+  const land = state.lrp.meta.land;
+  const bytes = await fetchWithProgress(
+    `${DATA_DIR}${land.file}?v=${land.version}`, land.byte_length, () => {});
+  if (bytes.byteLength !== land.byte_length) {
+    throw new Error(
+      `Land mask has ${bytes.byteLength} bytes; expected ${land.byte_length}.`);
+  }
+  const expected = Math.ceil((land.shape[0] * land.shape[1]) / 8);
+  if (bytes.byteLength !== expected) {
+    throw new Error(
+      `Land mask holds ${bytes.byteLength} bytes for a ${land.shape} grid; `
+      + `expected ${expected}.`);
+  }
+  state.lrp.landBits = bytes;
+}
+
 async function loadLrp() {
   try {
     state.lrp.meta = await loadLrpMeta();
+    await loadLrpLand();
     renderLrp();
     await ensureLrpChunk(state.densityIndex);
   } catch (error) {
