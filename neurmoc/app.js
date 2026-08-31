@@ -1613,6 +1613,15 @@ const PX_OUTSIDE = -3;
 const PX_LAND = -1;
 const PX_OCEAN = -2;
 
+// m_map's 'rot' turns the map the opposite way round from a plain rotation
+// of the projected coordinates. Both the forward transform and the inverse
+// in ensureProjectionCache read the angle from here, which is what keeps
+// them exact inverses of each other - they agreed before this fix too, and
+// were simply rotating the southern view backwards together.
+function lrpRotation(preset) {
+  return -preset.rotation * DEG;
+}
+
 function lrpProjection() {
   const spec = state.lrp.meta.projection;
   const targetLat = state.data.latitudes[state.latitudeIndex];
@@ -1633,7 +1642,7 @@ function projectLaea(latDeg, lonDeg, preset) {
   const y = k * (Math.cos(lat0) * Math.sin(lat)
     - Math.sin(lat0) * Math.cos(lat) * Math.cos(dLon));
   const rhoMax = 2 * Math.sin((preset.radius * DEG) / 2);
-  const rot = preset.rotation * DEG;
+  const rot = lrpRotation(preset);
   return {
     x: (x * Math.cos(rot) + y * Math.sin(rot)) / rhoMax,
     y: (-x * Math.sin(rot) + y * Math.cos(rot)) / rhoMax,
@@ -1688,7 +1697,7 @@ function ensureProjectionCache(preset, size) {
   const sinLat0 = Math.sin(lat0);
   const cosLat0 = Math.cos(lat0);
   const rhoMax = 2 * Math.sin((preset.radius * DEG) / 2);
-  const rot = preset.rotation * DEG;
+  const rot = lrpRotation(preset);
   const cosRot = Math.cos(rot);
   const sinRot = Math.sin(rot);
 
