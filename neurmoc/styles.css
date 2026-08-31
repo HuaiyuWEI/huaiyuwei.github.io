@@ -31,6 +31,12 @@
   --radius-lg: 20px;
   --radius-md: 12px;
   --radius-sm: 8px;
+  --tab-bar-bg: linear-gradient(135deg, #245b83, #3b7ba8);
+  --tab-bar-border: rgba(21, 60, 94, 0.35);
+  --tab-bar-label: rgba(255, 255, 255, 0.72);
+  --tab-ink: #ffffff;
+  --tab-ink-strong: #ffffff;
+  --tab-hover: rgba(255, 255, 255, 0.20);
   --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
   --font-body: "Inter", "Segoe UI", Tahoma, sans-serif;
 }
@@ -60,6 +66,12 @@
   --plot-border: rgba(122, 160, 196, 0.22);
   --weakening: #7fc0ee;
   --strengthening: #ff9d80;
+  --tab-bar-bg: linear-gradient(135deg, #14283f, #1f3f61);
+  --tab-bar-border: rgba(122, 160, 196, 0.28);
+  --tab-bar-label: rgba(230, 238, 247, 0.62);
+  --tab-ink: rgba(230, 238, 247, 0.88);
+  --tab-ink-strong: #ffffff;
+  --tab-hover: rgba(255, 255, 255, 0.12);
 }
 
 * {
@@ -537,83 +549,108 @@ button {
 /* One workspace at a time. Every tab shares the selection and the loaded
    data, so switching is a visibility change, not a page load.
 
-   This is the page's primary navigation, so it is styled as a bar rather
-   than a row of chips, and it sticks to the top: a visitor who scrolls
-   into a panel keeps the other sections in sight instead of having to
-   remember they exist. */
+   The page is full of pill-shaped control rows - product options, location
+   presets, playback speeds - so a sixth row of pills reads as another
+   filter and gets skipped. This is a solid navigation strip instead: its
+   own colour, its own contrast, icons, and it sticks to the top. */
 .tab-bar {
   position: sticky;
   top: 0;
   z-index: 30;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
-  margin: 0 0 14px;
-  padding: 10px 14px;
+  margin: 0 0 8px;
+  padding: 8px 16px;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--panel-border);
-  background: var(--panel);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--tab-bar-border);
+  background: var(--tab-bar-bg);
+  box-shadow: 0 8px 22px rgba(29, 62, 94, 0.22);
 }
 
 .tab-bar-label {
-  color: var(--muted);
+  color: var(--tab-bar-label);
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .tab-bar-options {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
   flex: 1 1 auto;
 }
 
 .tab-option {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   width: auto;                 /* the generic button rule pins 120px */
   border: 1px solid transparent;
   background: transparent;
-  color: var(--ink);
+  color: var(--tab-ink);
   border-radius: var(--radius-md);
-  padding: 0 18px;
-  min-height: 42px;
+  padding: 0 16px;
+  min-height: 46px;
   font: inherit;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.02rem;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.tab-option svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  flex: none;
+  opacity: 0.85;
 }
 
 .tab-option:hover {
-  background: var(--accent-soft);
-  border-color: var(--button-border);
+  background: var(--tab-hover);
+  color: var(--tab-ink-strong);
 }
 
+/* the selected view is a raised light pill on the dark strip - the
+   inverse of every other control row on the page, so the two never read
+   as the same kind of thing */
 .tab-option.is-active {
-  background: linear-gradient(135deg, var(--button-start), var(--button-end));
+  background: var(--panel);
+  color: var(--accent-deep);
   border-color: transparent;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(53, 88, 122, 0.22);
+  box-shadow: 0 3px 10px rgba(12, 32, 52, 0.28);
+}
+
+.tab-option.is-active svg {
+  opacity: 1;
 }
 
 .tab-option:focus-visible {
-  outline: 2px solid var(--accent-deep);
+  outline: 2px solid #ffffff;
   outline-offset: 2px;
+}
+
+.tab-hint {
+  margin: 0 0 14px;
+  padding-left: 4px;
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 .tab-panel[hidden] {
   display: none;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 700px) {
   /* keep all five reachable without wrapping into a tall block */
   .tab-bar {
-    gap: 8px;
+    gap: 10px;
     padding: 8px 10px;
   }
   .tab-bar-options {
@@ -625,8 +662,8 @@ button {
     display: none;
   }
   .tab-option {
-    padding: 0 14px;
-    font-size: 0.94rem;
+    padding: 0 12px;
+    font-size: 0.96rem;
   }
 }
 
