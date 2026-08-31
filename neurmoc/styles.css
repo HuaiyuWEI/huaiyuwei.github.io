@@ -532,6 +532,51 @@ button {
   margin: 0;
 }
 
+/* ---- section tabs ---- */
+
+/* One workspace at a time. Every tab shares the selection and the loaded
+   data, so switching is a visibility change, not a page load. */
+.tab-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 2px 0 2px;
+}
+
+.tab-option {
+  appearance: none;
+  width: auto;                 /* the generic button rule pins 120px */
+  border: 1px solid var(--hairline);
+  background: var(--chip-bg);
+  color: var(--muted);
+  border-radius: var(--radius-md);
+  padding: 9px 16px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.tab-option:hover {
+  color: var(--ink);
+}
+
+.tab-option.is-active {
+  background: var(--accent, #4d90c2);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.tab-option:focus-visible {
+  outline: 2px solid var(--accent, #4d90c2);
+  outline-offset: 2px;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
 /* ---- LRP attribution ---- */
 
 .lrp-panel {

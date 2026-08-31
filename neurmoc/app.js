@@ -19,6 +19,7 @@ const state = {
   clim: 20,                             // mean-state panel (full field)
   trendClim: 0.4,
   sigBasis: "point",                    // "point" | "fdr" (see sigField)
+  tab: "explore",                       // which workspace is on screen
   playbackSpeed: "normal",
   playing: false,
   timer: null,
@@ -57,6 +58,7 @@ const controls = {
   selectedValue: document.getElementById("selected-value"),
   selectedStd: document.getElementById("selected-std"),
   lrpNote: document.getElementById("lrp-note"),
+  lrpSelectedCell: document.getElementById("lrp-selected-cell"),
   lrpStatus: document.getElementById("lrp-status"),
   lrpBody: document.getElementById("lrp-body"),
   loadingOverlay: document.getElementById("loading-overlay"),
@@ -638,6 +640,9 @@ function buildHash() {
   if (state.sigBasis === "fdr") {
     parts.set("s", "f");
   }
+  if (state.tab !== "explore") {
+    parts.set("v", state.tab);
+  }
   return parts.toString();
 }
 
@@ -686,9 +691,11 @@ function applyHashState() {
     // the non-default combinations stream in later; remember the request
     state.pendingCombo = c;
   }
+  const tab = params.get("v");
+  state.tab = TAB_NAMES.includes(tab) ? tab : "explore";
 }
 
-const HASH_STATE_KEYS = ["c", "j", "k", "t", "a", "d", "s"];
+const HASH_STATE_KEYS = ["c", "j", "k", "t", "a", "d", "s", "v"];
 
 // editing the hash by hand, or following a shared link while the page is
 // already open, should apply like a fresh load; plain anchors (#cite) are
@@ -701,6 +708,7 @@ function applyHashToUi() {
   state.diff = false;
   state.sigBasis = "point";
   state.pendingCombo = null;
+  state.tab = "explore";
   applyHashState();
   controls.timeSlider.value = String(state.timeIndex);
   controls.climSlider.value = String(state.climAnom);
@@ -717,7 +725,7 @@ function applyHashToUi() {
     applyComboIndex(0);
   }
   updateDiffAvailability();
-  render();
+  setTab(state.tab);                    // also repaints what it reveals
 }
 
 window.addEventListener("hashchange", () => {
@@ -2456,6 +2464,11 @@ function renderLrp() {
     return;
   }
   const lrp = state.lrp;
+  if (controls.lrpSelectedCell) {
+    controls.lrpSelectedCell.textContent =
+      `${formatLatitude(state.data.latitudes[state.latitudeIndex])}, `
+      + `σ₂ = ${formatDensity(state.data.densities[state.densityIndex])}`;
+  }
   if (controls.lrpNote) {
     // the attribution deliberately does not follow the product selection,
     // so say so louder once the visitor has changed it
@@ -2542,29 +2555,26 @@ async function loadLrp() {
   }
 }
 
-/* ---------------- visibility gating ---------------- */
+/* ---------------- paint gating ---------------- */
 
 /* render() repaints every panel, and it runs on each month during
-   playback. The Hovmoller alone costs about 40 ms of the 42 ms frame
-   budget because it fills 140 x 261 cells, so panels scrolled far out of
-   sight were setting the animation's frame rate. Each panel is now
-   painted only while it is near the viewport; one that changes while
-   hidden is marked dirty and repainted when it scrolls back in.        */
+   playback. The Hovmoller alone costs about 40 ms because it fills
+   140 x 261 cells, so panels sitting on a tab nobody is looking at were
+   setting the animation's frame rate.
+
+   A panel is painted only while its tab is on screen. That is read
+   straight from the box - a panel on a hidden tab measures 0 x 0 - so it
+   is computed fresh at paint time and depends on no event or observer.
+   Gating further, on nearness to the viewport, would save a little more,
+   but it needs a scroll signal to know when to repaint what has just been
+   revealed, and a missed signal leaves a blank panel. A tab is only a
+   screen or two, so it is not worth that risk.                          */
 
 const paintRecords = new Map();          // element -> { visible, dirty }
-const PAINT_MARGIN_PX = 300;             // paint just before it is seen
-
-function nearViewport(element) {
-  const box = element.getBoundingClientRect();
-  return box.bottom > -PAINT_MARGIN_PX
-    && box.top < window.innerHeight + PAINT_MARGIN_PX;
-}
 
 function registerPaintTarget(element) {
   if (element && !paintRecords.has(element)) {
-    // seeded synchronously: the observer's first callback is async, and
-    // the initial render happens before it arrives
-    paintRecords.set(element, { visible: nearViewport(element), dirty: false });
+    paintRecords.set(element, { visible: true, dirty: false });
   }
 }
 
@@ -2573,36 +2583,83 @@ function shouldPaint(element) {
   if (!record) {
     return true;                         // never registered: always paint
   }
+  const box = element.getBoundingClientRect();
+  record.visible = box.width > 0 || box.height > 0;
   if (!record.visible) {
-    record.dirty = true;
+    record.dirty = true;                 // repaint when its tab comes back
     return false;
   }
   record.dirty = false;
   return true;
 }
 
-function startPaintObserver() {
-  if (typeof IntersectionObserver !== "function") {
-    paintRecords.forEach((record) => { record.visible = true; });
+/* ---------------- section tabs ---------------- */
+
+/* One workspace at a time. Every tab reads the same selection and the same
+   loaded data, so switching is a visibility change - no refetch, no reset -
+   and a hidden panel costs nothing to keep current because the paint gate
+   above skips it. */
+
+const TAB_NAMES = ["explore", "attribution", "evolution", "animation", "about"];
+//: panels that live inside a tab, so a link to one can open its tab first
+const TAB_OF_ANCHOR = { about: "about", cite: "about" };
+
+function setTab(name, options) {
+  const target = TAB_NAMES.includes(name) ? name : "explore";
+  state.tab = target;
+  TAB_NAMES.forEach((tab) => {
+    const panel = document.getElementById(`tab-${tab}`);
+    const button = document.getElementById(`tab-btn-${tab}`);
+    if (panel) {
+      panel.hidden = tab !== target;
+    }
+    if (button) {
+      button.classList.toggle("is-active", tab === target);
+      button.setAttribute("aria-selected", tab === target ? "true" : "false");
+    }
+  });
+  // the newly shown panels have just gained a box, and shouldPaint reads
+  // that at paint time, so this render draws them
+  if (state.data) {
+    render();
+  }
+  if (options && options.scrollToTop) {
+    const bar = document.getElementById("tab-bar");
+    if (bar) {
+      bar.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+}
+
+function bindTabs() {
+  const bar = document.getElementById("tab-bar");
+  if (!bar) {
     return;
   }
-  const observer = new IntersectionObserver((entries) => {
-    let repaint = false;
-    entries.forEach((entry) => {
-      const record = paintRecords.get(entry.target);
-      if (!record) {
-        return;
-      }
-      record.visible = entry.isIntersecting;
-      if (record.visible && record.dirty) {
-        repaint = true;
+  bar.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-tab]");
+    if (button) {
+      setTab(button.dataset.tab, { scrollToTop: true });
+      scheduleUrlUpdate();
+    }
+  });
+  // an in-page link to something inside a tab has to open that tab first
+  document.querySelectorAll('a[href^="#"]').forEach((link) => {
+    const anchor = link.getAttribute("href").slice(1);
+    const tab = TAB_OF_ANCHOR[anchor];
+    if (!tab) {
+      return;
+    }
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      setTab(tab);
+      scheduleUrlUpdate();
+      const target = document.getElementById(anchor);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     });
-    if (repaint && state.data) {
-      render();
-    }
-  }, { rootMargin: `${PAINT_MARGIN_PX}px 0px` });
-  paintRecords.forEach((_record, element) => observer.observe(element));
+  });
 }
 
 /* ---------------- render ---------------- */
@@ -2991,7 +3048,7 @@ function bindControls() {
       state.latitudeIndex = preset.latIdx;
       state.densityIndex = preset.densityIdx;
       controls.densitySelect.value = String(preset.densityIdx);
-      render();
+      setTab("explore");                // the time series lives there
       const panel = document.getElementById("timeseries-panel");
       if (panel) {
         panel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3250,10 +3307,10 @@ async function init() {
 
   bindControls();
   bindCanvasInteractions();
+  bindTabs();
   [trendCanvas, timeseriesSvg, sectionCanvas, lrpPanel, hovmollerCanvas,
    snapshotCanvas].forEach(registerPaintTarget);
-  render();
-  startPaintObserver();
+  setTab(state.tab);                    // renders, and reveals the right tab
   renderHeroSpark();
   // the first render can measure the SVG box before the flex/grid layout
   // has settled; one more pass on the next frame locks the aspect in
