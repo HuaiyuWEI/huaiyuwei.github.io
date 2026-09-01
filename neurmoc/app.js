@@ -1,6 +1,6 @@
 /* NeurMOC viewer (v3): themed (light/dark) canvas rendering, progressive
-   data loading (default combination first, the others streamed in the
-   background), product-difference view, RAPID 26.5N overlay, mean-state
+   data loading (default combination first, alternatives on first request),
+   product-difference view, RAPID 26.5N overlay, mean-state
    trend interpretation, and shareable URL state. */
 
 const META_PATH = "./data/neurmoc_meta.json?v=2026-08-29a";
@@ -9,7 +9,8 @@ const DATA_DIR = "./data/";
 const state = {
   data: null,
   combosReady: false,
-  pendingCombo: null,                   // combo requested by URL before the stream arrived
+  comboLoadPromise: null,
+  pendingCombo: null,                   // requested combo waiting for its on-demand download
   combo: { obp: 0, ssh: 0, wind: 0 },   // option index per product axis
   diff: false,                          // heatmaps show selected - default
   climAnom: 4,                          // snapshot + Hovmoller (anomalies)
@@ -37,12 +38,17 @@ let DEFAULT_VIEW = { j: 0, k: 0, t: 0 };
 const controls = {
   timeSlider: document.getElementById("time-slider"),
   densitySelect: document.getElementById("density-select"),
+  latitudeSelect: document.getElementById("latitude-select"),
+  cellDensitySelect: document.getElementById("cell-density-select"),
+  cellPicker: document.getElementById("cell-picker"),
+  viewerStatus: document.getElementById("viewer-status"),
   climSlider: document.getElementById("clim-slider"),
   timeLabel: document.getElementById("time-label"),
   climLabel: document.getElementById("clim-label"),
   playButton: document.getElementById("play-button"),
   speedControl: document.getElementById("speed-control"),
   productBar: document.getElementById("product-bar"),
+  productPanel: document.getElementById("product-panel"),
   productComboLabel: document.getElementById("product-combo-label"),
   productNote: document.getElementById("product-note"),
   diffToggle: document.getElementById("diff-toggle"),
@@ -214,6 +220,41 @@ function formatDensity(value) {
   return `${value.toFixed(1)}`;
 }
 
+function preferredScrollBehavior() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ? "auto" : "smooth";
+}
+
+function announceViewer(message) {
+  if (controls.viewerStatus) {
+    controls.viewerStatus.textContent = message;
+  }
+}
+
+function selectedCellDescription() {
+  if (!state.data) {
+    return "";
+  }
+  return `${formatLatitude(state.data.latitudes[state.latitudeIndex])}, `
+    + `density σ₂ ${formatDensity(state.data.densities[state.densityIndex])} kilograms per cubic metre`;
+}
+
+function announceSelection() {
+  announceViewer(`Selected cell: ${selectedCellDescription()}. Local plots and summaries updated.`);
+}
+
+function syncCellControls() {
+  if (controls.latitudeSelect) {
+    controls.latitudeSelect.value = String(state.latitudeIndex);
+  }
+  if (controls.cellDensitySelect) {
+    controls.cellDensitySelect.value = String(state.densityIndex);
+  }
+  if (controls.densitySelect) {
+    controls.densitySelect.value = String(state.densityIndex);
+  }
+}
+
 function hovmollerDensityTitle(value) {
   return `σ₂ = ${formatDensity(value)} kg m⁻³`;
 }
@@ -297,10 +338,23 @@ function comboIndex() {
   return state.combo.obp * 4 + state.combo.ssh * 2 + state.combo.wind;
 }
 
-function comboLabel() {
+function comboParts(combo) {
+  return {
+    obp: Math.floor(combo / 4),
+    ssh: (combo >> 1) & 1,
+    wind: combo & 1,
+  };
+}
+
+function requestedComboIndex() {
+  return state.pendingCombo !== null ? state.pendingCombo : comboIndex();
+}
+
+function comboLabel(combo = comboIndex()) {
   const axes = state.data.products.axes;
-  return [axes[0].options[state.combo.obp], axes[1].options[state.combo.ssh],
-          axes[2].options[state.combo.wind]].join(" + ");
+  const selected = comboParts(combo);
+  return [axes[0].options[selected.obp], axes[1].options[selected.ssh],
+          axes[2].options[selected.wind]].join(" + ");
 }
 
 function predAt(t, k, j) {
@@ -371,8 +425,8 @@ function sigField() {
 // The trend map, its hatching and every per-cell trend readout follow the
 // selected input combination: stage 18 re-runs the project's estimator on
 // each combination with the published budget terms held fixed, so only the
-// slope and the bootstrap serial term move. Until that binary arrives (it
-// streams with the combination cubes) the exported default stands in - and
+// slope and the bootstrap serial term move. Until that binary is requested
+// with the combination cubes, the exported default stands in - and
 // the default IS combination 0, so the fallback is never wrong, only
 // less specific.
 let trendFieldMemo = null;
@@ -589,10 +643,12 @@ function restartPlayback() {
   if (!state.playing) {
     state.timer = null;
     controls.playButton.textContent = "Play";
+    controls.playButton.setAttribute("aria-pressed", "false");
     scheduleUrlUpdate();
     return;
   }
   controls.playButton.textContent = "Pause";
+  controls.playButton.setAttribute("aria-pressed", "true");
   state.timer = window.setInterval(() => {
     state.timeIndex = (state.timeIndex + 1) % state.data.time_labels.length;
     controls.timeSlider.value = String(state.timeIndex);
@@ -620,7 +676,7 @@ function getBasinSplitInfo(latitudes) {
 
 function buildHash() {
   const parts = new URLSearchParams();
-  const combo = state.pendingCombo !== null ? state.pendingCombo : comboIndex();
+  const combo = requestedComboIndex();
   if (combo !== 0) {
     parts.set("c", String(combo));
   }
@@ -690,7 +746,7 @@ function applyHashState() {
   const nonDefault = c !== null && c !== 0;
   state.diff = params.get("d") === "1" && nonDefault;
   if (nonDefault) {
-    // the non-default combinations stream in later; remember the request
+    // Remember the non-default request until its on-demand download finishes.
     state.pendingCombo = c;
   }
   const tab = params.get("v");
@@ -714,7 +770,7 @@ function applyHashToUi() {
   applyHashState();
   controls.timeSlider.value = String(state.timeIndex);
   controls.climSlider.value = String(state.climAnom);
-  controls.densitySelect.value = String(state.densityIndex);
+  syncCellControls();
   if (controls.diffToggle) {
     controls.diffToggle.checked = state.diff;
   }
@@ -725,9 +781,14 @@ function applyHashToUi() {
     state.pendingCombo = null;
   } else if (state.pendingCombo === null) {
     applyComboIndex(0);
+  } else {
+    syncProductControls();
   }
   updateDiffAvailability();
   setTab(state.tab);                    // also repaints what it reveals
+  if (!state.combosReady && state.pendingCombo !== null) {
+    void ensureCombosLoaded();
+  }
 }
 
 window.addEventListener("hashchange", () => {
@@ -2472,7 +2533,7 @@ function renderLrp() {
       + `σ₂ = ${formatDensity(state.data.densities[state.densityIndex])}`;
   }
   if (controls.lrpNote) {
-    // the attribution deliberately does not follow the product selection,
+    // Model relevance deliberately does not follow the product selection,
     // so say so louder once the visitor has changed it
     controls.lrpNote.classList.toggle("is-emphasised", comboIndex() !== 0);
   }
@@ -2483,25 +2544,25 @@ function renderLrp() {
   }
   if (lrp.failed) {
     lrpDrawnKey = null;
-    setLrpStatus("The attribution data could not be loaded — reload the page to retry.");
+    setLrpStatus("The model-relevance data could not be loaded — reload the page to retry.");
     return;
   }
   if (!lrp.meta) {
     lrpDrawnKey = null;
-    setLrpStatus("Loading attribution…");
+    setLrpStatus("Loading model relevance…");
     return;
   }
   const cellIndex = state.densityIndex * state.data.dims.nj + state.latitudeIndex;
   if (lrp.meta.unlearnable.has(cellIndex)) {
     lrpDrawnKey = null;
     setLrpStatus("This cell had no variance in the training simulations, so the network "
-      + "never learned it and it carries no attribution.");
+      + "never learned it and has no model-relevance value.");
     return;
   }
   const cell = lrpCellValues();
   if (!cell) {
     lrpDrawnKey = null;
-    setLrpStatus(`Loading attribution for ${hovmollerDensityTitle(
+    setLrpStatus(`Loading model relevance for ${hovmollerDensityTitle(
       state.data.densities[state.densityIndex])}…`);
     ensureLrpChunk(state.densityIndex);
     return;
@@ -2603,7 +2664,7 @@ function shouldPaint(element) {
    above skips it. */
 
 const TAB_NAMES = ["reconstruction", "attribution", "evolution", "animation", "about"];
-//: panels that live inside a tab, so a link to one can open its tab first
+// Panels that live inside a tab, so a link to one can open its tab first.
 const TAB_OF_ANCHOR = { about: "about", cite: "about" };
 
 function setTab(name, options) {
@@ -2618,17 +2679,24 @@ function setTab(name, options) {
     if (button) {
       button.classList.toggle("is-active", tab === target);
       button.setAttribute("aria-selected", tab === target ? "true" : "false");
+      button.tabIndex = tab === target ? 0 : -1;
     }
   });
+  if (controls.productPanel) {
+    controls.productPanel.hidden = target === "about";
+  }
+  if (controls.cellPicker) {
+    controls.cellPicker.hidden = target === "about";
+  }
   // the newly shown panels have just gained a box, and shouldPaint reads
   // that at paint time, so this render draws them
   if (state.data) {
     render();
   }
   if (options && options.scrollToTop) {
-    const bar = document.getElementById("tab-bar");
-    if (bar) {
-      bar.scrollIntoView({ behavior: "smooth", block: "start" });
+    const dashboard = document.querySelector(".dashboard-layout");
+    if (dashboard) {
+      dashboard.scrollIntoView({ behavior: preferredScrollBehavior(), block: "start" });
     }
   }
 }
@@ -2645,6 +2713,32 @@ function bindTabs() {
       scheduleUrlUpdate();
     }
   });
+  bar.addEventListener("keydown", (event) => {
+    const current = event.target.closest('[role="tab"]');
+    if (!current || !bar.contains(current)) {
+      return;
+    }
+    const tabs = Array.from(bar.querySelectorAll('[role="tab"]'));
+    const currentIndex = tabs.indexOf(current);
+    let nextIndex = null;
+    if (event.key === "ArrowRight") {
+      nextIndex = (currentIndex + 1) % tabs.length;
+    } else if (event.key === "ArrowLeft") {
+      nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = tabs.length - 1;
+    }
+    if (nextIndex === null) {
+      return;
+    }
+    event.preventDefault();
+    const next = tabs[nextIndex];
+    setTab(next.dataset.tab);
+    next.focus();
+    scheduleUrlUpdate();
+  });
   // an in-page link to something inside a tab has to open that tab first
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
     const anchor = link.getAttribute("href").slice(1);
@@ -2658,7 +2752,8 @@ function bindTabs() {
       scheduleUrlUpdate();
       const target = document.getElementById(anchor);
       if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        target.focus({ preventScroll: true });
+        target.scrollIntoView({ behavior: preferredScrollBehavior(), block: "start" });
       }
     });
   });
@@ -2676,10 +2771,14 @@ function render() {
   const diff = diffActive();
   const anomClim = diff ? Math.max(1, Math.round(state.climAnom / 2)) : state.climAnom;
   const diffSuffix = diff ? " · selected − default" : "";
+  const cellDescription = selectedCellDescription();
 
+  syncCellControls();
   controls.timeLabel.textContent = d.time_labels[state.timeIndex];
+  controls.timeSlider.setAttribute("aria-valuetext", d.time_labels[state.timeIndex]);
   controls.climLabel.textContent = diff
     ? `±${anomClim} Sv (difference)` : `±${state.climAnom} Sv`;
+  controls.climSlider.setAttribute("aria-valuetext", controls.climLabel.textContent);
   controls.selectedLatitude.textContent = formatLatitude(d.latitudes[state.latitudeIndex]);
   controls.selectedDensity.textContent = `σ₂ = ${formatDensity(d.densities[state.densityIndex])} kg m⁻³`;
   if (controls.selectedBaseline) {
@@ -2690,6 +2789,21 @@ function render() {
     ? `${meanValue.toFixed(2)} Sv` : "no data";
   controls.selectedStd.textContent = Number.isFinite(selectedStd)
     ? `${selectedStd.toFixed(2)} Sv` : "no data";
+
+  snapshotCanvas.setAttribute("aria-label",
+    `Monthly reconstruction for ${d.time_labels[state.timeIndex]}; selected cell ${cellDescription}.`);
+  sectionCanvas.setAttribute("aria-label",
+    `Mean overturning-state heatmap; selected cell ${cellDescription}.`);
+  hovmollerCanvas.setAttribute("aria-label",
+    `Latitude–time reconstruction at density σ₂ ${formatDensity(d.densities[state.densityIndex])}; selected latitude ${formatLatitude(d.latitudes[state.latitudeIndex])}.`);
+  trendCanvas.setAttribute("aria-label",
+    `Linear-trend heatmap; selected cell ${cellDescription}. Use the Selected cell controls to choose any cell without a pointer.`);
+  timeseriesSvg.setAttribute("aria-label",
+    `Reconstruction time series at ${cellDescription}.`);
+  lrpTrendCanvas.setAttribute("aria-label",
+    `Linear-trend heatmap for model-relevance selection; selected cell ${cellDescription}.`);
+  lrpMeanCanvas.setAttribute("aria-label",
+    `Mean-state heatmap for model-relevance selection; selected cell ${cellDescription}.`);
 
   if (shouldPaint(snapshotCanvas)) {
   const snapshotGeom = drawDualBasinHeatmap(snapshotCanvas, sliceKJ(state.timeIndex), d.latitudes, d.densities, {
@@ -2763,7 +2877,7 @@ function render() {
     drawTimeSeries();
   }
 
-  // The Attribution tab carries its own copies of these two maps so the
+  // The Model relevance tab carries its own copies of these two maps so the
   // explained cell can be moved without leaving the tab. Same fields, same
   // click handling; the paint gate keeps them idle while that tab is shut.
   if (shouldPaint(lrpTrendCanvas)) {
@@ -2817,8 +2931,13 @@ function updatePresetHighlight() {
       return;
     }
     const { latIdx, densityIdx } = preset();
-    button.classList.toggle("is-active",
-      latIdx === state.latitudeIndex && densityIdx === state.densityIndex);
+    const active = latIdx === state.latitudeIndex && densityIdx === state.densityIndex;
+    button.classList.toggle("is-active", active);
+    if (active) {
+      button.setAttribute("aria-current", "location");
+    } else {
+      button.removeAttribute("aria-current");
+    }
   });
 }
 
@@ -2844,8 +2963,8 @@ function bindCanvasInteractions() {
       }
       const { x, y } = getCanvasPointer(canvas, event);
       if (updateSelectionFromDualBasin(entry.geom, x, y)) {
-        controls.densitySelect.value = String(state.densityIndex);
         render();
+        announceSelection();
       }
     });
     bindHover(canvas);
@@ -2865,6 +2984,7 @@ function bindCanvasInteractions() {
     state.timeIndex = entry.geom.ny - 1 - hit.rowIdx;
     controls.timeSlider.value = String(state.timeIndex);
     render();
+    announceSelection();
   });
   bindHover(hovmollerCanvas);
 }
@@ -2947,18 +3067,33 @@ const PRESETS = {
 };
 
 function applyComboIndex(combo) {
-  // mixed radix, not a bit field: obp has three options since GSFC was
-  // added, so index = obp*4 + ssh*2 + wind with obp in 0..2
-  state.combo = {
-    obp: Math.floor(combo / 4), ssh: (combo >> 1) & 1, wind: combo & 1,
-  };
+  // Mixed radix, not a bit field: index = obp*4 + ssh*2 + wind.
+  state.combo = comboParts(combo);
+  syncProductControls();
+  updateDiffAvailability();
+}
+
+function syncProductControls() {
+  if (!state.data || !controls.productBar) {
+    return;
+  }
+  const requested = requestedComboIndex();
+  const selected = comboParts(requested);
+  const applied = comboParts(comboIndex());
+  const loading = !state.combosReady && Boolean(state.comboLoadPromise);
+  const pending = !state.combosReady && state.pendingCombo !== null;
   controls.productBar.querySelectorAll(".product-option").forEach((item) => {
     const axis = item.dataset.axis;
-    item.classList.toggle("is-active",
-      Number(item.dataset.option) === state.combo[axis]);
+    const option = Number(item.dataset.option);
+    const active = option === selected[axis];
+    item.disabled = false;
+    item.classList.toggle("is-active", active);
+    item.classList.toggle("is-loading", loading && active && option !== applied[axis]);
+    item.setAttribute("aria-pressed", active ? "true" : "false");
   });
-  controls.productComboLabel.textContent = comboLabel();
-  updateDiffAvailability();
+  controls.productBar.setAttribute("aria-busy", loading ? "true" : "false");
+  const suffix = pending ? (loading ? " (loading…)" : " (not loaded)") : "";
+  controls.productComboLabel.textContent = comboLabel(requested) + suffix;
 }
 
 function syncSigControl() {
@@ -2980,13 +3115,20 @@ function updateDiffAvailability() {
   controls.diffToggle.disabled = comboIndex() === 0 && !pendingNonDefault;
 }
 
-function setProductOptionsEnabled(ready) {
-  controls.productBar.querySelectorAll(".product-option").forEach((button) => {
-    if (Number(button.dataset.option) > 0) {
-      button.disabled = !ready;
-      button.classList.toggle("is-loading", !ready);
-    }
-  });
+function requestComboIndex(combo) {
+  if (combo === 0 || state.combosReady) {
+    state.pendingCombo = null;
+    applyComboIndex(combo);
+    render();
+    announceViewer(`Input products selected: ${comboLabel(combo)}.`);
+    return;
+  }
+  state.pendingCombo = combo;
+  syncProductControls();
+  updateDiffAvailability();
+  scheduleUrlUpdate();
+  announceViewer(`Loading input products: ${comboLabel(combo)}.`);
+  void ensureCombosLoaded();
 }
 
 function bindControls() {
@@ -2998,6 +3140,19 @@ function bindControls() {
   controls.densitySelect.addEventListener("change", (event) => {
     state.densityIndex = Number(event.target.value);
     render();
+    announceSelection();
+  });
+
+  controls.latitudeSelect.addEventListener("change", (event) => {
+    state.latitudeIndex = Number(event.target.value);
+    render();
+    announceSelection();
+  });
+
+  controls.cellDensitySelect.addEventListener("change", (event) => {
+    state.densityIndex = Number(event.target.value);
+    render();
+    announceSelection();
   });
 
   controls.climSlider.addEventListener("input", (event) => {
@@ -3017,7 +3172,9 @@ function bindControls() {
     }
     state.playbackSpeed = button.dataset.speed || "normal";
     controls.speedControl.querySelectorAll(".speed-option").forEach((item) => {
-      item.classList.toggle("is-active", item === button);
+      const active = item === button;
+      item.classList.toggle("is-active", active);
+      item.setAttribute("aria-pressed", active ? "true" : "false");
     });
     if (state.playing) {
       restartPlayback();
@@ -3026,20 +3183,24 @@ function bindControls() {
 
   controls.productBar.addEventListener("click", (event) => {
     const button = event.target.closest(".product-option");
-    if (!button || !state.data || button.disabled) {
+    if (!button || !state.data) {
       return;
     }
     const axis = button.dataset.axis;
-    const next = { ...state.combo, [axis]: Number(button.dataset.option) };
-    state.pendingCombo = null;
-    applyComboIndex(next.obp * 4 + next.ssh * 2 + next.wind);
-    render();
+    const next = {
+      ...comboParts(requestedComboIndex()),
+      [axis]: Number(button.dataset.option),
+    };
+    requestComboIndex(next.obp * 4 + next.ssh * 2 + next.wind);
   });
 
   if (controls.diffToggle) {
     controls.diffToggle.addEventListener("change", (event) => {
       state.diff = event.target.checked;
       render();
+      announceViewer(event.target.checked
+        ? "Difference from the default combination enabled."
+        : "Difference from the default combination disabled.");
     });
   }
 
@@ -3052,6 +3213,9 @@ function bindControls() {
       state.sigBasis = button.dataset.sig === "point" ? "point" : "fdr";
       syncSigControl();
       render();
+      announceViewer(state.sigBasis === "point"
+        ? "Significance test set to plus or minus two sigma only."
+        : "Significance test set to false-discovery-rate control.");
     });
   }
 
@@ -3088,11 +3252,13 @@ function bindControls() {
       const preset = PRESETS.rapid();
       state.latitudeIndex = preset.latIdx;
       state.densityIndex = preset.densityIdx;
-      controls.densitySelect.value = String(preset.densityIdx);
       setTab("reconstruction");         // the time series lives there
+      render();
+      announceSelection();
       const panel = document.getElementById("timeseries-panel");
       if (panel) {
-        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+        panel.focus({ preventScroll: true });
+        panel.scrollIntoView({ behavior: preferredScrollBehavior(), block: "start" });
       }
     };
     sparkChip.addEventListener("click", jumpToRapid);
@@ -3116,8 +3282,8 @@ function bindControls() {
     const { latIdx, densityIdx } = preset();
     state.latitudeIndex = latIdx;
     state.densityIndex = densityIdx;
-    controls.densitySelect.value = String(densityIdx);
     render();
+    announceSelection();
   });
 
   if (controls.copyBibtex) {
@@ -3206,8 +3372,8 @@ async function loadData() {
   const { scale_sv: scale, nan_count: nanCount } = meta.series_encoding;
   const nCell = nt * nk * nj;
 
-  // the core file (default combination + envelope) is enough to render;
-  // the other seven combinations stream in the background afterwards
+  // The core file (default combination + envelope) is enough to render;
+  // the seven alternatives are downloaded only after one is selected.
   setLoadingProgress(0.06, "Downloading the reconstruction…");
   const bytes = await fetchWithProgress(
     `${DATA_DIR}${meta.series_core.file}?v=${meta.series_core.version}`,
@@ -3231,16 +3397,17 @@ async function loadData() {
   return meta;
 }
 
-// Per-combination trend statistics: small enough to fetch before the
-// combination cubes, so the map is ready the moment the buttons unlock.
-async function loadTrendCombos() {
+// Per-combination trend statistics load with the alternative cubes so an
+// ordinary visit pays only for the default reconstruction.
+async function loadTrendCombos(onProgress = () => {}) {
   const d = state.data;
   const info = d.trend_combos;
   if (!info) {
+    onProgress(1);
     return;                       // data predates stage 18; default stands in
   }
   const bytes = await fetchWithProgress(
-    `${DATA_DIR}${info.file}?v=${info.version}`, info.byte_length, () => {});
+    `${DATA_DIR}${info.file}?v=${info.version}`, info.byte_length, onProgress);
   if (bytes.byteLength !== info.byte_length) {
     throw new Error(`Trend file has ${bytes.byteLength} bytes; expected ${info.byte_length}.`);
   }
@@ -3254,45 +3421,100 @@ async function loadTrendCombos() {
     sigFdr: new Uint8Array(bytes.buffer, base + n * 8 + n, n),
   };
   trendFieldMemo = null;
+  onProgress(1);
 }
 
-async function loadCombos() {
+async function loadCombosData(onProgress = () => {}) {
   const d = state.data;
   const info = d.series_combos;
-  try {
-    await loadTrendCombos();
-    const bytes = await fetchWithProgress(
-      `${DATA_DIR}${info.file}?v=${info.version}`, info.byte_length, () => {});
-    if (bytes.byteLength !== info.byte_length) {
-      throw new Error(`Combos file has ${bytes.byteLength} bytes; expected ${info.byte_length}.`);
-    }
-    const counts = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
-    const { nt, nk, nj } = d.dims;
-    const nCell = nt * nk * nj;
-    const { scale_sv: scale, nan_count: nanCount } = d.series_encoding;
-    decodeCounts(counts, 0, d.pred, nCell, counts.length, scale, nanCount);
-    state.combosReady = true;
-    setProductOptionsEnabled(true);
-    if (controls.productNote) {
-      controls.productNote.hidden = true;
-    }
-    if (state.pendingCombo !== null) {
-      applyComboIndex(state.pendingCombo);
-      state.pendingCombo = null;
-    }
-    updateDiffAvailability();
-    render();          // fixed y-limits now span all eight combinations
-  } catch (error) {
-    console.error(error);
-    if (controls.productNote) {
-      controls.productNote.textContent =
-        "Could not load the other product combinations — reload the page to retry.";
-      controls.productNote.hidden = false;
-    }
+  const trendBytes = d.trend_combos ? d.trend_combos.byte_length : 0;
+  const totalBytes = trendBytes + info.byte_length;
+  const trendShare = totalBytes ? trendBytes / totalBytes : 0;
+
+  await loadTrendCombos((fraction) => onProgress(trendShare * fraction));
+  const bytes = await fetchWithProgress(
+    `${DATA_DIR}${info.file}?v=${info.version}`,
+    info.byte_length,
+    (fraction) => onProgress(trendShare + (1 - trendShare) * fraction),
+  );
+  if (bytes.byteLength !== info.byte_length) {
+    throw new Error(`Combos file has ${bytes.byteLength} bytes; expected ${info.byte_length}.`);
   }
+  const counts = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
+  const { nt, nk, nj } = d.dims;
+  const nCell = nt * nk * nj;
+  const { scale_sv: scale, nan_count: nanCount } = d.series_encoding;
+  decodeCounts(counts, 0, d.pred, nCell, counts.length, scale, nanCount);
+  onProgress(1);
+}
+
+function updateComboLoadProgress(fraction) {
+  if (!controls.productNote) {
+    return;
+  }
+  const percent = Math.min(100, Math.floor(Math.max(0, fraction) * 4) * 25);
+  if (controls.productNote.dataset.progress === String(percent)) {
+    return;
+  }
+  controls.productNote.dataset.progress = String(percent);
+  controls.productNote.textContent =
+    `Loading alternative product reconstructions… ${percent}%`;
+  controls.productNote.hidden = false;
+}
+
+function ensureCombosLoaded() {
+  if (state.combosReady) {
+    return Promise.resolve(true);
+  }
+  if (state.comboLoadPromise) {
+    return state.comboLoadPromise;
+  }
+
+  const task = loadCombosData(updateComboLoadProgress)
+    .then(() => {
+      state.combosReady = true;
+      if (controls.productNote) {
+        controls.productNote.textContent =
+          "Alternative product reconstructions loaded; all combinations are available.";
+        controls.productNote.hidden = false;
+        delete controls.productNote.dataset.progress;
+      }
+      const requested = state.pendingCombo;
+      if (requested !== null) {
+        state.pendingCombo = null;
+        applyComboIndex(requested);
+      }
+      updateDiffAvailability();
+      render();          // fixed y-limits now span all eight combinations
+      announceViewer("Alternative product reconstructions loaded.");
+      return true;
+    })
+    .catch((error) => {
+      console.error(error);
+      if (controls.productNote) {
+        controls.productNote.textContent = state.pendingCombo !== null
+          ? "Could not load the alternative product reconstructions. Select the highlighted product again to retry."
+          : "Alternative product reconstructions download when first selected (9.2 MB).";
+        controls.productNote.hidden = false;
+        delete controls.productNote.dataset.progress;
+      }
+      return false;
+    })
+    .finally(() => {
+      if (state.comboLoadPromise === task) {
+        state.comboLoadPromise = null;
+      }
+      syncProductControls();
+    });
+
+  state.comboLoadPromise = task;
+  updateComboLoadProgress(0);
+  syncProductControls();
+  return task;
 }
 
 async function init() {
+  applyTheme(currentTheme(), false);
   state.data = await loadData();
   const rapid = PRESETS.rapid();
   DEFAULT_VIEW = {
@@ -3313,12 +3535,20 @@ async function init() {
   }
 
   state.data.densities.forEach((density, idx) => {
+    [controls.densitySelect, controls.cellDensitySelect].forEach((select) => {
+      const option = document.createElement("option");
+      option.value = String(idx);
+      option.textContent = hovmollerDensityTitle(density);
+      select.appendChild(option);
+    });
+  });
+  state.data.latitudes.forEach((latitude, idx) => {
     const option = document.createElement("option");
     option.value = String(idx);
-    option.textContent = hovmollerDensityTitle(density);
-    controls.densitySelect.appendChild(option);
+    option.textContent = formatLatitude(latitude);
+    controls.latitudeSelect.appendChild(option);
   });
-  controls.densitySelect.value = String(state.densityIndex);
+  syncCellControls();
 
   state.data.products.axes.forEach((axis) => {
     const group = document.createElement("div");
@@ -3329,6 +3559,8 @@ async function init() {
     group.appendChild(caption);
     const buttons = document.createElement("div");
     buttons.className = "product-buttons";
+    buttons.setAttribute("role", "group");
+    buttons.setAttribute("aria-label", axis.name);
     axis.options.forEach((label, optionIdx) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -3336,13 +3568,14 @@ async function init() {
       button.dataset.axis = axis.key;
       button.dataset.option = String(optionIdx);
       button.textContent = label;
+      button.setAttribute("aria-pressed", optionIdx === 0 ? "true" : "false");
       buttons.appendChild(button);
     });
     group.appendChild(buttons);
     controls.productBar.appendChild(group);
   });
   controls.productComboLabel.textContent = comboLabel();
-  setProductOptionsEnabled(state.combosReady);
+  syncProductControls();
   updateDiffAvailability();
   syncSigControl();
 
@@ -3378,7 +3611,9 @@ async function init() {
     });
   }
 
-  loadCombos();
+  if (state.pendingCombo !== null) {
+    void ensureCombosLoaded();
+  }
   loadLrp();
 }
 

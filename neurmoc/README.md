@@ -16,7 +16,8 @@ inputs.
 - An input-product selector (GRACE JPL/CSR × DUACS/NASA-SSH ×
   CCMP/ERA5): each of the eight production combinations is a separately
   generated stage-14 reconstruction by the same trained network. ERA5 is a
-  reanalysis sensitivity input; all anomaly-series panels follow the selection.
+  reanalysis sensitivity input; reconstructed anomaly and trend panels follow
+  the selection, while the mean-state reference and model-relevance maps remain fixed.
   A "difference vs. default" toggle switches the anomaly heatmaps to
   selected − default.
 - The RAPID moored-array anomaly overlaid on the 26.5°N time series
@@ -33,7 +34,8 @@ inputs.
 - Local anomaly time series with the total uncertainty envelope and the
   linear trend at the clicked cell, plus location presets (RAPID 26.5°N,
   AMOC 40°N/equator/30°S, and Southern Ocean mid-depth/abyssal cells).
-  The envelope and trend belong to the default combination. The envelope
+  The monthly envelope belongs to the default combination; the displayed trend
+  slope and bootstrap serial term follow the selected combination. The envelope
   combines held-out-model mapping-error spread, network-ensemble spread,
   time-dependent across-product spread, and propagated GRACE measurement
   noise; the across-product and GRACE terms also enter the trend budget in
@@ -73,8 +75,8 @@ Hovering over any heatmap shows a value readout; clicking selects the cell.
     combination's anomaly cube `pred[t,k,j]` followed by its total
     uncertainty; enough to render the page.
   - `data/neurmoc_combos.bin` (~9.2 MB): the seven other combinations
-    `pred[c,t,k,j]` (index = obp·4 + ssh·2 + wind), streamed in the
-    background after first paint. NaN cells encode as int16 min.
+    `pred[c,t,k,j]` (index = obp·4 + ssh·2 + wind), downloaded when a
+    non-default product is first selected. NaN cells encode as int16 min.
   - refreshed copies of `NeurMOC_data.mat` / `.nc` for the download links.
 - `data/neurmoc_trends.bin` (~200 KB) — per-combination trend statistics
   from the pipeline's `scripts/18_combination_trends.py`: float32

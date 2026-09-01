@@ -78,8 +78,35 @@
   box-sizing: border-box;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 html {
   scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 ::selection {
@@ -154,7 +181,7 @@ body {
   margin: 0 0 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-deep);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -499,6 +526,7 @@ button {
 
 .dashboard-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   margin-top: 14px;
   min-width: 0;
@@ -567,6 +595,8 @@ button {
   border: 1px solid var(--tab-bar-border);
   background: var(--tab-bar-bg);
   box-shadow: 0 8px 22px rgba(29, 62, 94, 0.22);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .tab-bar-label {
@@ -582,6 +612,8 @@ button {
   gap: 4px;
   flex-wrap: wrap;
   flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .tab-option {
@@ -647,13 +679,36 @@ button {
   display: none;
 }
 
+.product-panel[hidden],
+.cell-picker[hidden] {
+  display: none;
+}
+
+#about,
+#cite,
+#timeseries-panel {
+  scroll-margin-top: 82px;
+}
+
+#about:focus-visible,
+#cite:focus-visible,
+#timeseries-panel:focus-visible {
+  outline: 2px solid var(--accent-deep);
+  outline-offset: 4px;
+}
+
 @media (max-width: 700px) {
   /* keep all five reachable without wrapping into a tall block */
   .tab-bar {
     gap: 10px;
     padding: 8px 10px;
+    flex-wrap: nowrap;
+  }
+  .tab-bar-label {
+    flex: none;
   }
   .tab-bar-options {
+    flex: 1 1 0;
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
@@ -662,16 +717,18 @@ button {
     display: none;
   }
   .tab-option {
+    flex: 0 0 auto;
+    width: auto;
     padding: 0 12px;
     font-size: 0.96rem;
   }
 }
 
-/* ---- LRP attribution ---- */
+/* ---- LRP model relevance ---- */
 
-/* The attribution maps answer "where does this cell come from", so the
+/* The model-relevance maps answer "where does this cell come from", so the
    visitor needs to choose the cell without leaving the tab. These are the
-   same two maps the Explore tab carries, drawn into their own canvases. */
+   same two maps the Reconstruction tab carries, drawn into their own canvases. */
 .lrp-picker-panel {
   margin: 0 0 16px;
 }
@@ -699,8 +756,8 @@ button {
   color: var(--muted);
 }
 
-/* raised when the visitor picks a non-default combination, since the
-   attribution deliberately does not follow that choice */
+/* Raised when the visitor picks a non-default combination, since model
+   relevance deliberately does not follow that choice. */
 .lrp-note.is-emphasised {
   color: var(--ink);
   background: var(--chip-bg);
@@ -994,7 +1051,6 @@ canvas {
   .hero,
   .summary-grid,
   .top-panels-grid,
-  .dashboard-layout,
   .snapshot-body,
   .info-grid {
     grid-template-columns: 1fr;
@@ -1184,6 +1240,47 @@ canvas {
 
 /* ---- product panel tools ---- */
 
+.cell-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 28px;
+  padding: 13px 72px 13px 16px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.cell-picker > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.cell-picker > div:first-child span,
+.cell-picker-fields label span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.cell-picker-fields {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cell-picker-fields label {
+  display: grid;
+  gap: 4px;
+}
+
+.cell-picker-fields select {
+  width: auto;
+  min-width: 170px;
+  min-height: 38px;
+}
+
 .panel-tools {
   display: flex;
   flex-direction: column;
@@ -1279,7 +1376,6 @@ canvas {
 }
 
 .product-option.is-loading {
-  opacity: 0.45;
   cursor: progress;
 }
 
@@ -1384,6 +1480,21 @@ canvas {
   .panel-header {
     flex-wrap: wrap;
   }
+
+  .product-row .product-bar {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .cell-picker {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cell-picker-fields {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1409,6 +1520,12 @@ canvas {
 
   .embedded-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cell-picker-fields,
+  .cell-picker-fields label,
+  .cell-picker-fields select {
+    width: 100%;
   }
 }
 

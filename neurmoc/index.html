@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-08-30h">
+  <link rel="stylesheet" href="./styles.css?v=2026-09-01a">
 </head>
 <body>
   <noscript>
@@ -49,7 +49,7 @@
     </div>
   </div>
 
-  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch color theme">
     <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 14.6A8.6 8.6 0 0 1 9.4 3.4 8.6 8.6 0 1 0 20.6 14.6z"/></svg>
     <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM11 1h2v3.2h-2V1zm0 18.8h2V23h-2v-3.2zM1 11h3.2v2H1v-2zm18.8 0H23v2h-3.2v-2zM4.2 5.6l1.4-1.4 2.3 2.3-1.4 1.4-2.3-2.3zm11.9 11.9 1.4-1.4 2.3 2.3-1.4 1.4-2.3-2.3zm2.3-13.3 1.4 1.4-2.3 2.3-1.4-1.4 2.3-2.3zM6.5 16.1l1.4 1.4-2.3 2.3-1.4-1.4 2.3-2.3z"/></svg>
   </button>
@@ -104,35 +104,37 @@
     <section class="dashboard-layout">
       <div class="tab-bar" id="tab-bar">
         <span class="tab-bar-label" aria-hidden="true">View</span>
-        <div class="tab-bar-options" role="tablist" aria-label="Viewer sections">
+        <div class="tab-bar-options" role="tablist" aria-label="Viewer sections" aria-orientation="horizontal">
         <button class="tab-option is-active" type="button" role="tab" id="tab-btn-reconstruction"
-                data-tab="reconstruction" aria-controls="tab-reconstruction" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3V3zm10 0h8v5h-8V3zM3 13h8v8H3v-8zm10 3h8v5h-8v-5zm0-6h8v4h-8v-4z"/></svg><span>Reconstruction</span></button>
+                data-tab="reconstruction" aria-controls="tab-reconstruction" aria-selected="true" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3V3zm10 0h8v5h-8V3zM3 13h8v8H3v-8zm10 3h8v5h-8v-5zm0-6h8v4h-8v-4z"/></svg><span>Reconstruction</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-attribution"
-                data-tab="attribution" aria-controls="tab-attribution" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><circle cx="12" cy="12" r="2.6"/></svg><span>Attribution</span></button>
+                data-tab="attribution" aria-controls="tab-attribution" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><circle cx="12" cy="12" r="2.6"/></svg><span>Model relevance</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-evolution"
-                data-tab="evolution" aria-controls="tab-evolution" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v4H3V4zm0 6h18v4H3v-4zm0 6h18v4H3v-4z"/></svg><span>Evolution</span></button>
+                data-tab="evolution" aria-controls="tab-evolution" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v4H3V4zm0 6h18v4H3v-4zm0 6h18v4H3v-4z"/></svg><span>Evolution</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-animation"
-                data-tab="animation" aria-controls="tab-animation" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7L8 5z"/></svg><span>Animation</span></button>
+                data-tab="animation" aria-controls="tab-animation" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7L8 5z"/></svg><span>Animation</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-about"
-                data-tab="about" aria-controls="tab-about" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg><span>About &amp; cite</span></button>
+                data-tab="about" aria-controls="tab-about" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg><span>About &amp; cite</span></button>
         </div>
       </div>
-      <p class="tab-hint">Five views of the same reconstruction &mdash; your selected cell and input
-         products carry across all of them.</p>
+      <p class="tab-hint">Your selected cell carries across the four data views. Input-product choices
+         update reconstructed anomalies and trends wherever shown; the mean-state reference and model-relevance
+         maps remain fixed.</p>
 
-      <article class="panel product-panel">
+      <article class="panel product-panel" id="product-panel">
         <div class="panel-header">
           <div>
             <h2>Input products</h2>
             <p>Pick the input products &mdash; each of the eight production combinations is separately
-               reconstructed by the same trained network. Showing: <strong id="product-combo-label">&hellip;</strong></p>
+               reconstructed by the same trained network. Selection: <strong id="product-combo-label">&hellip;</strong></p>
             <details class="method-note">
               <summary>For additional details</summary>
               <p>The ocean-bottom-pressure choice dominates the differences between combinations; sea
-                 surface height and wind matter less. The uncertainty envelope and the trend statistics
-                 belong to the default combination (GRACE JPL + DUACS + CCMP) and already include the
-                 across-product spread as a budget term. Its monthly contribution is evaluated separately
-                 at every month, rather than represented by one time-mean map. The spread is a standard
+                 surface height and wind matter less. The monthly uncertainty envelope belongs to the default
+                 combination (GRACE JPL + DUACS + CCMP) and already includes the across-product spread as a
+                 budget term. The displayed trend slope and bootstrap serial uncertainty follow the selected
+                 combination; the other trend-budget terms remain fixed. The monthly across-product contribution
+                 is evaluated separately at every month, rather than represented by one time-mean map. The spread is a standard
                  deviation, not a range, so an individual alternative reconstruction is not guaranteed to
                  remain inside the default &plusmn;1&sigma; band.</p>
             </details>
@@ -148,8 +150,26 @@
             <button class="tool-button" id="share-view" type="button">Copy link to this view</button>
           </div>
         </div>
-        <p class="product-note" id="product-note">Streaming the seven other combinations in the background&hellip;</p>
+        <p class="product-note" id="product-note" role="status" aria-live="polite" aria-atomic="true">Alternative product reconstructions download when first selected (9.2 MB).</p>
       </article>
+
+      <section class="cell-picker" id="cell-picker" aria-labelledby="cell-picker-title">
+        <div>
+          <strong id="cell-picker-title">Selected cell</strong>
+          <span>Shared by Reconstruction, Model relevance, Evolution, and Animation.</span>
+        </div>
+        <div class="cell-picker-fields">
+          <label>
+            <span>Latitude</span>
+            <select id="latitude-select"></select>
+          </label>
+          <label>
+            <span>Density (σ₂)</span>
+            <select id="cell-density-select"></select>
+          </label>
+        </div>
+      </section>
+      <p class="sr-only" id="viewer-status" role="status" aria-live="polite" aria-atomic="true"></p>
 
 
 
@@ -195,17 +215,17 @@
           <canvas id="trend-canvas" width="1200" height="520" role="img" aria-label="Linear trend heatmap"></canvas>
         </article>
 
-<article class="panel panel-span-rows" id="timeseries-panel">
+<article class="panel panel-span-rows" id="timeseries-panel" tabindex="-1" aria-labelledby="timeseries-heading">
           <div class="panel-header">
             <div>
-              <h2>Local time series</h2>
-              <p>Anomaly at the selected cell with its uncertainty envelope and trend &mdash; choose a preset
-                 or click any map cell.</p>
+              <h2 id="timeseries-heading">Local time series</h2>
+              <p>Anomaly at the selected cell with its uncertainty envelope and trend &mdash; choose a preset,
+                 use the Selected cell controls above, or click any map cell.</p>
               <details class="method-note">
                 <summary>What the curves show</summary>
                  <p>The solid curve is the selected reconstruction. The curve and uncertainty shading are blue
                     where the trend weakens the local 2004&ndash;2009 mean overturning and red where it strengthens it;
-                    A nonsignificant dashed trend remains gray. The dashed trend is that of the selected
+                    a nonsignificant dashed trend remains gray. The dashed trend is that of the selected
                     combination; the shaded band remains the default reconstruction's
                     (GRACE JPL + DUACS + CCMP). The &plusmn;1&sigma; band combines
                     held-out-model mapping-error spread, network-ensemble spread, the time-dependent spread across
@@ -268,8 +288,8 @@
           <div class="panel-header">
             <div>
               <h2>Mean overturning state (2004&ndash;2009)</h2>
-              <p>The reference state the anomalies are measured from. Click any cell to inspect its time
-                 series.</p>
+              <p>The reference state the anomalies are measured from. Use the Selected cell controls above,
+                 or click any cell, to inspect its time series.</p>
               <details class="method-note">
                 <summary>What this panel shows</summary>
                 <p>The 2004&ndash;2009 mean overturning of the training model, split into Southern Ocean (SMOC)
@@ -289,16 +309,16 @@
           <div class="panel-header">
             <div>
               <h2>Pick the cell to explain</h2>
-              <p>Click any cell to set the latitude and density that the attribution below explains.
-                 These are the same maps as the Reconstruction tab, and the selected cell is shared
-                 across every view.</p>
+              <p>Click either map, or use the Selected cell controls above, to set the latitude and density
+                 explained below. These are the same maps as in Reconstruction, and the selected cell is shared
+                 across every data view.</p>
             </div>
           </div>
           <div class="lrp-picker-grid">
             <canvas id="lrp-trend-canvas" width="1100" height="520" role="img"
-                    aria-label="Linear trend heatmap - click to choose the cell to explain"></canvas>
+                    aria-label="Linear trend heatmap for choosing the cell to explain"></canvas>
             <canvas id="lrp-mean-canvas" width="1100" height="520" role="img"
-                    aria-label="Mean overturning state - click to choose the cell to explain"></canvas>
+                    aria-label="Mean overturning state for choosing the cell to explain"></canvas>
           </div>
         </article>
 
@@ -317,14 +337,15 @@
                  percentile of the three maps, as in the manuscript figure. The profile sums each
                  latitude band and divides by the number of mascons in it &mdash; a plain count, never
                  an area weight, because relevance is additive across inputs. The accounting panel
-                 shows the <em>signed</em> contributions, which sum to the reconstruction itself.</p>
+                 shows the <em>signed</em> contributions, which sum to the reconstruction itself. This is a model
+                 explanation, not a causal attribution of ocean variability.</p>
             </details>
           </div>
         </div>
         <p class="lrp-note" id="lrp-note">Relevance depends on the input values, so it is a property of
            one input combination: these maps are for the default GRACE JPL + DUACS + CCMP inputs and do
            not follow the product selection above.</p>
-        <div class="lrp-status" id="lrp-status">Loading attribution&hellip;</div>
+        <div class="lrp-status" id="lrp-status" role="status" aria-live="polite" aria-atomic="true">Loading model relevance&hellip;</div>
         <div class="lrp-body" id="lrp-body" hidden>
           <canvas id="lrp-maps-canvas" width="1320" height="460" role="img"
                   aria-label="Mean relevance magnitude per input mascon"></canvas>
@@ -343,7 +364,8 @@
         <div class="panel-header">
           <div>
             <h2>Latitude&ndash;time evolution</h2>
-            <p>Hovm&ouml;ller diagram of the reconstruction at the selected density level. Click to move the month and latitude together.</p>
+            <p>Hovm&ouml;ller diagram of the reconstruction at the selected density level. Click the diagram to move
+               the month and latitude together, or use the Month and Selected cell controls.</p>
           </div>
           <label class="hov-level">
             <span>Density level</span>
@@ -363,7 +385,7 @@
         <div class="panel-header">
           <div>
             <h2>Monthly snapshot &amp; animation</h2>
-            <p>Press Play to animate the month-to-month evolution of the reconstructed streamfunction.</p>
+            <p>Press Play to step through monthly samples of the 2-year-low-pass reconstruction.</p>
           </div>
         </div>
         <div class="snapshot-body">
@@ -384,12 +406,12 @@
             <div class="control-block">
               <span>Playback speed</span>
               <div class="speed-control" id="speed-control" role="group" aria-label="Playback speed">
-                <button class="speed-option" data-speed="slow" type="button">Slow</button>
-                <button class="speed-option is-active" data-speed="normal" type="button">Normal</button>
-                <button class="speed-option" data-speed="fast" type="button">Fast</button>
+                <button class="speed-option" data-speed="slow" type="button" aria-pressed="false">Slow</button>
+                <button class="speed-option is-active" data-speed="normal" type="button" aria-pressed="true">Normal</button>
+                <button class="speed-option" data-speed="fast" type="button" aria-pressed="false">Fast</button>
               </div>
             </div>
-            <button id="play-button" type="button">Play</button>
+            <button id="play-button" type="button" aria-pressed="false">Play</button>
           </aside>
         </div>
       </article>
@@ -397,10 +419,10 @@
 
       <div class="tab-panel" id="tab-about" role="tabpanel" aria-labelledby="tab-btn-about" hidden>
         <section class="info-grid">
-<article class="panel" id="about">
+<article class="panel" id="about" tabindex="-1" aria-labelledby="about-heading">
           <div class="panel-header">
             <div>
-              <h2>About NeurMOC</h2>
+              <h2 id="about-heading">About NeurMOC</h2>
             </div>
           </div>
           <div class="prose">
@@ -416,7 +438,7 @@
               <li><strong>Inputs</strong> &mdash; GRACE/GRACE-FO ocean bottom pressure, satellite-altimetry sea surface height, and 10-m zonal surface wind, all on the JPL mascon grid.</li>
               <li><strong>Output</strong> &mdash; the monthly overturning-streamfunction anomaly in latitude&ndash;density (σ₂) space for the Atlantic and Southern Ocean. The downloadable MAT/NetCDF files contain the default JPL + DUACS + CCMP reconstruction and its per-cell uncertainty; the viewer additionally carries the seven product-swap reconstructions.</li>
               <li><strong>Training</strong> &mdash; one climate model only: the ACCESS-ESM1.5 large ensemble is the
-                only simulation set that archives every required field (ocean bottom pressure and density space verturning-streamfunction in particular) with
+                only simulation set that archives every required field (ocean bottom pressure and density-space overturning streamfunction in particular) with
                 a large ensemble. The cost of applying an ACCESS-trained network beyond its training model is
                 measured on an independent model.</li>
               <li><strong>Validation</strong> &mdash; withheld ACCESS-ESM1.5 ensemble members, an independent
@@ -441,10 +463,10 @@
           </div>
         </article>
 
-<article class="panel" id="cite">
+<article class="panel" id="cite" tabindex="-1" aria-labelledby="cite-heading">
           <div class="panel-header">
             <div>
-              <h2>How to cite</h2>
+              <h2 id="cite-heading">How to cite</h2>
             </div>
           </div>
           <div class="prose">
@@ -489,6 +511,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-30h"></script>
+  <script src="./app.js?v=2026-09-01a"></script>
 </body>
 </html>
