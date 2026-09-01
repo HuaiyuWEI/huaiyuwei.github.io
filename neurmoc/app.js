@@ -19,7 +19,7 @@ const state = {
   clim: 20,                             // mean-state panel (full field)
   trendClim: 0.4,
   sigBasis: "point",                    // "point" | "fdr" (see sigField)
-  tab: "explore",                       // which workspace is on screen
+  tab: "reconstruction",                // which workspace is on screen
   playbackSpeed: "normal",
   playing: false,
   timer: null,
@@ -642,7 +642,7 @@ function buildHash() {
   if (state.sigBasis === "fdr") {
     parts.set("s", "f");
   }
-  if (state.tab !== "explore") {
+  if (state.tab !== "reconstruction") {
     parts.set("v", state.tab);
   }
   return parts.toString();
@@ -694,7 +694,7 @@ function applyHashState() {
     state.pendingCombo = c;
   }
   const tab = params.get("v");
-  state.tab = TAB_NAMES.includes(tab) ? tab : "explore";
+  state.tab = TAB_NAMES.includes(tab) ? tab : "reconstruction";
 }
 
 const HASH_STATE_KEYS = ["c", "j", "k", "t", "a", "d", "s", "v"];
@@ -710,7 +710,7 @@ function applyHashToUi() {
   state.diff = false;
   state.sigBasis = "point";
   state.pendingCombo = null;
-  state.tab = "explore";
+  state.tab = "reconstruction";
   applyHashState();
   controls.timeSlider.value = String(state.timeIndex);
   controls.climSlider.value = String(state.climAnom);
@@ -2602,12 +2602,12 @@ function shouldPaint(element) {
    and a hidden panel costs nothing to keep current because the paint gate
    above skips it. */
 
-const TAB_NAMES = ["explore", "attribution", "evolution", "animation", "about"];
+const TAB_NAMES = ["reconstruction", "attribution", "evolution", "animation", "about"];
 //: panels that live inside a tab, so a link to one can open its tab first
 const TAB_OF_ANCHOR = { about: "about", cite: "about" };
 
 function setTab(name, options) {
-  const target = TAB_NAMES.includes(name) ? name : "explore";
+  const target = TAB_NAMES.includes(name) ? name : "reconstruction";
   state.tab = target;
   TAB_NAMES.forEach((tab) => {
     const panel = document.getElementById(`tab-${tab}`);
@@ -3089,7 +3089,7 @@ function bindControls() {
       state.latitudeIndex = preset.latIdx;
       state.densityIndex = preset.densityIdx;
       controls.densitySelect.value = String(preset.densityIdx);
-      setTab("explore");                // the time series lives there
+      setTab("reconstruction");         // the time series lives there
       const panel = document.getElementById("timeseries-panel");
       if (panel) {
         panel.scrollIntoView({ behavior: "smooth", block: "start" });

@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-08-30g">
+  <link rel="stylesheet" href="./styles.css?v=2026-08-30h">
 </head>
 <body>
   <noscript>
@@ -105,8 +105,8 @@
       <div class="tab-bar" id="tab-bar">
         <span class="tab-bar-label" aria-hidden="true">View</span>
         <div class="tab-bar-options" role="tablist" aria-label="Viewer sections">
-        <button class="tab-option is-active" type="button" role="tab" id="tab-btn-explore"
-                data-tab="explore" aria-controls="tab-explore" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3V3zm10 0h8v5h-8V3zM3 13h8v8H3v-8zm10 3h8v5h-8v-5zm0-6h8v4h-8v-4z"/></svg><span>Explore</span></button>
+        <button class="tab-option is-active" type="button" role="tab" id="tab-btn-reconstruction"
+                data-tab="reconstruction" aria-controls="tab-reconstruction" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3V3zm10 0h8v5h-8V3zM3 13h8v8H3v-8zm10 3h8v5h-8v-5zm0-6h8v4h-8v-4z"/></svg><span>Reconstruction</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-attribution"
                 data-tab="attribution" aria-controls="tab-attribution" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><circle cx="12" cy="12" r="2.6"/></svg><span>Attribution</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-evolution"
@@ -153,7 +153,7 @@
 
 
 
-      <div class="tab-panel" id="tab-explore" role="tabpanel" aria-labelledby="tab-btn-explore">
+      <div class="tab-panel" id="tab-reconstruction" role="tabpanel" aria-labelledby="tab-btn-reconstruction">
         <section class="top-panels-grid">
 <article class="panel panel-center-figure">
           <div class="panel-header">
@@ -290,7 +290,7 @@
             <div>
               <h2>Pick the cell to explain</h2>
               <p>Click any cell to set the latitude and density that the attribution below explains.
-                 These are the same maps as the Explore tab, and the selected cell is shared
+                 These are the same maps as the Reconstruction tab, and the selected cell is shared
                  across every view.</p>
             </div>
           </div>
@@ -489,6 +489,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-08-30g"></script>
+  <script src="./app.js?v=2026-08-30h"></script>
 </body>
 </html>
