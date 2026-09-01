@@ -17,7 +17,7 @@ inputs.
   CCMP/ERA5): each of the eight production combinations is a separately
   generated stage-14 reconstruction by the same trained network. ERA5 is a
   reanalysis sensitivity input; reconstructed anomaly and trend panels follow
-  the selection, while the mean-state reference and model-relevance maps remain fixed.
+  the selection, while the mean-state reference and input-relevance maps remain fixed.
   A "difference vs. default" toggle switches the anomaly heatmaps to
   selected − default.
 - The RAPID moored-array anomaly overlaid on the 26.5°N time series

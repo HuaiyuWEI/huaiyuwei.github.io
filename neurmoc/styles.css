@@ -724,9 +724,9 @@ button {
   }
 }
 
-/* ---- LRP model relevance ---- */
+/* ---- LRP input relevance ---- */
 
-/* The model-relevance maps answer "where does this cell come from", so the
+/* The input-relevance maps answer "where does this cell come from", so the
    visitor needs to choose the cell without leaving the tab. These are the
    same two maps the Reconstruction tab carries, drawn into their own canvases. */
 .lrp-picker-panel {

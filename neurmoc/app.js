@@ -2533,7 +2533,7 @@ function renderLrp() {
       + `σ₂ = ${formatDensity(state.data.densities[state.densityIndex])}`;
   }
   if (controls.lrpNote) {
-    // Model relevance deliberately does not follow the product selection,
+    // Input relevance deliberately does not follow the product selection,
     // so say so louder once the visitor has changed it
     controls.lrpNote.classList.toggle("is-emphasised", comboIndex() !== 0);
   }
@@ -2544,25 +2544,25 @@ function renderLrp() {
   }
   if (lrp.failed) {
     lrpDrawnKey = null;
-    setLrpStatus("The model-relevance data could not be loaded — reload the page to retry.");
+    setLrpStatus("The input-relevance data could not be loaded — reload the page to retry.");
     return;
   }
   if (!lrp.meta) {
     lrpDrawnKey = null;
-    setLrpStatus("Loading model relevance…");
+    setLrpStatus("Loading input relevance…");
     return;
   }
   const cellIndex = state.densityIndex * state.data.dims.nj + state.latitudeIndex;
   if (lrp.meta.unlearnable.has(cellIndex)) {
     lrpDrawnKey = null;
     setLrpStatus("This cell had no variance in the training simulations, so the network "
-      + "never learned it and has no model-relevance value.");
+      + "never learned it and has no input-relevance value.");
     return;
   }
   const cell = lrpCellValues();
   if (!cell) {
     lrpDrawnKey = null;
-    setLrpStatus(`Loading model relevance for ${hovmollerDensityTitle(
+    setLrpStatus(`Loading input relevance for ${hovmollerDensityTitle(
       state.data.densities[state.densityIndex])}…`);
     ensureLrpChunk(state.densityIndex);
     return;
@@ -2683,7 +2683,7 @@ function setTab(name, options) {
     }
   });
   if (controls.productPanel) {
-    controls.productPanel.hidden = target === "about";
+    controls.productPanel.hidden = target === "attribution" || target === "about";
   }
   if (controls.cellPicker) {
     controls.cellPicker.hidden = target === "about";
@@ -2801,9 +2801,9 @@ function render() {
   timeseriesSvg.setAttribute("aria-label",
     `Reconstruction time series at ${cellDescription}.`);
   lrpTrendCanvas.setAttribute("aria-label",
-    `Linear-trend heatmap for model-relevance selection; selected cell ${cellDescription}.`);
+    `Linear-trend heatmap for input-relevance selection; selected cell ${cellDescription}.`);
   lrpMeanCanvas.setAttribute("aria-label",
-    `Mean-state heatmap for model-relevance selection; selected cell ${cellDescription}.`);
+    `Mean-state heatmap for input-relevance selection; selected cell ${cellDescription}.`);
 
   if (shouldPaint(snapshotCanvas)) {
   const snapshotGeom = drawDualBasinHeatmap(snapshotCanvas, sliceKJ(state.timeIndex), d.latitudes, d.densities, {
@@ -2877,7 +2877,7 @@ function render() {
     drawTimeSeries();
   }
 
-  // The Model relevance tab carries its own copies of these two maps so the
+  // The Input relevance tab carries its own copies of these two maps so the
   // explained cell can be moved without leaving the tab. Same fields, same
   // click handling; the paint gate keeps them idle while that tab is shut.
   if (shouldPaint(lrpTrendCanvas)) {

@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-09-01a">
+  <link rel="stylesheet" href="./styles.css?v=2026-09-01c">
 </head>
 <body>
   <noscript>
@@ -108,7 +108,7 @@
         <button class="tab-option is-active" type="button" role="tab" id="tab-btn-reconstruction"
                 data-tab="reconstruction" aria-controls="tab-reconstruction" aria-selected="true" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3V3zm10 0h8v5h-8V3zM3 13h8v8H3v-8zm10 3h8v5h-8v-5zm0-6h8v4h-8v-4z"/></svg><span>Reconstruction</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-attribution"
-                data-tab="attribution" aria-controls="tab-attribution" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><circle cx="12" cy="12" r="2.6"/></svg><span>Model relevance</span></button>
+                data-tab="attribution" aria-controls="tab-attribution" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><circle cx="12" cy="12" r="2.6"/></svg><span>Input relevance</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-evolution"
                 data-tab="evolution" aria-controls="tab-evolution" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v4H3V4zm0 6h18v4H3v-4zm0 6h18v4H3v-4z"/></svg><span>Evolution</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-animation"
@@ -118,7 +118,7 @@
         </div>
       </div>
       <p class="tab-hint">Your selected cell carries across the four data views. Input-product choices
-         update reconstructed anomalies and trends wherever shown; the mean-state reference and model-relevance
+         update reconstructed anomalies and trends wherever shown; the mean-state reference and input-relevance
          maps remain fixed.</p>
 
       <article class="panel product-panel" id="product-panel">
@@ -156,7 +156,7 @@
       <section class="cell-picker" id="cell-picker" aria-labelledby="cell-picker-title">
         <div>
           <strong id="cell-picker-title">Selected cell</strong>
-          <span>Shared by Reconstruction, Model relevance, Evolution, and Animation.</span>
+          <span>Shared by Reconstruction, Input relevance, Evolution, and Animation.</span>
         </div>
         <div class="cell-picker-fields">
           <label>
@@ -345,7 +345,7 @@
         <p class="lrp-note" id="lrp-note">Relevance depends on the input values, so it is a property of
            one input combination: these maps are for the default GRACE JPL + DUACS + CCMP inputs and do
            not follow the product selection above.</p>
-        <div class="lrp-status" id="lrp-status" role="status" aria-live="polite" aria-atomic="true">Loading model relevance&hellip;</div>
+        <div class="lrp-status" id="lrp-status" role="status" aria-live="polite" aria-atomic="true">Loading input relevance&hellip;</div>
         <div class="lrp-body" id="lrp-body" hidden>
           <canvas id="lrp-maps-canvas" width="1320" height="460" role="img"
                   aria-label="Mean relevance magnitude per input mascon"></canvas>
@@ -511,6 +511,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-09-01a"></script>
+  <script src="./app.js?v=2026-09-01c"></script>
 </body>
 </html>
