@@ -756,7 +756,7 @@ button {
   color: var(--muted);
 }
 
-/* Raised when the visitor picks a non-default combination, since model
+/* Raised when the visitor picks a non-default combination, since input
    relevance deliberately does not follow that choice. */
 .lrp-note.is-emphasised {
   color: var(--ink);

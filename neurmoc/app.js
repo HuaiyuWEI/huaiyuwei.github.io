@@ -2513,10 +2513,27 @@ function setLrpStatus(message) {
   if (!controls.lrpStatus) {
     return;
   }
+
+  const hasMessage = Boolean(message);
+
+  // Keep the page height stable while a new density chunk loads. Hiding the
+  // tall relevance plots without reserving their space makes the browser
+  // clamp the current scroll position and sends the visitor up the page.
+  if (hasMessage && controls.lrpBody && !controls.lrpBody.hidden && lrpPanel) {
+    const panelHeight = lrpPanel.getBoundingClientRect().height;
+    if (panelHeight > 0) {
+      lrpPanel.style.minHeight = `${Math.ceil(panelHeight)}px`;
+    }
+  }
+
   controls.lrpStatus.textContent = message;
-  controls.lrpStatus.hidden = !message;
+  controls.lrpStatus.hidden = !hasMessage;
   if (controls.lrpBody) {
-    controls.lrpBody.hidden = Boolean(message);
+    controls.lrpBody.hidden = hasMessage;
+  }
+
+  if (!hasMessage && lrpPanel) {
+    lrpPanel.style.minHeight = "";
   }
 }
 
