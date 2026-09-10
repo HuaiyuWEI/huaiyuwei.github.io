@@ -417,6 +417,22 @@ function plotSignFor(meanState) {
     && meanState <= -MEAN_STATE_DIRECTION_EPSILON_SV ? -1 : 1;
 }
 
+let negativeMeanMaskMemo = null;
+
+// Cells whose 2004-2009 reference streamfunction is negative, i.e. the
+// counterclockwise (abyssal) overturning. The manuscript's trend map marks
+// exactly these with white dots. Strict "< 0", as signRef < 0 in
+// Fig_real_world.m - not the 0.5 Sv direction epsilon, which exists to
+// decide when a trend may be CALLED strengthening or weakening rather than
+// to describe the mean state itself. NaN outside the valid plane is false.
+function negativeMeanMask() {
+  if (!negativeMeanMaskMemo) {
+    negativeMeanMaskMemo = meanStateYZ().map(
+      (row) => row.map((value) => Number.isFinite(value) && value < 0));
+  }
+  return negativeMeanMaskMemo;
+}
+
 function meanStateYZ() {
   // the 2004-2009 mean state (training-model baseline) alone - the
   // orientation panel; product-independent by construction
@@ -855,6 +871,26 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
         const globalX = indices[localX];
         ctx.fillStyle = valueToColor(values[j][globalX], options.clim);
         ctx.fillRect(x0 + localX * cellW, margins.top + j * cellH, Math.ceil(cellW), Math.ceil(cellH));
+      }
+    }
+    if (options.dotMask) {
+      // Manuscript Fig. 5C: "white dots mark regions where that reference
+      // streamfunction is negative" - the counterclockwise (abyssal) cells,
+      // one dot per grid cell where the 2004-2009 mean state is negative.
+      // Drawn BENEATH the hatching, as nm_section_row.m does, so the gray
+      // significance strokes stay visible where both land on one cell.
+      const radius = Math.max(0.55, Math.min(cellW, cellH) * 0.15);
+      ctx.fillStyle = "#ffffff";
+      for (let j = 0; j < ny; j += 1) {
+        for (let localX = 0; localX < indices.length; localX += 1) {
+          if (!options.dotMask[j][indices[localX]]) {
+            continue;
+          }
+          ctx.beginPath();
+          ctx.arc(x0 + (localX + 0.5) * cellW,
+                  margins.top + (j + 0.5) * cellH, radius, 0, 2 * Math.PI);
+          ctx.fill();
+        }
       }
     }
     if (options.hatchMask) {
@@ -2959,6 +2995,7 @@ function render() {
     highlightX: state.latitudeIndex,
     highlightY: state.densityIndex,
     hatchMask: trendFields.hatch,
+    dotMask: negativeMeanMask(),
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(trendCanvas, trendGeom, "trend");
