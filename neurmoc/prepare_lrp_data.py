@@ -73,7 +73,7 @@ CLIM_PERCENTILE = 99
 #: stage 20's sweep, and the mascon geometry whose basin_id == 1 subset is
 #: the network's 1292-element input domain
 SWEEP_DEFAULT = (
-    r"E:\NeurMOC_2026_data\results\m26r5\ACCESS_hist+SSP585"
+    r"E:\NeurMOC_2026_data\results\m26r8\ACCESS_hist+SSP585"
     r"\FullDepth_PCAinY64_ResNet_Neur192x96x48_5foldCV_Reg0.01Drop0.2"
     r"_swishActivation_LPF2Year\obp_mascon_V7+ssh_mascon_V7+uas_mascon_V7"
     r"\RealWorld\LRP\all_cells\lrp0_z_rule\RelevanceAllCells.npz"
@@ -106,7 +106,7 @@ PROJECTION = {
 }
 #: the stage-17 single-cell products, used to validate this export
 PRODUCT_ROOT_DEFAULT = (
-    r"E:\NeurMOC_2026_data\results\m26r5\ACCESS_hist+SSP585"
+    r"E:\NeurMOC_2026_data\results\m26r8\ACCESS_hist+SSP585"
     r"\FullDepth_PCAinY64_ResNet_Neur192x96x48_5foldCV_Reg0.01Drop0.2"
     r"_swishActivation_LPF2Year\obp_mascon_V7+ssh_mascon_V7+uas_mascon_V7"
     r"\RealWorld\LRP"

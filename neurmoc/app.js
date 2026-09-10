@@ -3,7 +3,7 @@
    product-difference view, RAPID 26.5N overlay, mean-state
    trend interpretation, and shareable URL state. */
 
-const META_PATH = "./data/neurmoc_meta.json?v=2026-08-29a";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-09-09a";
 const DATA_DIR = "./data/";
 
 const state = {
@@ -1628,7 +1628,7 @@ function bindHover(canvas) {
 
 /* ---------------- LRP attribution ---------------- */
 
-const LRP_META_PATH = "./data/neurmoc_lrp.json?v=2026-08-30a";
+const LRP_META_PATH = "./data/neurmoc_lrp.json?v=2026-09-09a";
 
 // ColorBrewer Reds - the manuscript's sequential magnitude map
 const REDS = [
