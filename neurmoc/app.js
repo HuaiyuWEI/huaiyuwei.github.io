@@ -417,12 +417,12 @@ function meanStateYZ() {
 // Which significance test drives every display: the map's hatching, the
 // time-series label and trend-line color, the interpretation chip, and the
 // trend tooltip. "point" (default) is the +-2 sigma test alone - does this
-// cell's own interval exclude zero? - the convention the manuscript keeps
-// for single cells chosen in advance (fig02's cell panels). "fdr" adds the
-// map-level Benjamini-Hochberg gate intersected with that rule, the
-// multiplicity correction for a field scanned as a whole (fig02's map).
-// FDR is a strict subset of per-point, so it only ever REMOVES significant
-// cells.
+// cell's own interval exclude zero? - the criterion the manuscript's trend
+// map hatches. "fdr" adds the map-level Benjamini-Hochberg gate intersected
+// with that rule, the multiplicity correction for a field scanned as a
+// whole; the manuscript reports that as a sensitivity test in a
+// supplementary figure rather than as its headline map. FDR is a strict
+// subset of per-point, so it only ever REMOVES significant cells.
 function sigField() {
   return state.sigBasis === "point"
     ? state.data.trend.significant : state.data.trend.significant_fdr;
