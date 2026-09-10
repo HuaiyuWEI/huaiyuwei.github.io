@@ -404,6 +404,19 @@ function relativeTrendDirection(meanState, slope) {
   return meanState * slope > 0 ? "increasing" : "declining";
 }
 
+// Sign applied to everything drawn in the time-series panel. The manuscript
+// plots the negative-mean abyssal cells as -Psi' (Fig. 5 D and E: "the
+// plotted anomaly and fitted trend are multiplied by -1, so a negative
+// plotted trend denotes weakening"), so that a downward line means weakening
+// at EVERY cell rather than only at the positive-mean ones. The threshold is
+// the direction epsilon: below it the local overturning has no meaningful
+// sign to orient by, and the interpretation chip already declines to call
+// those cells either way, so flipping them would be arbitrary.
+function plotSignFor(meanState) {
+  return Number.isFinite(meanState)
+    && meanState <= -MEAN_STATE_DIRECTION_EPSILON_SV ? -1 : 1;
+}
+
 function meanStateYZ() {
   // the 2004-2009 mean state (training-model baseline) alone - the
   // orientation panel; product-independent by construction
@@ -1176,10 +1189,15 @@ function drawTimeSeries() {
     ? Math.max(300, Math.min(720, Math.round((cssHeight / Math.max(cssWidth, 1)) * width)))
     : 320;
   timeseriesSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  // Orientation for this cell, decided once: every plotted quantity carries
+  // it, and the raw arrays are never drawn directly.
+  const meanStateValue = meanStateYZ()[state.densityIndex][state.latitudeIndex];
+  const plotSign = plotSignFor(meanStateValue);
   const values = [];
   const stdValues = [];
   for (let t = 0; t < nt; t += 1) {
-    values.push(predAt(t, state.densityIndex, state.latitudeIndex));
+    values.push(plotSign * predAt(t, state.densityIndex, state.latitudeIndex));
+    // a band half-width, not a signed quantity - it must not be flipped
     stdValues.push(stdAt(t, state.densityIndex, state.latitudeIndex));
   }
   const legendDefault = document.getElementById("legend-default");
@@ -1208,7 +1226,8 @@ function drawTimeSeries() {
   const defaultValues = [];
   if (showDefault) {
     for (let t = 0; t < nt; t += 1) {
-      defaultValues.push(predAtCombo(0, t, state.densityIndex, state.latitudeIndex));
+      defaultValues.push(
+        plotSign * predAtCombo(0, t, state.densityIndex, state.latitudeIndex));
     }
   }
   // The uncertainty band is an estimate for the default
@@ -1226,9 +1245,12 @@ function drawTimeSeries() {
   // nuance is spelled out by the interpretation chip
   const sigShown = trendDefined
     && trendSigAt(state.densityIndex, state.latitudeIndex);
-  const meanStateValue = meanStateYZ()[state.densityIndex][state.latitudeIndex];
+  // Direction is judged on the RAW slope against the raw mean state. The
+  // plotted slope below has already absorbed plotSign, and feeding that back
+  // in would cancel the very sign it encodes.
   const direction = trendDefined
     ? relativeTrendDirection(meanStateValue, slope) : "neutral";
+  const plottedSlope = plotSign * slope;
   const directionColor = direction === "declining" ? theme.declining
     : direction === "increasing" ? theme.increasing : theme.trendNot;
   const directionBand = direction === "declining" ? theme.decliningBand
@@ -1241,13 +1263,13 @@ function drawTimeSeries() {
   // directly than a bracketed range. Always annotated, significant or not.
   const ciHalf = trendDefined ? ciHalfRaw : NaN;
   const trendLabel = trendDefined
-    ? `Trend = ${formatTrend(slope)} ± ${formatTrend(ciHalf)} Sv yr⁻¹`
+    ? `Trend = ${formatTrend(plottedSlope)} ± ${formatTrend(ciHalf)} Sv yr⁻¹`
       + (sigShown ? "" : " (not significant)")
     : "No trend estimate at this cell";
   const xMean = xYears.reduce((sum, value) => sum + value, 0) / xYears.length;
   const yMean = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const intercept = yMean - slope * xMean;
-  const trendValues = xYears.map((x) => slope * x + intercept);
+  const intercept = yMean - plottedSlope * xMean;
+  const trendValues = xYears.map((x) => plottedSlope * x + intercept);
 
   const showRapid = isRapidCell();
   let rapidValues = null;
@@ -1262,12 +1284,16 @@ function drawTimeSeries() {
       const v = ti >= 0 ? values[ti] : NaN;
       if (Number.isFinite(v)) {
         sumPred += v;
-        sumObs += d.rapid.anomaly_sv[i];
+        sumObs += plotSign * d.rapid.anomaly_sv[i];
         nMatched += 1;
       }
     });
     const offset = nMatched ? sumPred / nMatched - sumObs / nMatched : 0;
-    rapidValues = d.rapid.anomaly_sv.map((value) => value + offset);
+    // plotSign is +1 at the RAPID preset (26.5N mid-depth is a positive
+    // cell), but carry it so the observed curve could never be drawn
+    // mirrored against a flipped reconstruction if that preset moved.
+    rapidValues = d.rapid.anomaly_sv.map(
+      (value) => plotSign * value + offset);
     rapidUnc = d.rapid.uncertainty_sv || null;
   }
   if (legendDefault) legendDefault.hidden = !showDefault;
@@ -1442,7 +1468,7 @@ function drawTimeSeries() {
     <path d="${linePath}" fill="none" stroke="${directionColor}" stroke-width="3"></path>
     ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${trendColor}" stroke-width="2.5" stroke-dasharray="9 6"></path>` : ""}
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>
-    <text x="${22 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="${theme.muted}" transform="rotate(-90 ${22 * fs} ${margins.top + plotHeight / 2})">Ψ anomaly (Sv)</text>
+    <text x="${22 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="${theme.muted}" transform="rotate(-90 ${22 * fs} ${margins.top + plotHeight / 2})">${plotSign < 0 ? "−Ψ" : "Ψ"} anomaly (Sv)</text>
     <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${trendColor}">
       ${trendLabel}${comboNote}
     </text>
@@ -1495,8 +1521,15 @@ function updateTrendReading() {
   } else {
     const strengthening = relativeTrendDirection(base, rawSlope) === "increasing";
     cls = strengthening ? "is-strengthening" : "is-weakening";
-    verdict = `significant ${rawSlope > 0 ? "positive" : "negative"} trend on a `
-      + `${base >= 0 ? "positive" : "negative"} cell → the overturning here is `
+    // Name the sign the reader can SEE. On a flipped cell the plotted trend
+    // is the negative of the raw one, so quoting the raw sign here would
+    // contradict both the line in the panel and its trend label.
+    const chipSign = plotSignFor(base);
+    const shownSlope = chipSign * rawSlope;
+    verdict = `significant ${shownSlope > 0 ? "positive" : "negative"} trend on a `
+      + `${base >= 0 ? "positive" : "negative"} cell`
+      + `${chipSign < 0 ? ", plotted as −Ψ′" : ""}`
+      + ` → the overturning here is `
       + `<strong>${strengthening ? "strengthening" : "weakening"}</strong>`;
   }
   // the borrowed-band caveat is a per-cell annotation like the verdict,
