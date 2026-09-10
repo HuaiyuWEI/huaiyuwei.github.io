@@ -1230,6 +1230,33 @@ function drawTimeSeries() {
         plotSign * predAtCombo(0, t, state.densityIndex, state.latitudeIndex));
     }
   }
+  // Manuscript display convention (ZERO_BIAS in Fig_real_world.m): the
+  // plotted series is an anomaly relative to its OWN mean over the window on
+  // screen, not relative to 2004-2009. The window is the RAPID overlap when
+  // the observations are drawn - Fig. 4 demeans BOTH series over the exactly
+  // matched months, since the offset between RAPID's reference frame and the
+  // reconstruction's is undefined - and the whole displayed record otherwise
+  // (Fig. 5: "anomaly relative to its temporal mean over the displayed
+  // period"). One constant is removed from BOTH curves rather than each
+  // being demeaned separately, so the offset between two product
+  // combinations, which is what that comparison exists to show, survives.
+  const showRapid = isRapidCell();
+  const rapidRows = showRapid && d.rapid
+    ? d.rapid.time_index.filter(
+      (ti) => ti >= 0 && Number.isFinite(values[ti]))
+    : null;
+  const zeroWindow = rapidRows && rapidRows.length
+    ? rapidRows.map((ti) => values[ti])
+    : values.filter(Number.isFinite);
+  const zeroMean = zeroWindow.length
+    ? zeroWindow.reduce((sum, value) => sum + value, 0) / zeroWindow.length
+    : 0;
+  for (let t = 0; t < nt; t += 1) {
+    values[t] -= zeroMean;
+    if (showDefault) {
+      defaultValues[t] -= zeroMean;
+    }
+  }
   // The uncertainty band is an estimate for the default
   // JPL + DUACS + CCMP reconstruction, so it stays centered on that
   // series (the gray curve) when another combination is selected. The
@@ -1271,12 +1298,13 @@ function drawTimeSeries() {
   const intercept = yMean - plottedSlope * xMean;
   const trendValues = xYears.map((x) => plottedSlope * x + intercept);
 
-  const showRapid = isRapidCell();
   let rapidValues = null;
   let rapidUnc = null;
   if (showRapid) {
-    // fig02's zero-bias display convention: shift the observed curve onto
-    // the DISPLAYED reconstruction's mean over the shared months
+    // The reconstruction is already zero-mean over these matched months
+    // (zeroMean above used exactly this window), so the offset computed here
+    // reduces to minus RAPID's own matched mean - which is Fig. 4's rule,
+    // both series demeaned over their overlap.
     let sumPred = 0;
     let sumObs = 0;
     let nMatched = 0;
