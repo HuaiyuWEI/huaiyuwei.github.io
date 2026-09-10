@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-09-09a">
+  <link rel="stylesheet" href="./styles.css?v=2026-09-09b">
 </head>
 <body>
   <noscript>
@@ -138,7 +138,7 @@
                  combination; the other trend-budget terms remain fixed. The monthly across-product contribution
                  is evaluated separately at every month, rather than represented by one time-mean map. The spread is a standard
                  deviation, not a range, so an individual alternative reconstruction is not guaranteed to
-                 remain inside the default &plusmn;1&sigma; band.</p>
+                 remain inside the default &plusmn;2&sigma; band.</p>
             </details>
           </div>
         </div>
@@ -229,7 +229,7 @@
                     where the trend weakens the local 2004&ndash;2009 mean overturning and red where it strengthens it;
                     a nonsignificant dashed trend remains gray. The dashed trend is that of the selected
                     combination; the shaded band remains the default reconstruction's
-                    (GRACE JPL + DUACS + CCMP). The &plusmn;1&sigma; band combines
+                    (GRACE JPL + DUACS + CCMP). The &plusmn;2&sigma; band combines
                     held-out-model mapping-error spread, network-ensemble spread, the time-dependent spread across
                     the eight input-product combinations, and propagated GRACE measurement noise. When another combination is selected,
                     its default counterpart is also drawn in gray. At 26.5&deg;N the solid dark curve overlays the independent RAPID moored-array
@@ -254,7 +254,7 @@
           </div>
           <div class="ts-legend" role="list" aria-label="Time-series legend">
             <span class="legend-item" role="listitem"><span class="swatch swatch-recon" id="legend-reconstruction-swatch" aria-hidden="true"></span>Selected reconstruction (blue declining/weakening; red increasing/strengthening)</span>
-            <span class="legend-item" role="listitem"><span class="swatch swatch-uncertainty" id="legend-uncertainty-swatch" aria-hidden="true"></span>Default-products &plusmn;1&sigma; total</span>
+            <span class="legend-item" role="listitem"><span class="swatch swatch-uncertainty" id="legend-uncertainty-swatch" aria-hidden="true"></span>Default-products &plusmn;2&sigma; total</span>
             <span class="legend-item" role="listitem"><span class="swatch swatch-trend" id="legend-trend-swatch" aria-hidden="true"></span>Linear trend of the selection</span>
             <span class="legend-item" role="listitem" id="legend-default" hidden><span class="swatch swatch-default" aria-hidden="true"></span>Default reconstruction</span>
             <span class="legend-item" role="listitem" id="legend-rapid" hidden><span class="swatch swatch-rapid" aria-hidden="true"></span>RAPID observations &plusmn; uncertainty (mean-matched)</span>
@@ -280,7 +280,7 @@
               <strong id="selected-value">-</strong>
             </article>
             <article class="summary-card">
-              <span class="summary-label">Default 1&sigma; uncertainty (selected month)</span>
+              <span class="summary-label">Default 2&sigma; uncertainty (selected month)</span>
               <strong id="selected-std">-</strong>
             </article>
           </section>
@@ -513,6 +513,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-09-09a"></script>
+  <script src="./app.js?v=2026-09-09b"></script>
 </body>
 </html>

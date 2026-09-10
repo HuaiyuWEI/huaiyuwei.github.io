@@ -6,6 +6,14 @@
 const META_PATH = "./data/neurmoc_meta.json?v=2026-09-09a";
 const DATA_DIR = "./data/";
 
+// Width of the monthly uncertainty band, in multiples of the one-sigma
+// envelope carried in the binaries. 2 is the manuscript's convention:
+// Figs. 4 and 5 both caption the gray shading as +-2 sigma_month,t, and it
+// matches BAND_N_SIGMA in matlab_figures/Fig_real_world.m. It also keeps
+// this panel self-consistent, since the trend annotation and the map's
+// significance test already report a 2-sigma interval.
+const BAND_N_SIGMA = 2;
+
 const state = {
   data: null,
   combosReady: false,
@@ -1192,7 +1200,10 @@ function drawTimeSeries() {
   // in the column); keep the NaN fallback for robustness and annotate
   // borrowed cells
   const hasStd = stdValues.some(Number.isFinite);
-  const safeStd = stdValues.map((value) => (Number.isFinite(value) ? value : 0));
+  // Scale once, here, so the plotted band and the y-range that has to
+  // contain it can never disagree about the band's width.
+  const safeStd = stdValues.map(
+    (value) => (Number.isFinite(value) ? value * BAND_N_SIGMA : 0));
   const showDefault = state.combosReady && comboIndex() !== 0;
   const defaultValues = [];
   if (showDefault) {
@@ -2804,8 +2815,10 @@ function render() {
   }
   controls.selectedValue.textContent = Number.isFinite(meanValue)
     ? `${meanValue.toFixed(2)} Sv` : "no data";
+  // Reported at BAND_N_SIGMA so this card is the half-width of the band
+  // drawn above it, not a different multiple of the same sigma.
   controls.selectedStd.textContent = Number.isFinite(selectedStd)
-    ? `${selectedStd.toFixed(2)} Sv` : "no data";
+    ? `${(selectedStd * BAND_N_SIGMA).toFixed(2)} Sv` : "no data";
 
   snapshotCanvas.setAttribute("aria-label",
     `Monthly reconstruction for ${d.time_labels[state.timeIndex]}; selected cell ${cellDescription}.`);
