@@ -242,7 +242,14 @@ def main(cfg: Config) -> None:
         raise ValueError("sweep latitudes differ from the viewer's axis")
     if not np.allclose(densities, np.asarray(sweep["moc_sigma2_grid"], float)):
         raise ValueError("sweep densities differ from the viewer's axis")
-    relevance = np.asarray(sweep["relevance_abs_mean"], dtype=np.float64)
+    if "relevance_abs_mean_display" not in sweep:
+        raise ValueError("LRP sweep lacks manuscript-window maps; run stage 20 "
+                         "with --refresh-map-window before exporting")
+    if str(sweep["run_id"]) != meta["metadata"]["run_id"]:
+        raise ValueError("LRP sweep and reconstruction belong to different runs")
+    if str(sweep["training_experiment"]) != meta["metadata"]["network"]:
+        raise ValueError("LRP sweep and reconstruction use different networks")
+    relevance = np.asarray(sweep["relevance_abs_mean_display"], dtype=np.float64)
     n_cells, n_cov, n_mascon = relevance.shape
     if n_cells != n_lat * n_den:
         raise ValueError(
@@ -258,6 +265,9 @@ def main(cfg: Config) -> None:
     # ---- time: trim the sweep's window to the viewer's -------------------
     sweep_months = np.char.strip(np.asarray(sweep["time_month"]).astype(str).ravel())
     view_months = np.asarray(meta["time_labels"], dtype=str)
+    map_months = np.char.strip(np.asarray(sweep["relevance_map_time_month"]).astype(str))
+    if not np.array_equal(map_months, view_months):
+        raise ValueError("LRP map averaging window differs from the viewer")
     position = {label: i for i, label in enumerate(sweep_months)}
     missing = [m for m in view_months if m not in position]
     if missing:
@@ -341,10 +351,13 @@ def main(cfg: Config) -> None:
         if index >= n_cells or not learnable[index]:
             continue
         stored = sio.loadmat(path, variable_names=[
-            "relevance_abs_mean", "target_prediction_members", "target_sign"])
+            "relevance_abs_mean", "target_prediction_members", "target_sign", "time_month"])
+        stored_months = np.char.strip(np.asarray(stored["time_month"]).astype(str).ravel())
+        if not np.array_equal(stored_months, sweep_months):
+            raise ValueError(f"{name}: stage-17 months differ from sweep")
         expected = np.asarray(stored["relevance_abs_mean"], dtype=np.float64)
         if expected.ndim == 3:
-            expected = expected.mean(axis=0)
+            expected = expected[keep].mean(axis=0)
         decoded = maps_q[index].astype(np.float64) * map_scale[index]
         scale = float(np.max(np.abs(expected))) or 1.0
         worst_map = max(worst_map, float(np.max(np.abs(decoded - expected))) / scale)
@@ -369,6 +382,8 @@ def main(cfg: Config) -> None:
         checked += 1
     if not checked:
         raise SystemExit("no stage-17 product validated this export")
+    if worst_map > 2.0 / COUNT_MAX:
+        raise SystemExit(f"LRP maps differ from trimmed stage-17 maps by {worst_map:.2e}")
     if worst_identity > ACCOUNTING_TOLERANCE_SV:
         raise SystemExit(
             f"the demeaned accounting identity closes only to "
@@ -497,6 +512,10 @@ def main(cfg: Config) -> None:
             "run_id": str(sweep["run_id"]),
             "training_experiment": str(sweep["training_experiment"]),
             "members": int(sweep["n_members"]),
+            "map_period": [str(map_months[0]), str(map_months[-1])],
+            "map_month_count": int(map_months.size),
+            "map_edge_months": int(sweep["relevance_map_edge_months"]),
+            "map_mean_method": str(sweep["relevance_map_mean_method"]),
         },
     }
     cfg.out_json.write_text(json.dumps(descriptor), encoding="utf-8")

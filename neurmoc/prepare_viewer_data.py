@@ -476,9 +476,9 @@ def main(cfg: Config) -> None:
     # ---- per-combination trend statistics (stage 18) --------------------
     # The viewer lets a visitor switch input products, so its map,
     # hatching and per-cell trend readouts must follow that choice. Stage
-    # 17 re-runs the project's trend estimator on each combination with
-    # the published budget terms held fixed (sigma_sate included), so only
-    # the slope and the bootstrap serial term move. Combination 0 is
+    # 18 re-runs the trend estimator and member-trend spread on each
+    # combination. GRACE coverage can differ; export its flags alongside
+    # the intervals, rather than silently claiming a complete budget. Combination 0 is
     # validated against the export both there and again here.
     trend_stats_file = rw / "combination_trend_stats.npz"
     if not trend_stats_file.is_file():
@@ -498,6 +498,10 @@ def main(cfg: Config) -> None:
         ct_n_boot = int(np.asarray(fh["n_boot"]).item())
         ct_block = int(np.asarray(fh["block_months"]).item())
         ct_sate_included = bool(np.asarray(fh["sigma_sate_included"]).item())
+        ct_grace_priced = np.asarray(fh["grace_priced_per_combo"], dtype=bool)
+        ct_grace_proxy = np.asarray(
+            fh["measurement_noise_is_proxy_per_combo"], dtype=bool)
+        ct_sigma_eps_definition = str(np.asarray(fh["sigma_eps_definition"]).item())
     if ct_slope.shape != (len(combos), nk, nj):
         raise SystemExit(
             f"combination_trend_stats has shape {ct_slope.shape}; expected "
@@ -506,6 +510,18 @@ def main(cfg: Config) -> None:
         raise SystemExit(
             f"combination_trend_stats is from run {ct_run_id} but the export "
             f"is {run_id} - rerun stage 18")
+    expected_tags = [item["tag"] if item["tag"] != "(default)" else ""
+                     for item in combo_meta]
+    if ct_tags != expected_tags:
+        raise ValueError("Stage-18 product ordering differs from the viewer")
+    for name, flags in (("GRACE coverage", ct_grace_priced),
+                        ("GRACE proxy", ct_grace_proxy)):
+        if flags.shape != (len(combos),):
+            raise ValueError(f"{name} flags must describe every product combination")
+    if np.any(ct_grace_proxy & ~ct_grace_priced):
+        raise ValueError("a GRACE proxy flag requires an included GRACE term")
+    if not np.array_equal(ct_months.astype("datetime64[M]").astype(str), canonical):
+        raise ValueError("Stage-18 month labels differ from the viewer")
     if ct_months.size != nt:
         raise SystemExit(
             f"combination_trend_stats covers {ct_months.size} months, the "
@@ -561,8 +577,10 @@ def main(cfg: Config) -> None:
             "reference_period": "2004-01 to 2009-12",
             "note": ("The reconstruction is the anomaly relative to the "
                      "Jan 2004 - Dec 2009 mean, matching the GRACE "
-                     "convention; the mean-state panel adds the training "
-                     "model's 2004-2009 baseline for orientation."),
+                     "convention; the mean-state panel shows the training "
+                     "model's 2004-2009 baseline alone for orientation. "
+                     "The local time-series panel additionally removes the "
+                     "display-period mean (RAPID-overlap mean at RAPID)."),
             "uncertainty": uncertainty_definition,
         },
         "dimensions": {"combos": len(combos), "time": nt,
@@ -586,8 +604,9 @@ def main(cfg: Config) -> None:
             "combos": combo_meta,
             "note": ("Every combination is a separately generated stage-14 "
                      "reconstruction with the same trained network; the "
-                     "uncertainty envelope and trend statistics belong to "
-                     "the default combination and already include the "
+                     "monthly uncertainty envelope belongs to the default "
+                     "combination; trend statistics follow the selected "
+                     "combination. Both budgets include the "
                      "across-product spread as a budget term. Its monthly "
                      "contribution is evaluated separately at every month."),
         },
@@ -625,8 +644,8 @@ def main(cfg: Config) -> None:
                     {
                         "key": "grace_measurement_noise",
                         "label": "propagated GRACE measurement noise",
-                        "time_dependent": False,
-                        "summary": "RMS monthly spread over the record",
+                        "time_dependent": True,
+                        "summary": "month-specific propagated GRACE uncertainty",
                         "mode": grace_noise_mode,
                         "draws": grace_noise_draws,
                     },
@@ -663,9 +682,9 @@ def main(cfg: Config) -> None:
                        "spread measured in cross-model transfer windows, and "
                        "observation/reanalysis input-product trend spread, "
                        "and propagated GRACE measurement-noise trend spread; "
-                       "the map mask applies "
-                       "Benjamini-Hochberg false-discovery-rate control and "
-                       "is intersected with the +-2 sigma rule"),
+                       "the default mask uses the pointwise +-2 sigma rule. "
+                       "The optional Benjamini-Hochberg FDR sensitivity mask "
+                       "is intersected with that pointwise rule"),
             "settings": {
                 "method": trend_method,
                 "block_months": trend_block_months,
@@ -707,15 +726,20 @@ def main(cfg: Config) -> None:
             "combo_tags": ct_tags,
             "months_trimmed_to_default_window": ct_trimmed,
             "sigma_sate_included": ct_sate_included,
+            "grace_priced_per_combo": ct_grace_priced.tolist(),
+            "measurement_noise_is_proxy_per_combo": ct_grace_proxy.tolist(),
+            "sigma_eps_definition": ct_sigma_eps_definition,
             "note": ("Per-combination trend statistics from stage 18: the "
                      "same estimator and the same published budget terms as "
                      "the manuscript, re-run on each combination's "
                      "reconstruction over the DEFAULT combination's window. "
-                     "Only the OLS slope and the moving-block-bootstrap "
-                     "serial term depend on the combination; the "
-                     "mapping-error, ensemble, input-product and GRACE "
-                     "terms are properties of the network and observing "
-                     "system and are held fixed. Combination 0 reproduces "
+                     "The slope, serial term, and network-member trend spread "
+                     "are combination-specific. Mapping and satellite-product "
+                     "spread are shared. GRACE measurement noise is included "
+                     "only where grace_priced_per_combo is true; a false flag "
+                     "means unestimated, not zero physical uncertainty. The "
+                     "proxy flags identify sensitivity estimates rather than "
+                     "native product-error estimates. Combination 0 reproduces "
                      "the NeurMOC_data export exactly. Slopes are NaN "
                      f"outside the valid plane. MBB {ct_block}-month "
                      f"blocks, {ct_n_boot} draws."),

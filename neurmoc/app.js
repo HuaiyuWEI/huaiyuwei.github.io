@@ -3,7 +3,7 @@
    product-difference view, RAPID 26.5N overlay, mean-state
    trend interpretation, and shareable URL state. */
 
-const META_PATH = "./data/neurmoc_meta.json?v=2026-09-09a";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-09-10e";
 const DATA_DIR = "./data/";
 
 // Width of the monthly uncertainty band, in multiples of the one-sigma
@@ -363,6 +363,29 @@ function comboLabel(combo = comboIndex()) {
   const selected = comboParts(combo);
   return [axes[0].options[selected.obp], axes[1].options[selected.ssh],
           axes[2].options[selected.wind]].join(" + ");
+}
+
+function trendBudgetNotice(combo = comboIndex()) {
+  const info = state.data.trend_combos;
+  const priced = info?.grace_priced_per_combo?.[combo];
+  const proxy = info?.measurement_noise_is_proxy_per_combo?.[combo];
+  if (typeof priced !== "boolean" || typeof proxy !== "boolean") {
+    return "GRACE-noise coverage is unavailable for this selection; the completeness of its trend budget is unknown.";
+  }
+  if (!priced) {
+    return "Incomplete trend budget: propagated GRACE measurement noise has not been estimated for this product combination. Its trend interval and significance omit this term; omission does not mean zero uncertainty.";
+  }
+  return proxy
+    ? "GRACE-noise sensitivity estimate: this CSR reconstruction uses JPL-reported input uncertainty as a proxy, not a native CSR uncertainty estimate."
+    : "";
+}
+
+function updateTrendBudgetNotice() {
+  const notice = trendBudgetNotice();
+  document.querySelectorAll("[data-trend-budget-notice]").forEach((el) => {
+    el.textContent = notice;
+    el.hidden = !notice;
+  });
 }
 
 function predAt(t, k, j) {
@@ -1736,7 +1759,7 @@ function bindHover(canvas) {
 
 /* ---------------- LRP attribution ---------------- */
 
-const LRP_META_PATH = "./data/neurmoc_lrp.json?v=2026-09-09a";
+const LRP_META_PATH = "./data/neurmoc_lrp.json?v=2026-09-10e";
 
 // ColorBrewer Reds - the manuscript's sequential magnitude map
 const REDS = [
@@ -2888,6 +2911,7 @@ function bindTabs() {
 
 function render() {
   const d = state.data;
+  updateTrendBudgetNotice();
   const hovmollerYearTicks = buildYearAxisTicks(d.time_years);
   const selectedStd = stdAt(state.timeIndex, state.densityIndex, state.latitudeIndex);
   const meanState = meanStateYZ();

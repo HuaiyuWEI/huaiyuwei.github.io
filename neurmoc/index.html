@@ -131,11 +131,12 @@
                reconstructed by the same trained network. Selection: <strong id="product-combo-label">&hellip;</strong></p>
             <details class="method-note">
               <summary>For additional details</summary>
-              <p>The ocean-bottom-pressure choice dominates the differences between combinations; sea
-                 surface height and wind matter less. The monthly uncertainty envelope belongs to the default
+               <p>At RAPID's 26.5&deg;N latitude, ocean-bottom-pressure choice is the main source of differences
+                  between the tested combinations. The monthly uncertainty envelope belongs to the default
                  combination (GRACE JPL + DUACS + CCMP) and already includes the across-product spread as a
-                 budget term. The displayed trend slope and bootstrap serial uncertainty follow the selected
-                 combination; the other trend-budget terms remain fixed. The monthly across-product contribution
+                  budget term. The trend slope, bootstrap serial uncertainty, and network-member trend spread
+                  follow the selected combination. Mapping and across-product trend spreads are shared;
+                  propagated GRACE-noise coverage is reported for each selection. The monthly across-product contribution
                  is evaluated separately at every month, rather than represented by one time-mean map. The spread is a standard
                  deviation, not a range, so an individual alternative reconstruction is not guaranteed to
                  remain inside the default &plusmn;2&sigma; band.</p>
@@ -183,29 +184,31 @@
               <h2>Trend, 2003&ndash;2024</h2>
               <p>Linear trend of the reconstruction; thin hatching marks cells whose trend is not
                  significant under the selected test. As in the manuscript, white dots mark cells
-                 whose 2004&ndash;09 reference overturning is negative &mdash; the counterclockwise,
-                 abyssal cells &mdash; where a positive trend is a <em>weakening</em>.</p>
+                  whose 2004&ndash;09 reference overturning is negative &mdash; the counterclockwise,
+                  abyssal cells &mdash; where a positive trend is a <em>weakening</em>.</p>
+               <p class="prose-note" data-trend-budget-notice role="status" hidden></p>
               <details class="method-note">
                 <summary>How significance is assessed</summary>
-                 <p>The trend is that of the selected input combination: each of the eight is fitted with the
-                    same estimator, and only its slope and its bootstrap serial term differ &mdash; the other budget
-                    terms describe the network and the observing system, so they are held fixed. Its
-                    &plusmn;2&sigma; uncertainty combines
+                 <p>The trend is that of the selected input combination. The slope, bootstrap serial term,
+                    and network-member trend spread are evaluated separately for each combination; mapping
+                    and across-product trend spreads are shared. The complete &plusmn;2&sigma; budget combines
                     five one-sigma terms in quadrature: serially correlated residual variability from a
                     48-month circular moving-block bootstrap; mapping-error trend spread measured in held-out
                     MRI windows; trend spread across trained network members; input-product trend spread; and
                     GRACE measurement-noise trend spread propagated through the reconstruction with a 500-draw
-                    Monte Carlo experiment. Independence among these terms is not demonstrated. Hatching marks
+                    Monte Carlo experiment. This last term is available for JPL + DUACS + CCMP and,
+                    using JPL uncertainty as a proxy, CSR + DUACS + CCMP. For the other six combinations,
+                    it has not been estimated and is omitted; their intervals and significance therefore
+                    use incomplete budgets. Independence among the terms is not demonstrated. Hatching marks
                     cells that fail the selected test.</p>
                  <p><strong>&plusmn;2&sigma; only</strong> (default) asks solely whether each cell's own
                     interval excludes zero &mdash; the criterion the manuscript's trend map hatches.
                     <strong>FDR</strong> additionally applies the Benjamini&ndash;Hochberg
-                    false-discovery-rate gate, the multiplicity correction appropriate when a whole field is
-                    scanned at once; the manuscript reports it as a sensitivity test in a supplementary
-                    figure, at a nominal level <em>q</em> = 0.091 calibrated for spatially correlated
-                    fields. Because roughly one cell in twenty passes a &plusmn;2&sigma; test by chance
-                    alone, it is the stricter reading of how much of
-                    the ocean is really changing. FDR-significant cells are a strict subset, so switching to it
+                    false-discovery-rate gate to assess sensitivity to multiple comparisons across the
+                    latitude&ndash;density field. The manuscript shows this sensitivity test in the
+                    Supplementary Information, using a nominal level <em>q</em> = 0.091 following an
+                    approximate adjustment for spatial correlation. Its interpretation depends on the
+                    approximate statistical assumptions underlying the test. FDR-significant cells are a subset, so switching to it
                     only ever removes significant area. The choice also drives the time-series label and the
                     mean-state chip, so the panels never disagree.</p>
               </details>
@@ -244,7 +247,7 @@
                     (GRACE JPL + DUACS + CCMP). The &plusmn;2&sigma; band combines
                     held-out-model mapping-error spread, network-ensemble spread, the time-dependent spread across
                     the eight input-product combinations, and propagated GRACE measurement noise. When another combination is selected,
-                    its default counterpart is also drawn in gray. At 26.5&deg;N the solid dark curve overlays the independent RAPID moored-array
+                    its default counterpart is also drawn in gray. At 26.5&deg;N the solid dark curve overlays the RAPID moored-array
                     observations with their observational uncertainty band, shifted to the
                     selected reconstruction's mean over the shared months &mdash; so the comparison is about variability only. The GRACE/GRACE-FO gap is shaded.
                     The trend is annotated as slope &plusmn; its 2&sigma; total uncertainty, the same interval the
@@ -325,7 +328,8 @@
               <h2>Pick the cell to explain</h2>
               <p>Click either map, or use the Selected cell controls above, to set the latitude and density
                  explained below. These are the same maps as in Reconstruction, and the selected cell is shared
-                 across every data view.</p>
+                  across every data view.</p>
+               <p class="prose-note" data-trend-budget-notice role="status" hidden></p>
             </div>
           </div>
           <div class="lrp-picker-grid">
@@ -350,8 +354,9 @@
                  <em>magnitude</em> of that contribution; their shared colour limit is the 99th
                  percentile of the three maps, as in the manuscript figure. The profile sums each
                  latitude band and divides by the number of mascons in it &mdash; a plain count, never
-                 an area weight, because relevance is additive across inputs. The accounting panel
-                 shows the <em>signed</em> contributions, which sum to the reconstruction itself. This is a model
+                  an area weight, because relevance is additive across inputs. The maps average April 2003&ndash;December 2024,
+                  excluding 12 filtering-edge months at each end. The accounting panel shows the <em>signed</em>
+                  input contributions plus the non-input residual; together they sum to the demeaned reconstruction. This is a model
                  explanation, not a causal attribution of ocean variability.</p>
             </details>
           </div>
@@ -455,9 +460,11 @@
                 only simulation set that archives every required field (ocean bottom pressure and density-space overturning streamfunction in particular) with
                 a large ensemble. The cost of applying an ACCESS-trained network beyond its training model is
                 measured on an independent model.</li>
-              <li><strong>Validation</strong> &mdash; withheld ACCESS-ESM1.5 ensemble members, an independent
-                climate model never seen in training (MRI-ESM2-0, from Japan's Meteorological Research
-                Institute), the ECCO v4r3 reanalysis, and the RAPID moored array.</li>
+              <li><strong>Evaluation</strong> &mdash; withheld ACCESS-ESM1.5 ensemble members and cross-model tests in
+                MRI-ESM2-0, from Japan's Meteorological Research Institute; observational comparison with
+                RAPID; and a consistency comparison with the ECCO v4r3 ocean state estimate. RAPID skill
+                was a secondary model-selection safeguard, not a fully untouched benchmark. The baseline
+                was not selected by maximizing agreement with RAPID.</li>
             </ul>
             <p class="prose-note">
                The reconstruction uses each dataset's own 2004&ndash;2009 reference-period convention; the
@@ -473,7 +480,7 @@
                noise and the other processing choices. It excludes GIA, geocenter, and C20&ndash;C30 correction errors,
                so it is not a complete estimate of every GRACE-related error source. Trend significance combines
                corresponding trend-space terms with serially correlated residual variability (moving-block bootstrap)
-               and false-discovery-rate control. </p>
+                with optional false-discovery-rate sensitivity testing. </p>
           </div>
         </article>
 
@@ -503,7 +510,8 @@
 }</pre>
             </div>
             <p class="prose-note">
-              The reconstruction is provided as-is for research use. Please cite the manuscript when using the
+               This citation is the original v1 preprint; the m26r8 reconstruction and revised uncertainty methods
+               postdate it. The reconstruction is provided as-is for research use. Please cite the manuscript when using the
               data, and <a class="meta-link" href="mailto:huaiyu.ocean@gmail.com">get in touch</a> with questions.
             </p>
           </div>
@@ -525,6 +533,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-09-10d"></script>
+  <script src="./app.js?v=2026-09-10e"></script>
 </body>
 </html>
