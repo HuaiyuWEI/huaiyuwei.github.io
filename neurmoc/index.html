@@ -67,13 +67,13 @@
           <p class="hero-subtitle">Satellite-based monitoring of the ocean overturning circulation with deep learning</p>
           <p class="hero-copy">
             NeurMOC reconstructs Atlantic and Southern Ocean meridional overturning circulation (MOC)
-            anomalies (relative to the 2004&ndash;2009 mean, the GRACE convention) in
+            inter-annual variability and trend in
             latitude&ndash;density space from satellite observations of ocean bottom pressure (GRACE/GRACE-FO), sea surface
             height, and 10-m zonal surface winds, using a simple neural network trained on the large
             ensemble of climate simulations from CSIRO's ACCESS-ESM1.5.
-            This viewer presents the monthly reconstruction of MOC and its trend over April 2003 &ndash; December 2024
-            with uncertainty estimates.
-            Input-relevance maps further show how ocean bottom pressure, sea surface height, and zonal-wind
+            This viewer presents the reconstruction over April 2003 &ndash; December 2024
+            with uncertainty estimates. We also present the input-relevance maps, which further show 
+            how ocean bottom pressure, sea surface height, and zonal-wind
             observations from different regions contribute to each reconstructed MOC cell.
           </p>
           <div class="hero-actions">
@@ -131,7 +131,7 @@
                reconstructed by the same trained network. Selection: <strong id="product-combo-label">&hellip;</strong></p>
             <details class="method-note">
               <summary>For additional details</summary>
-               <p>At RAPID's 26.5&deg;N latitude, ocean-bottom-pressure choice is the main source of differences
+               <p>Ocean-bottom-pressure choice is the main source of differences
                   between the tested combinations. The monthly uncertainty envelope belongs to the default
                  combination (GRACE JPL + DUACS + CCMP) and already includes the across-product spread as a
                   budget term. The trend slope, bootstrap serial uncertainty, and network-member trend spread
@@ -185,7 +185,7 @@
               <p>Linear trend of the reconstruction; thin hatching marks cells whose trend is not
                  significant under the selected test. As in the manuscript, white dots mark cells
                   whose 2004&ndash;09 reference overturning is negative &mdash; the counterclockwise,
-                  abyssal cells &mdash; where a positive trend is a <em>weakening</em>.</p>
+                  abyssal cells &mdash; where a positive trend indicates <em>weakening</em>.</p>
                <p class="prose-note" data-trend-budget-notice role="status" hidden></p>
               <details class="method-note">
                 <summary>How significance is assessed</summary>
