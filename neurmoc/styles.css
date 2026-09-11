@@ -212,8 +212,12 @@ h2 {
 .hero-copy,
 .panel-header p {
   margin: 8px 0 0;
-  line-height: 1.46;
+  line-height: 1.6;
   color: var(--muted);
+}
+
+.hero-copy {
+  max-width: 68ch;
 }
 
 /* ---- hero action buttons ---- */
@@ -425,6 +429,10 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+}
+
+.legend-item[hidden] {
+  display: none;
 }
 
 .swatch {
@@ -1217,13 +1225,14 @@ canvas {
 
 .method-note {
   margin: 6px 0 0;
-  font-size: 0.84rem;
+  font-size: 0.9rem;
   color: var(--muted);
 }
 
 .method-note summary {
   cursor: pointer;
-  width: max-content;
+  width: fit-content;
+  max-width: 100%;
   color: var(--accent-deep);
   font-weight: 600;
 }
@@ -1233,9 +1242,22 @@ canvas {
 }
 
 .method-note p {
-  margin: 6px 0 0;
-  line-height: 1.5;
-  max-width: 92ch;
+  margin: 10px 0 0;
+  line-height: 1.6;
+  max-width: 68ch;
+}
+
+.method-note summary:focus-visible {
+  outline: 2px solid var(--accent-deep);
+  outline-offset: 3px;
+}
+
+#monthly-band-note,
+[data-trend-budget-notice]:not([hidden]) {
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--chip-bg);
+  border-radius: var(--radius-sm);
 }
 
 /* ---- product panel tools ---- */

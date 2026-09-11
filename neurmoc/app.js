@@ -375,13 +375,13 @@ function trendBudgetNotice(combo = comboIndex()) {
   const priced = info?.grace_priced_per_combo?.[combo];
   const proxy = info?.measurement_noise_is_proxy_per_combo?.[combo];
   if (typeof priced !== "boolean" || typeof proxy !== "boolean") {
-    return "GRACE-noise coverage is unavailable for this selection; the completeness of its trend budget is unknown.";
+    return "We cannot verify whether GRACE measurement uncertainty is included for these inputs.";
   }
   if (!priced) {
-    return "Incomplete trend budget: propagated GRACE measurement noise has not been estimated for this product combination. Its trend interval and significance omit this term; omission does not mean zero uncertainty.";
+    return "Trend uncertainty is incomplete: GRACE measurement noise has not been estimated for these inputs and is not included in this test.";
   }
   return proxy
-    ? "GRACE-noise sensitivity estimate: this CSR reconstruction uses JPL-reported input uncertainty as a proxy, not a native CSR uncertainty estimate."
+    ? "For these CSR inputs, GRACE measurement uncertainty is approximated using JPL's reported errors."
     : "";
 }
 
@@ -1266,12 +1266,14 @@ function drawTimeSeries() {
   }
   const legendDefault = document.getElementById("legend-default");
   const legendRapid = document.getElementById("legend-rapid");
+  const monthlyBandNote = document.getElementById("monthly-band-note");
+  if (monthlyBandNote) monthlyBandNote.hidden = true;
   if (!Number.isFinite(values[0])) {
     // masked cell (outside the valid latitude-density plane)
     timeseriesSvg.innerHTML = `
       <rect x="0" y="0" width="${width}" height="${height}" fill="${theme.bg}"></rect>
       <text x="${width / 2}" y="${height / 2}" text-anchor="middle" font-size="20" fill="${theme.gapText}">
-        No data at this cell — pick a cell inside the colored region.
+        No data here — choose a point inside the colored region.
       </text>`;
     if (legendDefault) legendDefault.hidden = true;
     if (legendRapid) legendRapid.hidden = true;
@@ -1287,6 +1289,7 @@ function drawTimeSeries() {
   const safeStd = stdValues.map(
     (value) => (Number.isFinite(value) ? value * BAND_N_SIGMA : 0));
   const showDefault = state.combosReady && comboIndex() !== 0;
+  if (monthlyBandNote) monthlyBandNote.hidden = !showDefault;
   const defaultValues = [];
   if (showDefault) {
     for (let t = 0; t < nt; t += 1) {
@@ -1496,7 +1499,6 @@ function drawTimeSeries() {
   // panel's control selects (sigField). Curve and band color encode
   // strengthening/weakening relative to the local mean-state sign; an
   // insignificant dashed trend stays gray.
-  const comboNote = comboIndex() === 0 ? "" : " · band: default products";
   const gapStart = d.gap_time_range ? d.gap_time_range[0] : null;
   const gapEnd = d.gap_time_range ? d.gap_time_range[1] : null;
   const gapX1 = gapStart !== null ? margins.left + ((gapStart - xYears[0]) / (xYears[xYears.length - 1] - xYears[0])) * plotWidth : null;
@@ -1562,9 +1564,9 @@ function drawTimeSeries() {
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>
     <text x="${22 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="${theme.muted}" transform="rotate(-90 ${22 * fs} ${margins.top + plotHeight / 2})">${plotSign < 0 ? "−Ψ" : "Ψ"} anomaly (Sv)</text>
     <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${trendColor}">
-      ${trendLabel}${comboNote}
+      ${trendLabel}
     </text>
-    ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="${theme.gapText}">Uncertainty unavailable at this cell</text>`}
+    ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="${theme.gapText}">Uncertainty unavailable here</text>`}
   `;
 
   const reconSwatch = document.getElementById("legend-reconstruction-swatch");
@@ -1599,42 +1601,32 @@ function updateTrendReading() {
   // same combination and basis as the map hatching and the plot label
   const sigPoint = trendDefined && trendSigAt(k, j, "point");
   const sigShown = trendDefined && trendSigAt(k, j);
-  const sense = base >= 0 ? "clockwise" : "counterclockwise";
   let verdict;
   let cls = "is-neutral";
   if (!trendDefined) {
-    verdict = "no trend estimate at this cell";
+    verdict = "No trend estimate here";
   } else if (!sigShown) {
     verdict = (state.sigBasis === "fdr" && sigPoint)
-      ? "trend ±2σ excludes zero but fails FDR control — no robust change claimed"
-      : "trend not significant — no robust change in cell strength";
+      ? "Passes the local test, but not the map-wide FDR check"
+      : "Trend not significant under the selected test";
   } else if (relativeTrendDirection(base, rawSlope) === "neutral") {
-    verdict = "mean state near zero — strengthening vs. weakening is ill-defined here";
+    verdict = "Reference circulation is near zero; change in strength is unclear";
   } else {
     const strengthening = relativeTrendDirection(base, rawSlope) === "increasing";
     cls = strengthening ? "is-strengthening" : "is-weakening";
-    // Name the sign the reader can SEE. On a flipped cell the plotted trend
-    // is the negative of the raw one, so quoting the raw sign here would
-    // contradict both the line in the panel and its trend label.
-    const chipSign = plotSignFor(base);
-    const shownSlope = chipSign * rawSlope;
-    verdict = `significant ${shownSlope > 0 ? "positive" : "negative"} trend on a `
-      + `${base >= 0 ? "positive" : "negative"} cell`
-      + `${chipSign < 0 ? ", plotted as −Ψ′" : ""}`
-      + ` → the overturning here is `
-      + `<strong>${strengthening ? "strengthening" : "weakening"}</strong>`;
+    verdict = `<strong>${strengthening ? "Strengthening" : "Weakening"}</strong> — passes the selected test`;
+    if (d.trend_combos?.grace_priced_per_combo?.[comboIndex()] !== true) {
+      verdict += " (uncertainty incomplete)";
+    }
   }
   // the borrowed-band caveat is a per-cell annotation like the verdict,
   // and the SVG's top line has no room for it beside the trend label
   const mappingFilled = d.mapping_filled || d.transfer_filled;
   const borrowed = mappingFilled && mappingFilled[k][j] === 1;
-  const defaultNote = "";
   el.className = `trend-reading ${cls}`;
-  el.innerHTML = `<span>Mean state <strong>${formatSigned(base)} Sv</strong> (${sense} cell)</span>`
-    + `<span class="tr-sep" aria-hidden="true">·</span><span class="tr-verdict">${verdict}</span>`
-    + defaultNote
+  el.innerHTML = `<span class="tr-verdict">${verdict}</span>`
     + (borrowed
-      ? `<span class="tr-sep" aria-hidden="true">·</span><span>uncertainty band: mapping-error term borrowed from the σ₂ level above</span>`
+      ? `<span class="tr-sep" aria-hidden="true">·</span><span>Model-transfer uncertainty is estimated from a shallower level.</span>`
       : "");
   el.hidden = false;
 }
@@ -2708,8 +2700,7 @@ function renderLrp() {
   const cellIndex = state.densityIndex * state.data.dims.nj + state.latitudeIndex;
   if (lrp.meta.unlearnable.has(cellIndex)) {
     lrpDrawnKey = null;
-    setLrpStatus("This cell had no variance in the training simulations, so the network "
-      + "never learned it and has no input-relevance value.");
+    setLrpStatus("No input explanation is available here: the training simulations had no variability at this location.");
     return;
   }
   const cell = lrpCellValues();
@@ -2953,7 +2944,7 @@ function render() {
   hovmollerCanvas.setAttribute("aria-label",
     `Latitude–time reconstruction at density σ₂ ${formatDensity(d.densities[state.densityIndex])}; selected latitude ${formatLatitude(d.latitudes[state.latitudeIndex])}.`);
   trendCanvas.setAttribute("aria-label",
-    `Linear-trend heatmap; selected cell ${cellDescription}. Use the Selected cell controls to choose any cell without a pointer.`);
+    `Linear-trend heatmap; selected location ${cellDescription}. Use the Selected location controls to choose a point without a pointer.`);
   timeseriesSvg.setAttribute("aria-label",
     `Reconstruction time series at ${cellDescription}.`);
   lrpTrendCanvas.setAttribute("aria-label",
@@ -3371,8 +3362,8 @@ function bindControls() {
       syncSigControl();
       render();
       announceViewer(state.sigBasis === "point"
-        ? "Significance test set to plus or minus two sigma only."
-        : "Significance test set to false-discovery-rate control.");
+        ? "Local significance test selected."
+        : "Map-wide false discovery rate check selected.");
     });
   }
 
@@ -3518,7 +3509,7 @@ function decodeCounts(counts, offset, target, targetOffset, n, scale, nanCount) 
 }
 
 async function loadData() {
-  setLoadingProgress(0.03, "Fetching metadata…");
+  setLoadingProgress(0.03, "Preparing the maps…");
   const metaResponse = await fetch(META_PATH);
   if (!metaResponse.ok) {
     throw new Error(`HTTP ${metaResponse.status} while fetching metadata`);
@@ -3541,7 +3532,7 @@ async function loadData() {
     throw new Error(`Core file has ${bytes.byteLength} bytes; expected ${meta.series_core.byte_length}.`);
   }
 
-  setLoadingProgress(0.95, "Decoding…");
+  setLoadingProgress(0.95, "Drawing the plots…");
   const counts = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
   const pred = new Float32Array(nCombos * nCell).fill(NaN);
   const std = new Float32Array(nCell);
@@ -3632,8 +3623,8 @@ function ensureCombosLoaded() {
       state.combosReady = true;
       if (controls.productNote) {
         controls.productNote.textContent =
-          "Alternative product reconstructions loaded; all combinations are available.";
-        controls.productNote.hidden = false;
+          "All input combinations are ready.";
+        controls.productNote.hidden = true;
         delete controls.productNote.dataset.progress;
       }
       const requested = state.pendingCombo;
@@ -3651,7 +3642,7 @@ function ensureCombosLoaded() {
       if (controls.productNote) {
         controls.productNote.textContent = state.pendingCombo !== null
           ? "Could not load the alternative product reconstructions. Select the highlighted product again to retry."
-          : "Alternative product reconstructions download when first selected (9.2 MB).";
+          : "Could not load the alternative datasets. Select an alternative to retry.";
         controls.productNote.hidden = false;
         delete controls.productNote.dataset.progress;
       }

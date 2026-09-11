@@ -17,11 +17,11 @@
     })();
   </script>
   <title>NeurMOC — Satellite-based reconstruction of the ocean overturning circulation</title>
-  <meta name="description" content="NeurMOC is a neural-network reconstruction of Atlantic and Southern Ocean overturning circulation anomalies from GRACE, satellite altimetry, and zonal surface winds, April 2003 to December 2024. Explore all eight production input combinations, uncertainty, and trends interactively.">
+  <meta name="description" content="Explore changes in Atlantic and Southern Ocean overturning from 2003 to 2024. NeurMOC combines satellite observations with deep learning to reveal circulation patterns, trends, and the signals behind them.">
   <link rel="canonical" href="https://huaiyuwei.github.io/neurmoc/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="NeurMOC — satellite-based monitoring of the ocean overturning circulation">
-  <meta property="og:description" content="Interactive viewer for the NeurMOC reconstruction: monthly overturning anomalies in latitude–density space for all eight production input combinations, with uncertainty and 2003–2024 trends.">
+  <meta property="og:description" content="Explore two decades of Atlantic and Southern Ocean overturning: how it changes, how certain the trends are, and which observations inform the reconstruction.">
   <meta property="og:url" content="https://huaiyuwei.github.io/neurmoc/">
   <meta property="og:image" content="https://huaiyuwei.github.io/neurmoc/og_image.png">
   <meta property="og:image:width" content="1200">
@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-09-11a">
+  <link rel="stylesheet" href="./styles.css?v=2026-09-11b">
 </head>
 <body>
   <noscript>
@@ -45,7 +45,7 @@
       <div class="loading-spinner" aria-hidden="true"></div>
       <strong>Loading the NeurMOC reconstruction</strong>
       <div class="loading-bar"><div id="loading-bar-fill"></div></div>
-      <span id="loading-status">Fetching metadata…</span>
+      <span id="loading-status">Loading the maps…</span>
     </div>
   </div>
 
@@ -64,17 +64,12 @@
         <div class="hero-main">
           <p class="eyebrow">Interactive data viewer</p>
           <h1>NeurMOC</h1>
-          <p class="hero-subtitle">Satellite-based monitoring of the ocean overturning circulation with deep learning</p>
+          <p class="hero-subtitle">Exploring ocean overturning from space</p>
           <p class="hero-copy">
-            NeurMOC reconstructs Atlantic and Southern Ocean meridional overturning circulation (MOC)
-            inter-annual variability and trend in
-            latitude&ndash;density space from satellite observations of ocean bottom pressure (GRACE/GRACE-FO), sea surface
-            height, and 10-m zonal surface winds, using a simple neural network trained on the large
-            ensemble of climate simulations from CSIRO's ACCESS-ESM1.5.
-            This viewer presents the reconstruction over April 2003 &ndash; December 2024
-            with uncertainty estimates. We also present the input-relevance maps, which further show 
-            how ocean bottom pressure, sea surface height, and zonal-wind
-            observations from different regions contribute to each reconstructed MOC cell.
+            How is the ocean's overturning circulation changing? NeurMOC combines satellite observations
+            with a neural network trained on climate simulations to estimate changes across the Atlantic
+            and Southern Oceans. Explore two decades of variability and trends, compare input datasets,
+            and see which observations inform the reconstruction.
           </p>
           <div class="hero-actions">
             <a class="action-button action-primary" href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">
@@ -97,8 +92,8 @@
             <svg id="hero-spark" viewBox="0 0 300 64" preserveAspectRatio="none" aria-hidden="true"></svg>
           </div>
           <div class="fact-chip"><span class="fact-label">Period</span><strong>Apr 2003 – Dec 2024, monthly</strong></div>
-          <div class="fact-chip"><span class="fact-label">Coverage</span><strong>74.5°S – 64.5°N, Atlantic + Southern Ocean</strong></div>
-          <div class="fact-chip"><span class="fact-label">Resolution</span><strong>18 density (σ₂) levels · 2-year low-pass</strong></div>
+          <div class="fact-chip"><span class="fact-label">Coverage</span><strong>Atlantic &amp; Southern Oceans</strong></div>
+          <div class="fact-chip"><span class="fact-label">Focus</span><strong>Year-to-year changes and long-term trends</strong></div>
         </aside>
       </div>
     </section>
@@ -119,27 +114,18 @@
                 data-tab="about" aria-controls="tab-about" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg><span>About &amp; cite</span></button>
         </div>
       </div>
-      <p class="tab-hint">Your selected cell carries across the four data views. Input-product choices
-         update reconstructed anomalies and trends wherever shown; the mean-state reference and input-relevance
-         maps remain fixed.</p>
+      <p class="tab-hint">Choose a location on a map, then explore it across the tabs.</p>
 
       <article class="panel product-panel" id="product-panel">
         <div class="panel-header">
           <div>
-            <h2>Input products</h2>
-            <p>Pick the input products &mdash; each of the eight production combinations is separately
-               reconstructed by the same trained network. Selection: <strong id="product-combo-label">&hellip;</strong></p>
+            <h2>Compare input datasets</h2>
+            <p>See how different estimates of pressure, sea level, and wind affect the results.
+               Selected: <strong id="product-combo-label">&hellip;</strong></p>
             <details class="method-note">
-              <summary>For additional details</summary>
-               <p>Ocean-bottom-pressure choice is the main source of differences
-                  between the tested combinations. The monthly uncertainty envelope belongs to the default
-                 combination (GRACE JPL + DUACS + CCMP) and already includes the across-product spread as a
-                  budget term. The trend slope, bootstrap serial uncertainty, and network-member trend spread
-                  follow the selected combination. Mapping and across-product trend spreads are shared;
-                  propagated GRACE-noise coverage is reported for each selection. The monthly across-product contribution
-                 is evaluated separately at every month, rather than represented by one time-mean map. The spread is a standard
-                 deviation, not a range, so an individual alternative reconstruction is not guaranteed to
-                 remain inside the default &plusmn;2&sigma; band.</p>
+              <summary>Which inputs are the default?</summary>
+              <p>JPL ocean bottom pressure, DUACS sea level, and CCMP wind define the primary reconstruction.
+                 The other combinations show sensitivity to dataset choice; they are not independent observations of overturning.</p>
             </details>
           </div>
         </div>
@@ -153,13 +139,13 @@
             <button class="tool-button" id="share-view" type="button">Copy link to this view</button>
           </div>
         </div>
-        <p class="product-note" id="product-note" role="status" aria-live="polite" aria-atomic="true">Alternative product reconstructions download when first selected (9.2 MB).</p>
+        <p class="product-note" id="product-note" role="status" aria-live="polite" aria-atomic="true" hidden></p>
       </article>
 
       <section class="cell-picker" id="cell-picker" aria-labelledby="cell-picker-title">
         <div>
-          <strong id="cell-picker-title">Selected cell</strong>
-          <span>Shared by Reconstruction, Input relevance, Evolution, and Animation.</span>
+          <strong id="cell-picker-title">Selected location</strong>
+          <span>Choose a latitude and water-density level.</span>
         </div>
         <div class="cell-picker-fields">
           <label>
@@ -182,42 +168,21 @@
           <div class="panel-header">
             <div>
               <h2>Trend, 2003&ndash;2024</h2>
-              <p>Linear trend of the reconstruction; thin hatching marks cells whose trend is not
-                 significant under the selected test. As in the manuscript, white dots mark cells
-                  whose 2004&ndash;09 reference overturning is negative &mdash; the counterclockwise,
-                  abyssal cells &mdash; where a positive trend indicates <em>weakening</em>.</p>
+              <p>Hatching marks trends that do not pass the selected significance test.
+                 White dots mark reverse-flow regions, where a positive trend means weakening.</p>
                <p class="prose-note" data-trend-budget-notice role="status" hidden></p>
               <details class="method-note">
                 <summary>How significance is assessed</summary>
-                 <p>The trend is that of the selected input combination. The slope, bootstrap serial term,
-                    and network-member trend spread are evaluated separately for each combination; mapping
-                    and across-product trend spreads are shared. The complete &plusmn;2&sigma; budget combines
-                    five one-sigma terms in quadrature: serially correlated residual variability from a
-                    48-month circular moving-block bootstrap; mapping-error trend spread measured in held-out
-                    MRI windows; trend spread across trained network members; input-product trend spread; and
-                    GRACE measurement-noise trend spread propagated through the reconstruction with a 500-draw
-                    Monte Carlo experiment. This last term is available for JPL + DUACS + CCMP and,
-                    using JPL uncertainty as a proxy, CSR + DUACS + CCMP. For the other six combinations,
-                    it has not been estimated and is omitted; their intervals and significance therefore
-                    use incomplete budgets. Independence among the terms is not demonstrated. Hatching marks
-                    cells that fail the selected test.</p>
-                 <p><strong>&plusmn;2&sigma; only</strong> (default) asks solely whether each cell's own
-                    interval excludes zero &mdash; the criterion the manuscript's trend map hatches.
-                    <strong>FDR</strong> additionally applies the Benjamini&ndash;Hochberg
-                    false-discovery-rate gate to assess sensitivity to multiple comparisons across the
-                    latitude&ndash;density field. The manuscript shows this sensitivity test in the
-                    Supplementary Information, using a nominal level <em>q</em> = 0.091 following an
-                    approximate adjustment for spatial correlation. Its interpretation depends on the
-                    approximate statistical assumptions underlying the test. FDR-significant cells are a subset, so switching to it
-                    only ever removes significant area. The choice also drives the time-series label and the
-                    mean-state chip, so the panels never disagree.</p>
+                 <p><strong>Local</strong> checks whether a trend's &plusmn;2&sigma; uncertainty interval excludes zero.
+                    <strong>Map-wide (FDR)</strong> adds a false discovery rate check for testing many locations at once.
+                    This extra check can reduce the area marked significant. Both rely on approximate uncertainty estimates.</p>
               </details>
             </div>
             <div class="sig-control" id="sig-control" role="group" aria-label="Significance test">
               <span class="sig-caption">Significance</span>
               <div class="sig-buttons">
-                <button class="sig-option is-active" type="button" data-sig="point" aria-pressed="true">&plusmn;2&sigma; only</button>
-                <button class="sig-option" type="button" data-sig="fdr" aria-pressed="false">FDR</button>
+                <button class="sig-option is-active" type="button" data-sig="point" aria-pressed="true">Local</button>
+                <button class="sig-option" type="button" data-sig="fdr" aria-pressed="false">Map-wide (FDR)</button>
               </div>
             </div>
           </div>
@@ -227,34 +192,16 @@
 <article class="panel panel-span-rows" id="timeseries-panel" tabindex="-1" aria-labelledby="timeseries-heading">
           <div class="panel-header">
             <div>
-              <h2 id="timeseries-heading">Local time series</h2>
-              <p>Anomaly at the selected cell with its uncertainty envelope and trend &mdash; choose a preset,
-                 use the Selected cell controls above, or click any map cell.</p>
+              <h2 id="timeseries-heading">Changes at this location</h2>
+              <p>Blue indicates weakening; red indicates strengthening. Choose a shortcut below or click a map.</p>
               <details class="method-note">
                 <summary>What the curves show</summary>
-                 <p>The solid curve is the selected reconstruction. The curve and uncertainty shading are blue
-                    where the trend weakens the local 2004&ndash;2009 mean overturning and red where it strengthens it;
-                    a nonsignificant dashed trend remains gray. Following the manuscript, the curve is
-                    plotted as an anomaly about <em>its own mean over the window shown</em> &mdash; the
-                    RAPID overlap where those observations are drawn, and the whole record otherwise
-                    &mdash; so the zero line here is not the 2004&ndash;09 level that the maps and the
-                    &ldquo;mean anomaly&rdquo; readout use. For an abyssal cell &mdash; one whose
-                    2004&ndash;09 mean overturning is negative (counterclockwise) &mdash; the plotted anomaly
-                    and fitted trend are additionally multiplied by &minus;1 and the axis reads &minus;&Psi;,
-                    so that a downward line means weakening at every cell rather than only at
-                    the positive ones. The dashed trend is that of the selected
-                    combination; the shaded band remains the default reconstruction's
-                    (GRACE JPL + DUACS + CCMP). The &plusmn;2&sigma; band combines
-                    held-out-model mapping-error spread, network-ensemble spread, the time-dependent spread across
-                    the eight input-product combinations, and propagated GRACE measurement noise. When another combination is selected,
-                    its default counterpart is also drawn in gray. At 26.5&deg;N the orange curve overlays the RAPID moored-array
-                    observations with their observational uncertainty band, in the manuscript's colour; as in
-                    its Fig. 4, both series are demeaned over their shared months &mdash; so the comparison is about variability only. The GRACE/GRACE-FO gap is shaded.
-                    The trend is annotated as slope &plusmn; its 2&sigma; total uncertainty, the same interval the
-                    map's significance test uses; it is shown whether or not the trend is significant, so an
-                    insignificant cell reads as a value that its own uncertainty cannot separate from zero.
-                   The chip above the plot reads the trend against the local mean state: a positive trend on a negative (counterclockwise) cell
-                   means the overturning there is <em>weakening</em>.</p>
+                 <p>The solid line shows changes over time; the dashed line summarizes the trend.
+                    Shading and the &plusmn; value give estimated uncertainty (&plusmn;2&sigma;).
+                    Color shows the direction of change, not its significance.</p>
+                 <p>Series are centered to compare variability. In reverse-flow regions, the sign is flipped
+                    so a downward trend still means weakening. At the RAPID location, orange shows direct
+                    observations and their reported uncertainty. The vertical gray strip marks the gap between satellite missions.</p>
               </details>
             </div>
           </div>
@@ -268,13 +215,14 @@
             <button class="preset-option" type="button" data-preset="abyssal">SO abyssal cell 65°S</button>
           </div>
           <div class="ts-legend" role="list" aria-label="Time-series legend">
-            <span class="legend-item" role="listitem"><span class="swatch swatch-recon" id="legend-reconstruction-swatch" aria-hidden="true"></span>Selected reconstruction (blue declining/weakening; red increasing/strengthening)</span>
-            <span class="legend-item" role="listitem"><span class="swatch swatch-uncertainty" id="legend-uncertainty-swatch" aria-hidden="true"></span>Default-products &plusmn;2&sigma; total</span>
-            <span class="legend-item" role="listitem"><span class="swatch swatch-trend" id="legend-trend-swatch" aria-hidden="true"></span>Linear trend of the selection</span>
+            <span class="legend-item" role="listitem"><span class="swatch swatch-recon" id="legend-reconstruction-swatch" aria-hidden="true"></span>Reconstruction</span>
+            <span class="legend-item" role="listitem"><span class="swatch swatch-uncertainty" id="legend-uncertainty-swatch" aria-hidden="true"></span>Uncertainty (&plusmn;2&sigma;)</span>
+            <span class="legend-item" role="listitem"><span class="swatch swatch-trend" id="legend-trend-swatch" aria-hidden="true"></span>Trend</span>
             <span class="legend-item" role="listitem" id="legend-default" hidden><span class="swatch swatch-default" aria-hidden="true"></span>Default reconstruction</span>
-            <span class="legend-item" role="listitem" id="legend-rapid" hidden><span class="swatch swatch-rapid" aria-hidden="true"></span>RAPID observations &plusmn; uncertainty (mean-matched)</span>
-            <span class="legend-item" role="listitem"><span class="swatch swatch-gap" aria-hidden="true"></span>GRACE/GRACE-FO gap</span>
+            <span class="legend-item" role="listitem" id="legend-rapid" hidden><span class="swatch swatch-rapid" aria-hidden="true"></span>RAPID observations</span>
+            <span class="legend-item" role="listitem"><span class="swatch swatch-gap" aria-hidden="true"></span>Satellite gap</span>
           </div>
+          <p class="prose-note" id="monthly-band-note" hidden>Shading shows uncertainty around the gray default reconstruction, not the selected dataset combination.</p>
           <div class="trend-reading" id="trend-reading" hidden></div>
           <svg id="timeseries-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Time series of the reconstruction at the selected point"></svg>
           <section class="summary-grid embedded-summary-grid plot-summary-grid">
@@ -295,7 +243,7 @@
               <strong id="selected-value">-</strong>
             </article>
             <article class="summary-card">
-              <span class="summary-label">Default 2&sigma; uncertainty (selected month)</span>
+              <span class="summary-label">Default uncertainty (&plusmn;2&sigma;)</span>
               <strong id="selected-std">-</strong>
             </article>
           </section>
@@ -304,15 +252,15 @@
 <article class="panel panel-center-figure">
           <div class="panel-header">
             <div>
-              <h2>Mean overturning state (2004&ndash;2009)</h2>
-              <p>The reference state the anomalies are measured from. Use the Selected cell controls above,
-                 or click any cell, to inspect its time series.</p>
+              <h2>Reference circulation</h2>
+              <p>The climate model's mean circulation, shown for orientation &mdash; not an estimate of the observed ocean mean.</p>
               <details class="method-note">
-                <summary>What this panel shows</summary>
-                <p>The 2004&ndash;2009 mean overturning of the training model, split into Southern Ocean (SMOC)
-                   and Atlantic (AMOC) sectors &mdash; shown for orientation; the reconstructed quantity itself is
-                   the anomaly. Positive (red) cells circulate clockwise, negative (blue) cells
-                   counterclockwise, which is what decides whether a trend strengthens or weakens them.</p>
+                <summary>Reading the maps and units</summary>
+                <p>AMOC denotes Atlantic overturning; SMOC denotes Southern Ocean overturning.
+                   The vertical axis follows water density (&sigma;&sub2;), with denser water toward the bottom.
+                   Transport is measured in Sverdrups: 1 Sv is one million cubic meters per second.</p>
+                <p>This reference is the ACCESS model's 2004&ndash;2009 mean. Red shows clockwise circulation;
+                   blue shows counterclockwise circulation.</p>
               </details>
             </div>
           </div>
@@ -325,10 +273,8 @@
 <article class="panel lrp-picker-panel">
           <div class="panel-header">
             <div>
-              <h2>Pick the cell to explain</h2>
-              <p>Click either map, or use the Selected cell controls above, to set the latitude and density
-                 explained below. These are the same maps as in Reconstruction, and the selected cell is shared
-                  across every data view.</p>
+              <h2>Choose a location to explain</h2>
+              <p>Click a map to see which observations inform the reconstruction at that latitude and density.</p>
                <p class="prose-note" data-trend-budget-notice role="status" hidden></p>
             </div>
           </div>
@@ -344,26 +290,18 @@
         <div class="panel-header">
           <div>
             <h2>Where the network looks</h2>
-            <p>Layer-wise relevance propagation for the selected cell &mdash; how much each satellite
-               observation contributed to reconstructing it. Showing <strong id="lrp-selected-cell">the selected cell</strong>, chosen on the maps above.</p>
+            <p>Darker shading shows inputs with larger contributions to the reconstruction at
+               <strong id="lrp-selected-cell">the selected location</strong>.
+               These patterns explain the network's prediction, not cause and effect in the ocean.</p>
             <details class="method-note">
-              <summary>What this panel shows</summary>
-              <p>Branch-wise LRP-0 (z-rule) decomposes the network's prediction at one
-                 latitude&ndash;density cell into a contribution from every input mascon, averaged over
-                 the 25 network members and over the record. The maps show the mean
-                 <em>magnitude</em> of that contribution; their shared colour limit is the 99th
-                 percentile of the three maps, as in the manuscript figure. The profile sums each
-                 latitude band and divides by the number of mascons in it &mdash; a plain count, never
-                  an area weight, because relevance is additive across inputs. The maps average April 2003&ndash;December 2024,
-                  excluding 12 filtering-edge months at each end. The accounting panel shows the <em>signed</em>
-                  input contributions plus the non-input residual; together they sum to the demeaned reconstruction. This is a model
-                 explanation, not a causal attribution of ocean variability.</p>
+              <summary>Reading the contribution plots</summary>
+              <p>The maps summarize contribution magnitudes over 2003&ndash;2024. Below them, the latitude profile
+                 shows where contributions are concentrated, and the time series separates the contributions from
+                 pressure, sea level, and wind. The residual accounts for the remaining non-input terms.</p>
             </details>
           </div>
         </div>
-        <p class="lrp-note" id="lrp-note">Relevance depends on the input values, so it is a property of
-           one input combination: these maps are for the default GRACE JPL + DUACS + CCMP inputs and do
-           not follow the product selection above.</p>
+        <p class="lrp-note" id="lrp-note">These explanations always use the default JPL + DUACS + CCMP inputs.</p>
         <div class="lrp-status" id="lrp-status" role="status" aria-live="polite" aria-atomic="true">Loading input relevance&hellip;</div>
         <div class="lrp-body" id="lrp-body" hidden>
           <canvas id="lrp-maps-canvas" width="1320" height="460" role="img"
@@ -382,9 +320,8 @@
 <article class="panel">
         <div class="panel-header">
           <div>
-            <h2>Latitude&ndash;time evolution</h2>
-            <p>Hovm&ouml;ller diagram of the reconstruction at the selected density level. Click the diagram to move
-               the month and latitude together, or use the Month and Selected cell controls.</p>
+            <h2>Changes across latitude and time</h2>
+            <p>Follow the changes at one water-density level. Click the map to select a month and latitude.</p>
           </div>
           <label class="hov-level">
             <span>Density level</span>
@@ -404,7 +341,7 @@
         <div class="panel-header">
           <div>
             <h2>Monthly snapshot &amp; animation</h2>
-            <p>Press Play to step through monthly samples of the 2-year-low-pass reconstruction.</p>
+            <p>Press Play to follow the circulation changes month by month. The data are smoothed to highlight multi-year variability.</p>
           </div>
         </div>
         <div class="snapshot-body">
@@ -418,7 +355,7 @@
               <strong id="time-label">Loading...</strong>
             </label>
             <label class="control-block">
-              <span>Anomaly color limit (snapshot &amp; Hovm&ouml;ller)</span>
+              <span>Color range (animation &amp; evolution)</span>
               <input id="clim-slider" type="range" min="1" max="12" value="4" step="1">
               <strong id="clim-label">&plusmn;4 Sv</strong>
             </label>
@@ -446,41 +383,33 @@
           </div>
           <div class="prose">
             <p>
-              The MOC moves heat, carbon, and nutrients around the globe, but direct measurements exist at only a
-              few latitudes (e.g. the RAPID array at 26.5°N and the OSNAP array spanning 53°N to 60°N). NeurMOC closes this gap with neural networks that
-              learn the relationship between sea-surface and sea-floor observables and the overturning circulation
-              from simulations of a single climate model &mdash; the large initial-condition
-              ensemble of ACCESS-ESM1.5 (CSIRO) &mdash; and then apply it to two decades of satellite
-              observations.
+              The meridional overturning circulation (MOC) redistributes heat, carbon, and nutrients.
+              Direct observations cover only a few Atlantic locations. NeurMOC offers a broader view of
+              circulation changes across the Atlantic and Southern Oceans using ocean bottom pressure,
+              sea surface height, and wind observations.
             </p>
             <ul>
-              <li><strong>Inputs</strong> &mdash; GRACE/GRACE-FO ocean bottom pressure, satellite-altimetry sea surface height, and 10-m zonal surface wind, all on the JPL mascon grid.</li>
-              <li><strong>Output</strong> &mdash; the monthly overturning-streamfunction anomaly in latitude&ndash;density (σ₂) space for the Atlantic and Southern Ocean. The downloadable MAT/NetCDF files contain the default JPL + DUACS + CCMP reconstruction and its per-cell uncertainty; the viewer additionally carries the seven product-swap reconstructions.</li>
-              <li><strong>Training</strong> &mdash; one climate model only: the ACCESS-ESM1.5 large ensemble is the
-                only simulation set that archives every required field (ocean bottom pressure and density-space overturning streamfunction in particular) with
-                a large ensemble. The cost of applying an ACCESS-trained network beyond its training model is
-                measured on an independent model.</li>
-              <li><strong>Evaluation</strong> &mdash; withheld ACCESS-ESM1.5 ensemble members and cross-model tests in
-                MRI-ESM2-0, from Japan's Meteorological Research Institute; observational comparison with
-                RAPID; and a consistency comparison with the ECCO v4r3 ocean state estimate. RAPID skill
-                was a secondary model-selection safeguard, not a fully untouched benchmark. The baseline
-                was not selected by maximizing agreement with RAPID.</li>
+              <li><strong>How it works:</strong> a neural network learns from ACCESS-ESM1.5 climate simulations,
+                then estimates circulation changes from observed inputs.</li>
+              <li><strong>How it is evaluated:</strong> tests in a second climate model, MRI-ESM2.0,
+                and comparison with the RAPID observations at 26.5&deg;N.</li>
+              <li><strong>What you can download:</strong> the default JPL + DUACS + CCMP reconstruction
+                and uncertainty in MATLAB or NetCDF format. This viewer also shows seven alternative input combinations.</li>
             </ul>
             <p class="prose-note">
-               The reconstruction uses each dataset's own 2004&ndash;2009 reference-period convention; the
-               orientation panel is the frozen ACCESS training-model baseline. RAPID instead uses its available
-               April 2004&ndash;December 2009 mean and is mean-matched over shared months for the displayed comparison.
-               The monthly uncertainty envelope combines an empirical mapping-error spread measured across 15
-               held-out MRI scenario-branch windows, network-ensemble spread, the month-specific spread across the
-               eight input-product combinations, and GRACE measurement uncertainty propagated through the full
-               reconstruction with 500 Monte Carlo draws. The downloadable files carry the same envelope. Where
-               the held-out model does not provide complete support (mostly abyssal densities), the mapping-error
-               term is taken from the nearest measured level above in the same latitude column. The GRACE term uses
-               the JPL mascon uncertainty estimates and complements the product-swap term: one represents measurement
-               noise and the other processing choices. It excludes GIA, geocenter, and C20&ndash;C30 correction errors,
-               so it is not a complete estimate of every GRACE-related error source. Trend significance combines
-               corresponding trend-space terms with serially correlated residual variability (moving-block bootstrap)
-                with optional false-discovery-rate sensitivity testing. </p>
+               NeurMOC is a satellite-informed, model-dependent estimate. Its uncertainty bands describe
+               several known sources of error, but not every possible bias. Direct observational checks
+               remain limited, particularly in the Southern Ocean and deep ocean.</p>
+            <details class="method-note">
+              <summary>Methods and interpretation</summary>
+              <p>Monthly uncertainty combines model-transfer error, input-dataset differences,
+                 GRACE measurement uncertainty, and variation among trained networks. Trend uncertainty
+                 also accounts for estimating a trend from a short, autocorrelated record.</p>
+              <p>RAPID agreement was a secondary check during model selection; the default was not chosen
+                 to maximize it. Full methods, tests, and limitations are described in the accompanying manuscript.</p>
+              <p><a class="meta-link" href="#cite">Paper and citation</a> &mdash; the currently linked preprint
+                 is an earlier version and does not include all the revised analyses used in this viewer.</p>
+            </details>
           </div>
         </article>
 
@@ -510,9 +439,9 @@
 }</pre>
             </div>
             <p class="prose-note">
-               This citation is the original v1 preprint; the m26r8 reconstruction and revised uncertainty methods
-               postdate it. The reconstruction is provided as-is for research use. Please cite the manuscript when using the
-              data, and <a class="meta-link" href="mailto:huaiyu.ocean@gmail.com">get in touch</a> with questions.
+               The linked preprint is an earlier version of the study. This viewer uses updated data (m26r8)
+               and uncertainty estimates. Please cite the study when using the data, and
+               <a class="meta-link" href="mailto:huaiyu.ocean@gmail.com">get in touch</a> with questions.
             </p>
           </div>
         </article>
@@ -533,6 +462,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-09-11a"></script>
+  <script src="./app.js?v=2026-09-11b"></script>
 </body>
 </html>
