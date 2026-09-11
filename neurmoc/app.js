@@ -128,8 +128,11 @@ const PLOT_COLORS = {
     increasingBand: "rgba(178, 24, 43, 0.15)",
     neutralBand: "rgba(127, 139, 146, 0.14)",
     defaultLine: "#9aa8b5",
-    rapid: "#39424c",
-    rapidBand: "rgba(57, 66, 76, 0.13)",
+    // RAPID in the manuscript's colour: Fig. 4 draws the observed curve and
+    // its uncertainty band in [0.835 0.369 0] (A03_Fig_real_world.m), the
+    // band at FaceAlpha 0.14, and its caption calls it "the orange line".
+    rapid: "#d55e00",
+    rapidBand: "rgba(213, 94, 0, 0.14)",
     trendNot: "#7f8b92",
     cursor: "#162238",
     // one hue per input covariate, shared by the relevance profile and the
@@ -163,8 +166,10 @@ const PLOT_COLORS = {
     increasingBand: "rgba(255, 141, 112, 0.20)",
     neutralBand: "rgba(139, 152, 165, 0.18)",
     defaultLine: "#7b8b9c",
-    rapid: "#c3d0dd",
-    rapidBand: "rgba(195, 208, 221, 0.16)",
+    // same hue as the light theme so RAPID reads as the manuscript's orange
+    // in either mode; the band needs more opacity to register on navy
+    rapid: "#d55e00",
+    rapidBand: "rgba(213, 94, 0, 0.22)",
     trendNot: "#8b98a5",
     cursor: "#dbe6f2",
     lrp: ["#67b6cf", "#e8a05a", "#8fc46a"],

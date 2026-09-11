@@ -1438,14 +1438,12 @@ canvas {
   background: #7b8b9c;
 }
 
+/* the manuscript's RAPID orange (Fig. 4), in both themes - keep in step with
+   PLOT_COLORS.rapid in app.js */
 .swatch-rapid {
   width: 18px;
   height: 0;
-  border-top: 3px solid #39424c;
-}
-
-:root[data-theme="dark"] .swatch-rapid {
-  border-top-color: #c3d0dd;
+  border-top: 3px solid #d55e00;
 }
 
 /* ---- hero sparkline chip ---- */
