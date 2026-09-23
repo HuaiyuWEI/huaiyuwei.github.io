@@ -14,6 +14,9 @@ const DATA_DIR = "./data/";
 // significance test already report a 2-sigma interval.
 const BAND_N_SIGMA = 2;
 
+// Dashed cell-core lines on the trend maps: nm_section_row.m draws them '--k'.
+const CORE_LINE_COLOR = "#1a1a1a";
+
 const state = {
   data: null,
   combosReady: false,
@@ -436,13 +439,14 @@ function relativeTrendDirection(meanState, slope) {
 // plots the negative-mean abyssal cells as -Psi' (Fig. 5 D and E: "the
 // plotted anomaly and fitted trend are multiplied by -1, so a negative
 // plotted trend denotes weakening"), so that a downward line means weakening
-// at EVERY cell rather than only at the positive-mean ones. The threshold is
-// the direction epsilon: below it the local overturning has no meaningful
-// sign to orient by, and the interpretation chip already declines to call
-// those cells either way, so flipping them would be arbitrary.
+// at EVERY cell rather than only at the positive-mean ones. The test is the
+// same strict "< 0" as the white dots (negativeMeanMask), so every dotted
+// cell is flipped and no undotted one is. A 0.5 Sv threshold here once left
+// 191 of the 414 dotted cells unflipped. Weakly negative cells stay safe:
+// the interpretation chip declines to call them strengthening or weakening,
+// so the flip cannot contradict it.
 function plotSignFor(meanState) {
-  return Number.isFinite(meanState)
-    && meanState <= -MEAN_STATE_DIRECTION_EPSILON_SV ? -1 : 1;
+  return Number.isFinite(meanState) && meanState < 0 ? -1 : 1;
 }
 
 let negativeMeanMaskMemo = null;
@@ -459,6 +463,66 @@ function negativeMeanMask() {
       (row) => row.map((value) => Number.isFinite(value) && value < 0));
   }
   return negativeMeanMaskMemo;
+}
+
+let cellCoresMemo = null;
+
+// Density rows of the mid-depth and abyssal cell cores at every latitude,
+// ported from matlab_figures/nm_cell_cores.m so the dashed lines match the
+// manuscript's Fig. 5C exactly: argmax (mid) / argmin (abyssal) of the
+// 2004-2009 reference state per latitude, a centered 5-point moving average
+// of those indices across latitude (window shrinking at the edges, empty
+// columns ignored), rounded and clipped. The mid core is blanked south of
+// 55.5S, where no mid-depth cell is resolved; -1 marks "no core here".
+function cellCores() {
+  if (cellCoresMemo) {
+    return cellCoresMemo;
+  }
+  const ref = meanStateYZ();
+  const latitudes = state.data.latitudes;
+  const nlev = ref.length;
+  const nlat = ref[0].length;
+  const empty = [];
+  const rawMid = [];
+  const rawAby = [];
+  for (let j = 0; j < nlat; j += 1) {
+    let best = -Infinity;
+    let worst = Infinity;
+    let iMax = 0;
+    let iMin = 0;
+    let any = false;
+    for (let k = 0; k < nlev; k += 1) {
+      const v = ref[k][j];
+      if (!Number.isFinite(v)) {
+        continue;
+      }
+      any = true;
+      if (v > best) { best = v; iMax = k; }
+      if (v < worst) { worst = v; iMin = k; }
+    }
+    empty.push(!any);
+    rawMid.push(any ? iMax : NaN);
+    rawAby.push(any ? iMin : NaN);
+  }
+  const smooth = (raw) => raw.map((_, i) => {
+    const k = Math.min(i, nlat - 1 - i, 2);
+    let sum = 0;
+    let count = 0;
+    for (let m = i - k; m <= i + k; m += 1) {
+      if (Number.isFinite(raw[m])) { sum += raw[m]; count += 1; }
+    }
+    // MATLAB round(): half away from zero, identical to Math.round here
+    // because every index is non-negative
+    const curve = count ? sum / count : 0;
+    return Math.min(Math.max(Math.round(curve), 0), nlev - 1);
+  });
+  const mid = smooth(rawMid);
+  const aby = smooth(rawAby);
+  cellCoresMemo = {
+    mid: mid.map((k, j) => (empty[j] || latitudes[j] < -55.5 ? -1 : k)),
+    abyssal: aby.map((k, j) => (empty[j] ? -1 : k)),
+  };
+  return cellCoresMemo;
 }
 
 function meanStateYZ() {
@@ -893,7 +957,7 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
   ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, width, height);
 
-  function drawHalf(indices, x0, cellW) {
+  function drawHalf(indices, x0, cellW, isSmoc) {
     for (let j = 0; j < ny; j += 1) {
       for (let localX = 0; localX < indices.length; localX += 1) {
         const globalX = indices[localX];
@@ -948,10 +1012,44 @@ function drawDualBasinHeatmap(canvas, values, latitudes, densities, options) {
       ctx.stroke();
       ctx.restore();
     }
+    if (options.cores) {
+      // Fig. 5C's dashed core lines, on top of the hatching as in
+      // nm_section_row.m (field < dots < hatching < cores): the mid-depth
+      // core on both panels, the abyssal core on the SMOC panel only.
+      // Black in both themes, like the figure, because they sit on the
+      // light-centered colormap rather than on the page background.
+      const curves = isSmoc
+        ? [options.cores.mid, options.cores.abyssal] : [options.cores.mid];
+      ctx.save();
+      ctx.strokeStyle = CORE_LINE_COLOR;
+      ctx.lineWidth = 1.2 * fs;
+      ctx.setLineDash([5 * fs, 3.5 * fs]);
+      for (const rows of curves) {
+        ctx.beginPath();
+        let open = false;
+        for (let localX = 0; localX < indices.length; localX += 1) {
+          const k = rows[indices[localX]];
+          if (k < 0) {
+            open = false;
+            continue;
+          }
+          const x = x0 + (localX + 0.5) * cellW;
+          const y = margins.top + (k + 0.5) * cellH;
+          if (open) {
+            ctx.lineTo(x, y);
+          } else {
+            ctx.moveTo(x, y);
+            open = true;
+          }
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
   }
 
-  drawHalf(split.leftIndices, leftX0, leftCellW);
-  drawHalf(split.rightIndices, rightX0, rightCellW);
+  drawHalf(split.leftIndices, leftX0, leftCellW, true);
+  drawHalf(split.rightIndices, rightX0, rightCellW, false);
 
   ctx.strokeStyle = theme.frame;
   ctx.lineWidth = 1;
@@ -2909,7 +3007,20 @@ function render() {
   const d = state.data;
   updateTrendBudgetNotice();
   const hovmollerYearTicks = buildYearAxisTicks(d.time_years);
-  const selectedStd = stdAt(state.timeIndex, state.densityIndex, state.latitudeIndex);
+  // Root-mean-square of the default reconstruction's monthly sigma over the
+  // whole record - the same summary Table S2 and fig. S9 use. A single month
+  // would silently follow the Animation tab's slider, a control this card's
+  // reader cannot see from the Reconstruction tab.
+  let sumSq = 0;
+  let nFinite = 0;
+  for (let t = 0; t < d.dims.nt; t += 1) {
+    const s = stdAt(t, state.densityIndex, state.latitudeIndex);
+    if (Number.isFinite(s)) {
+      sumSq += s * s;
+      nFinite += 1;
+    }
+  }
+  const selectedStd = nFinite ? Math.sqrt(sumSq / nFinite) : NaN;
   const meanState = meanStateYZ();
   const baseValue = meanState[state.densityIndex][state.latitudeIndex];
   const meanValue = d.combo_mean_yz[comboIndex()][state.densityIndex][state.latitudeIndex];
@@ -2932,8 +3043,8 @@ function render() {
   }
   controls.selectedValue.textContent = Number.isFinite(meanValue)
     ? `${meanValue.toFixed(2)} Sv` : "no data";
-  // Reported at BAND_N_SIGMA so this card is the half-width of the band
-  // drawn above it, not a different multiple of the same sigma.
+  // Reported at BAND_N_SIGMA so this card is the typical half-width of the
+  // band drawn above it, not a different multiple of the same sigma.
   controls.selectedStd.textContent = Number.isFinite(selectedStd)
     ? `${(selectedStd * BAND_N_SIGMA).toFixed(2)} Sv` : "no data";
 
@@ -3016,6 +3127,7 @@ function render() {
     highlightY: state.densityIndex,
     hatchMask: trendFields.hatch,
     dotMask: negativeMeanMask(),
+    cores: cellCores(),
     yTickIndices: [0, 4, 8, 12, 16],
   });
   registerHover(trendCanvas, trendGeom, "trend");
@@ -3041,6 +3153,9 @@ function render() {
       highlightX: state.latitudeIndex,
       highlightY: state.densityIndex,
       hatchMask: trendFields.hatch,
+      // the same map as on the Reconstruction tab, so the same markings
+      dotMask: negativeMeanMask(),
+      cores: cellCores(),
       yTickIndices: [0, 4, 8, 12, 16],
     });
     registerHover(lrpTrendCanvas, geom, "trend");

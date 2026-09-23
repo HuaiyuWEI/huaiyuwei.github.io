@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-09-11b">
+  <link rel="stylesheet" href="./styles.css?v=2026-09-23a">
 </head>
 <body>
   <noscript>
@@ -93,7 +93,7 @@
           </div>
           <div class="fact-chip"><span class="fact-label">Period</span><strong>Apr 2003 – Dec 2024, monthly</strong></div>
           <div class="fact-chip"><span class="fact-label">Coverage</span><strong>Atlantic &amp; Southern Oceans</strong></div>
-          <div class="fact-chip"><span class="fact-label">Focus</span><strong>Year-to-year changes and long-term trends</strong></div>
+          <div class="fact-chip"><span class="fact-label">Focus</span><strong>Interannual variability and long-term trends</strong></div>
         </aside>
       </div>
     </section>
@@ -169,7 +169,7 @@
             <div>
               <h2>Trend, 2003&ndash;2024</h2>
               <p>Hatching marks trends that do not pass the selected significance test.
-                 White dots mark reverse-flow regions, where a positive trend means weakening.</p>
+                 White dots mark counterclockwise circulation (mostly the abyssal cell), where a positive trend means weakening.</p>
                <p class="prose-note" data-trend-budget-notice role="status" hidden></p>
               <details class="method-note">
                 <summary>How significance is assessed</summary>
@@ -199,7 +199,7 @@
                  <p>The solid line shows changes over time; the dashed line summarizes the trend.
                     Shading and the &plusmn; value give estimated uncertainty (&plusmn;2&sigma;).
                     Color shows the direction of change, not its significance.</p>
-                 <p>Series are centered to compare variability. In reverse-flow regions, the sign is flipped
+                 <p>Series are centered to compare variability. Where the circulation is counterclockwise (white dots on the map), the sign is flipped
                     so a downward trend still means weakening. At the RAPID location, orange shows direct
                     observations and their reported uncertainty. The vertical gray strip marks the gap between satellite missions.</p>
               </details>
@@ -243,7 +243,7 @@
               <strong id="selected-value">-</strong>
             </article>
             <article class="summary-card">
-              <span class="summary-label">Default uncertainty (&plusmn;2&sigma;)</span>
+              <span class="summary-label" title="Root-mean-square of the default reconstruction&#39;s monthly &plusmn;2&sigma; uncertainty over April 2003 &ndash; December 2024">Typical uncertainty (&plusmn;2&sigma;)</span>
               <strong id="selected-std">-</strong>
             </article>
           </section>
@@ -439,7 +439,7 @@
 }</pre>
             </div>
             <p class="prose-note">
-               The linked preprint is an earlier version of the study. This viewer uses updated data (m26r8)
+               The linked preprint is an earlier version of the study. This viewer uses the revised reconstruction
                and uncertainty estimates. Please cite the study when using the data, and
                <a class="meta-link" href="mailto:huaiyu.ocean@gmail.com">get in touch</a> with questions.
             </p>
@@ -462,6 +462,6 @@
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-09-11b"></script>
+  <script src="./app.js?v=2026-09-23a"></script>
 </body>
 </html>
