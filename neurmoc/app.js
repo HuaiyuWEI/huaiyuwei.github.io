@@ -2222,7 +2222,17 @@ function lrpCellValues() {
 }
 
 
+// Logical height of the globe row. Beside the two-column D/E row it is sized
+// to that row's height (660 x 330 at half width), so the whole figure fits
+// one screen; once D and E stack (styles.css, max-width 900px) the globes
+// keep the taller box, since at phone width they are already small.
+const LRP_MAPS_HEIGHT_WIDE = 330;
+const LRP_MAPS_HEIGHT_NARROW = 460;
+const lrpStackedQuery = window.matchMedia("(max-width: 900px)");
+
 function drawLrpMaps(cell) {
+  lrpMapsCanvas.dataset.logicalHeight = String(
+    lrpStackedQuery.matches ? LRP_MAPS_HEIGHT_NARROW : LRP_MAPS_HEIGHT_WIDE);
   const { ctx, width, height, fs } = setupCanvasResolution(lrpMapsCanvas);
   const theme = pc();
   const meta = state.lrp.meta;
@@ -2238,6 +2248,10 @@ function drawLrpMaps(cell) {
     (width - margins.left - margins.right - gap * (mapCount - 1)) / mapCount,
     height - margins.top - margins.bottom);
   const top = margins.top + (height - margins.top - margins.bottom - side) / 2;
+  // when the height limits the globes, centre them (with the colour bar
+  // that follows) instead of leaving the spare width at the right
+  const spare = width - margins.left - margins.right - mapCount * side - (mapCount - 1) * gap;
+  const left = margins.left + Math.max(0, spare) / 2;
   const targetLat = state.data.latitudes[state.latitudeIndex];
   const preset = lrpProjection();
   const spec = meta.projection;
@@ -2254,7 +2268,7 @@ function drawLrpMaps(cell) {
   const basePx = Math.round(15.5 * fs);
 
   for (let c = 0; c < mapCount; c += 1) {
-    const x0 = margins.left + c * (side + gap);
+    const x0 = left + c * (side + gap);
     const cx = x0 + side / 2;
     const cy = top + side / 2;
     const radius = side / 2;
@@ -2367,7 +2381,7 @@ function drawLrpMaps(cell) {
 
   // shared colour bar: 0 .. the 99th percentile of this cell's three maps
   const cbW = 13 * fs;
-  const cbX = margins.left + mapCount * side + (mapCount - 1) * gap + 26 * fs;
+  const cbX = left + mapCount * side + (mapCount - 1) * gap + 26 * fs;
   const cbH = side * 0.86;
   const cbTop = top + (side - cbH) / 2;
   const steps = REDS.length;
