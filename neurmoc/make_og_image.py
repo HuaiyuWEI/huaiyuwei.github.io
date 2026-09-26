@@ -39,7 +39,6 @@ pretty_period = (
     f"{datetime.strptime(last_month, '%Y-%m').strftime('%b %Y')}"
 )
 trend_years = f"{first_month[:4]}–{last_month[:4]}"
-run_id = meta["metadata"]["run_id"]
 
 fig = plt.figure(figsize=(12, 6.3), dpi=100)
 fig.patch.set_facecolor(BG)
@@ -57,8 +56,8 @@ fig.text(0.055, 0.825,
          "with deep learning",
          fontsize=17, color=ACCENT)
 fig.text(0.055, 0.755,
-         f"Interactive viewer · monthly anomalies, {pretty_period} "
-         f"· eight production input combinations · {run_id} error budget",
+         f"Interactive viewer · monthly anomalies and trends, {pretty_period} "
+         "· eight satellite-product combinations",
          fontsize=13, color=MUTED)
 
 # the trend map, split into SMOC | AMOC like the viewer
