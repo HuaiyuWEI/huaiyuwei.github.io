@@ -13,8 +13,9 @@ folder and emits the files consumed by app.js:
   viewer renders as soon as the default combination arrives and streams
   the rest in the background:
   - ``data/neurmoc_core.bin``: the default combination's ANOMALY
-    reconstruction ``pred[t,k,j]`` followed by its total uncertainty
-    ``std[t,k,j]``, C order;
+    reconstruction ``pred[t,k,j]`` (departure from its record mean at each
+    latitude-density point, as in the released NeurMOC_data files) followed
+    by its total uncertainty ``std[t,k,j]``, C order;
   - ``data/neurmoc_combos.bin``: the non-default combinations
     ``pred[c,t,k,j]`` for c = 1..N-1.
   The combination index is obp*4 + ssh*2 + wind over the option axes
@@ -60,6 +61,13 @@ REALWORLD_DEFAULT = (
     r"\RealWorld"
 )
 
+#: the released NeurMOC_data files (record-mean-removed MOC), copied as the
+#: viewer's downloads
+RELEASE_DATA_DEFAULT = (
+    r"D:\OneDrive - University of California\PythonWork\NeurMOC_2026"
+    r"\PublicVersion\data"
+)
+
 #: the pipeline's low-pass-filtered RAPID 26.5N transport record
 RAPID_DEFAULT = (
     r"E:\NeurMOC_2026_data\processed\observations\insitu_v6\rapid"
@@ -84,6 +92,7 @@ class Config:
     core_path: Path
     combos_path: Path
     trends_path: Path
+    release_data: Path
 
 
 def round_nested(values: np.ndarray, decimals: int = 4) -> list:
@@ -299,6 +308,11 @@ def main(cfg: Config) -> None:
     if not np.allclose(stack[0], pred0, atol=1e-5):
         raise ValueError("default combination does not reproduce the "
                          "NeurMOC_data export - stale files?")
+
+    # Show each combination as the departure from its own record mean at
+    # every latitude-density point, as in the released NeurMOC_data files.
+    stack = (stack - stack.astype(np.float64).mean(axis=1, keepdims=True)
+             ).astype(np.float32)
 
     # ---- reconstruct the four-term monthly uncertainty envelope ----------
     # Stage 15 supplies the empirical monthly mapping-error magnitude and
@@ -595,7 +609,6 @@ def main(cfg: Config) -> None:
         "nan_sentinel": NAN_SENTINEL,
         "mapping_filled": mapping_filled.astype(int).tolist(),
         "baseline_yz": round_nested(baseline_j, 4),
-        "combo_mean_yz": [round_nested(c.mean(axis=0), 4) for c in stack],
         "products": {
             "axes": [{"key": key, "name": name,
                       "options": [label for label, _ in options]}
@@ -780,9 +793,15 @@ def main(cfg: Config) -> None:
     cfg.meta_path.write_text(json.dumps(meta, separators=(",", ":")),
                              encoding="utf-8")
 
-    # refresh the downloadable products alongside the viewer data
+    # the downloads are the released NeurMOC_data files; check they carry
+    # exactly the reconstruction shown in the viewer
+    release_mat = sio.loadmat(cfg.release_data / "NeurMOC_data.mat",
+                              variable_names=["NeurMOC"])
+    if not np.allclose(release_mat["NeurMOC"], stack[0], atol=1e-4):
+        raise ValueError("released NeurMOC_data.mat differs from the viewer's "
+                         "default reconstruction")
     for name in ("NeurMOC_data.mat", "NeurMOC_data.nc"):
-        shutil.copy2(rw / name, cfg.core_path.parent / name)
+        shutil.copy2(cfg.release_data / name, cfg.core_path.parent / name)
 
     err = np.abs(np.round(stack / SCALE) * SCALE - stack).max()
     print(f"wrote {cfg.core_path} ({len(core_blob) / 1e6:.2f} MB), "
@@ -807,9 +826,11 @@ def parse_args() -> Config:
     parser.add_argument("--core", default="data/neurmoc_core.bin")
     parser.add_argument("--combos", default="data/neurmoc_combos.bin")
     parser.add_argument("--trends", default="data/neurmoc_trends.bin")
+    parser.add_argument("--release-data", default=RELEASE_DATA_DEFAULT)
     args = parser.parse_args()
     return Config(Path(args.realworld), Path(args.rapid), Path(args.meta),
-                  Path(args.core), Path(args.combos), Path(args.trends))
+                  Path(args.core), Path(args.combos), Path(args.trends),
+                  Path(args.release_data))
 
 
 if __name__ == "__main__":

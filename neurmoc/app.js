@@ -3,7 +3,7 @@
    product-difference view, RAPID 26.5N overlay, mean-state
    trend interpretation, and shareable URL state. */
 
-const META_PATH = "./data/neurmoc_meta.json?v=2026-09-10e";
+const META_PATH = "./data/neurmoc_meta.json?v=2026-09-25a";
 const DATA_DIR = "./data/";
 
 // Width of the monthly uncertainty band, in multiples of the one-sigma
@@ -72,7 +72,6 @@ const controls = {
   selectedLatitude: document.getElementById("selected-latitude"),
   selectedDensity: document.getElementById("selected-density"),
   selectedBaseline: document.getElementById("selected-baseline"),
-  selectedValue: document.getElementById("selected-value"),
   selectedStd: document.getElementById("selected-std"),
   lrpNote: document.getElementById("lrp-note"),
   lrpSelectedCell: document.getElementById("lrp-selected-cell"),
@@ -3037,7 +3036,6 @@ function render() {
   const selectedStd = nFinite ? Math.sqrt(sumSq / nFinite) : NaN;
   const meanState = meanStateYZ();
   const baseValue = meanState[state.densityIndex][state.latitudeIndex];
-  const meanValue = d.combo_mean_yz[comboIndex()][state.densityIndex][state.latitudeIndex];
   const diff = diffActive();
   const anomClim = diff ? Math.max(1, Math.round(state.climAnom / 2)) : state.climAnom;
   const diffSuffix = diff ? " · selected − default" : "";
@@ -3055,8 +3053,6 @@ function render() {
     controls.selectedBaseline.textContent = Number.isFinite(baseValue)
       ? `${formatSigned(baseValue, 2)} Sv` : "no data";
   }
-  controls.selectedValue.textContent = Number.isFinite(meanValue)
-    ? `${meanValue.toFixed(2)} Sv` : "no data";
   // Reported at BAND_N_SIGMA so this card is the typical half-width of the
   // band drawn above it, not a different multiple of the same sigma.
   controls.selectedStd.textContent = Number.isFinite(selectedStd)
