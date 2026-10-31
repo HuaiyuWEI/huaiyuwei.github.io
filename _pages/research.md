@@ -5,23 +5,23 @@ permalink: /research/
 author_profile: true
 ---
 
-<!-- Layout classes are styled in _sass/_research.scss. Overview thumbnails are 240x176 crops saved as images/thumb_*.jpg. Linking an image to itself opens it full size in a lightbox. -->
+<!-- Layout classes are styled in _sass/_research.scss. Overview previews are 600x400 (3:2) crops saved as images/thumb_*.jpg; thumb_DBNN.jpg combines the input globes and the MOC panel of DBNN.png. Linking an image to itself opens it full size in a lightbox. -->
 
 <nav class="research-overview" aria-label="Research projects">
   <a href="#moc-reconstruction">
-    <img src="/images/thumb_DBNN.jpg" alt="" width="240" height="176">
+    <img src="/images/thumb_DBNN.jpg" alt="" width="600" height="400">
     <span>Reconstructing the Meridional Overturning Circulation Using Machine Learning</span>
   </a>
   <a href="#eddy-parameterization">
-    <img src="/images/thumb_ww21.jpg" alt="" width="240" height="176">
+    <img src="/images/thumb_ww21.jpg" alt="" width="600" height="400">
     <span>Mesoscale Eddy Parameterization over Sloping Topography</span>
   </a>
   <a href="#abyssal-prograde-flows">
-    <img src="/images/thumb_Neptune_model.jpg" alt="" width="240" height="176">
+    <img src="/images/thumb_Neptune_model.jpg" alt="" width="600" height="400">
     <span>Formation of Abyssal Prograde Flows via Eddy Potential Vorticity Mixing</span>
   </a>
   <a href="#bottom-boundary-upwelling">
-    <img src="/images/thumb_Neptune_Upwelling.jpg" alt="" width="240" height="176">
+    <img src="/images/thumb_Neptune_Upwelling.jpg" alt="" width="600" height="400">
     <span>Mesoscale Eddy-Mediated Diapycnal Upwelling in the Ocean’s Sloping Bottom Boundary</span>
   </a>
 </nav>
