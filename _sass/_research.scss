@@ -6,6 +6,7 @@ $research-card-border       : mix(#fff, $gray, 80%);
 $research-accent            : mix(#000, $info-color, 40%);   // dark teal, 6:1 on white
 $research-muted             : mix(#fff, $text-color, 15%);   // secondary text, 5:1 on white
 $research-wide              : 1200px;   // four overview cards in a row from here up
+$research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neurmoc/make_og_image.py)
 
 /* Top-level section headings on archive-layout pages (Publications),
    underlined like the headings in .page__content (Homepage); list entry
@@ -266,13 +267,17 @@ $research-wide              : 1200px;   // four overview cards in a row from her
     outline: 0;
   }
 
-  /* NeurMOC viewer link card */
+  /* NeurMOC viewer link card, above the findings in section 01: the two data
+     panels of the viewer's preview on its own background, with an accent
+     rule like the overview cards */
   .research-cta {
     display: block;
-    margin-top: 1.25em;
+    margin: 0 0 1.25em;
     color: $text-color;
     text-decoration: none;
+    background: $research-preview-bg;
     border: 1px solid $research-card-border;
+    border-top: 3px solid $research-accent;
     border-radius: $border-radius;
     overflow: hidden;
 
@@ -284,9 +289,10 @@ $research-wide              : 1200px;   // four overview cards in a row from her
 
     span {
       display: block;
-      padding: 0.75em 1em;
-      font-size: 0.875em;
+      padding: 0.6em 1em 0.85em;
+      font-size: 0.9375em;
       line-height: 1.5;
+      text-wrap: pretty;            // no lone "2003. →" on the last line
 
       &::after {
         content: "\00a0\2192";
@@ -363,11 +369,47 @@ $research-wide              : 1200px;   // four overview cards in a row from her
   }
 }
 
+/* Section 01: the viewer card and the findings beside the network diagram.
+   Stacked below 1200 px, where the two columns cannot end level: the text
+   keeps the paragraphs' measure, and the card and the diagram stay near
+   their desktop size */
+.research-row--feature {
+  @include breakpoint($medium) {
+    display: block;
+  }
+
+  @include breakpoint($research-wide) {
+    display: grid;
+  }
+
+  .research-row__text {
+    max-width: 44em;
+  }
+
+  .research-cta,
+  .research-figure {
+    max-width: 30em;
+
+    @include breakpoint($research-wide) {
+      max-width: none;
+    }
+  }
+
+  .research-figure {
+    margin-top: 1.5em;
+
+    @include breakpoint($research-wide) {
+      margin-top: 0;
+    }
+  }
+}
+
 .research-row__text > :first-child {
   margin-top: 0;
 }
 
-.research-row__text > :last-child {
+/* .research-project here outranks the paragraphs' own 1em margin above */
+.research-project .research-row__text > :last-child {
   margin-bottom: 0;
 }
 
@@ -455,9 +497,14 @@ $research-wide              : 1200px;   // four overview cards in a row from her
   }
 }
 
+/* A tall figure kept to the text measure, so it fits under the masthead on a
+   laptop screen (the Pacific map in section 03: 792 x 607 px, not 980 x 752) */
+.research-figure--measure {
+  max-width: 44em;
+}
+
 /*
-   Home page: the text-only project cards, two per row, and the dated
-   highlights list
+   Home page: the text-only project cards, two per row
    ========================================================================== */
 
 .home-overview {
@@ -466,29 +513,4 @@ $research-wide              : 1200px;   // four overview cards in a row from her
   @include breakpoint($research-wide) {
     grid-template-columns: 1fr 1fr;
   }
-}
-
-.home-highlights {
-  margin: 0.5em 0 0;
-  padding: 0;
-  list-style: none;
-
-  li {
-    display: grid;
-    grid-template-columns: 3.25em 1fr;
-    gap: 0.5em;
-    margin: 0;
-    padding: 0.55em 0;
-    line-height: 1.5;
-    border-bottom: 1px solid $border-color;
-
-    &:last-child {
-      border-bottom: 0;
-    }
-  }
-}
-
-.home-highlights__year {
-  font-weight: bold;
-  color: $research-accent;
 }

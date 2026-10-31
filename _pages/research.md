@@ -26,7 +26,7 @@ images/thumb_*.jpg, 3:2 landscape, 1200x800 px recommended (600x400 at least), a
     <img src="/images/thumb_DBNN.jpg" alt="" width="600" height="400" loading="lazy">
     <span class="research-overview__body">
       <span class="research-overview__num">01</span>
-      <span class="research-overview__title">Reconstructing the Meridional Overturning Circulation Using Machine Learning</span>
+      <span class="research-overview__title">MOC reconstruction</span>
       <span class="research-overview__summary">NeurMOC uses deep learning to reconstruct Atlantic and Southern Ocean overturning changes since 2003 from satellite observations.</span>
     </span>
   </a>
@@ -34,7 +34,7 @@ images/thumb_*.jpg, 3:2 landscape, 1200x800 px recommended (600x400 at least), a
     <img src="/images/thumb_ww21.jpg" alt="" width="600" height="400" loading="lazy">
     <span class="research-overview__body">
       <span class="research-overview__num">02</span>
-      <span class="research-overview__title">Mesoscale Eddy Parameterization over Sloping Topography</span>
+      <span class="research-overview__title">Eddy parameterization</span>
       <span class="research-overview__summary">Steep slopes make eddies anisotropic and inefficient at cross-slope stirring. We represent such topographic effects in physics-based and machine-learning-augmented parameterizations.</span>
     </span>
   </a>
@@ -42,7 +42,7 @@ images/thumb_*.jpg, 3:2 landscape, 1200x800 px recommended (600x400 at least), a
     <img src="/images/thumb_Neptune_PV.jpg" alt="" width="600" height="400" loading="lazy">
     <span class="research-overview__body">
       <span class="research-overview__num">03</span>
-      <span class="research-overview__title">Formation of Abyssal Prograde Flows via Eddy Potential Vorticity Mixing</span>
+      <span class="research-overview__title">Abyssal prograde flows</span>
       <span class="research-overview__summary">Eddy homogenization of topographic potential vorticity gradients drives abyssal prograde flows, which strengthen with slope before weakening over steep slopes.</span>
     </span>
   </a>
@@ -50,7 +50,7 @@ images/thumb_*.jpg, 3:2 landscape, 1200x800 px recommended (600x400 at least), a
     <img src="/images/thumb_Neptune_Upwelling.jpg" alt="" width="600" height="400" loading="lazy">
     <span class="research-overview__body">
       <span class="research-overview__num">04</span>
-      <span class="research-overview__title">Mesoscale Eddy-Mediated Diapycnal Upwelling in the Ocean’s Sloping Bottom Boundary</span>
+      <span class="research-overview__title">Eddy-mediated upwelling</span>
       <span class="research-overview__summary">Ongoing work on how mesoscale eddies and prograde flows influence diapycnal upwelling of dense water along sloping ocean boundaries.</span>
     </span>
   </a>
@@ -62,14 +62,14 @@ images/thumb_*.jpg, 3:2 landscape, 1200x800 px recommended (600x400 at least), a
     <h2>Reconstructing the Meridional Overturning Circulation Using Machine Learning</h2>
     <p class="research-project__lede">The meridional overturning circulation (MOC) regulates Earth’s climate by redistributing heat and salt, yet direct observing arrays cover only a few Atlantic latitudes. I address this observational gap by linking the MOC to satellite observations through deep learning.</p>
   </header>
-  <div class="research-row">
+  <p>In a model-based demonstration, we showed that a dual-branch neural network can reconstruct the strength and vertical structure of MOC variability from satellite-measurable quantities such as ocean bottom pressure, sea surface height, and wind (<a href="https://doi.org/10.1029/2024MS004915">Wei et al. 2025</a>). Building on this demonstration, I developed NeurMOC, a reconstruction of MOC changes across the Atlantic and Southern Oceans since 2003 based on satellite observations.</p>
+  <div class="research-row research-row--feature">
     <div class="research-row__text">
-      <p>In a model-based demonstration, we showed that a dual-branch neural network can reconstruct the strength and vertical structure of MOC variability from satellite-measurable quantities such as ocean bottom pressure, sea surface height, and wind (<a href="https://doi.org/10.1029/2024MS004915">Wei et al. 2025</a>). Building on this demonstration, I developed NeurMOC, a reconstruction of MOC changes across the Atlantic and Southern Oceans since 2003 based on satellite observations.</p>
-      <p>Using NeurMOC, we find evidence of Atlantic MOC declines, alongside strengthening of the Southern Ocean’s mid-depth overturning cell and weakening of its abyssal cell (<a href="https://doi.org/10.22541/essoar.15004679/v1">Wei et al. 2026, preprint</a>). We validated the approach through cross-model testing and comparison with in-situ observations at 26.5°N, and quantified reconstruction uncertainty. Attribution analysis shows that the network uses physically plausible local and remote signals consistent with geostrophic constraints.</p>
       <a class="research-cta" href="/neurmoc/">
-        <img src="/neurmoc/og_image.png" alt="" width="1200" height="630" loading="lazy">
-        <span>Explore the interactive NeurMOC viewer: MOC changes in latitude–density space, reconstructed from satellite observations since 2003.</span>
+        <img src="/images/neurmoc_card.png" alt="" width="1137" height="392" loading="lazy">
+        <span>Explore the interactive <strong>NeurMOC</strong> viewer: MOC changes in latitude–density space, reconstructed from satellite observations since 2003.</span>
       </a>
+      <p>Using NeurMOC, we find evidence of Atlantic MOC declines, alongside strengthening of the Southern Ocean’s mid-depth overturning cell and weakening of its abyssal cell (<a href="https://doi.org/10.22541/essoar.15004679/v1">Wei et al. 2026, preprint</a>). We validated the approach through cross-model testing and comparison with in-situ observations at 26.5°N, and quantified reconstruction uncertainty. Attribution analysis shows that the network uses physically plausible local and remote signals consistent with geostrophic constraints.</p>
     </div>
     <figure class="research-figure">
       <a href="/images/DBNN.png"><img src="/images/DBNN.png" alt="Dual-branch neural network architecture for MOC reconstruction" width="1736" height="1863" loading="lazy"></a>
@@ -80,7 +80,7 @@ images/thumb_*.jpg, 3:2 landscape, 1200x800 px recommended (600x400 at least), a
     <h3>Key papers</h3>
     <ul>
       <li><b>Wei, H.</b>, Stewart, A. L., Medvedev, A., Srinivasan, K., Solodoch, A., Manucharyan, G., &amp; Hogg, A. (2026). <a href="https://doi.org/10.22541/essoar.15004679/v1">Deep learning unlocks satellite-based monitoring of the global ocean overturning circulation</a>. Preprint, ESS Open Archive.</li>
-      <li>Medvedev, A., <b>Wei, H.</b>, Armour, K., Srinivasan, K., Solodoch, A., Stewart, A. L., &amp; Manucharyan, G. (2026). <a href="https://doi.org/10.22541/essoar.15002298/v1">Basin-wide sea-surface observations reveal post-2000 emergence of AMOC weakening</a>. Preprint, ESS Open Archive.</li>
+      <li>Medvedev, A., <b>Wei, H.</b>, Armour, K. C., Srinivasan, K., Solodoch, A., Stewart, A. L., &amp; Manucharyan, G. (2026). <a href="https://doi.org/10.22541/essoar.15002298/v1">Basin-wide sea-surface observations reveal post-2000 emergence of AMOC weakening</a>. Preprint, ESS Open Archive.</li>
       <li><b>Wei, H.</b>, Srinivasan, K., Stewart, A. L., Solodoch, A., Manucharyan, G., &amp; Hogg, A. (2025). <a href="https://doi.org/10.1029/2024MS004915">Full-depth reconstruction of long-term meridional overturning circulation variability from satellite-measurable quantities via machine learning</a>. Journal of Advances in Modeling Earth Systems.</li>
     </ul>
   </div>
@@ -146,16 +146,17 @@ images/thumb_*.jpg, 3:2 landscape, 1200x800 px recommended (600x400 at least), a
     <h2>Formation of Abyssal Prograde Flows via Eddy Potential Vorticity Mixing</h2>
     <p class="research-project__lede">Abyssal currents over sloping seafloors preferentially flow in the “prograde” direction, with shallower water to the right in the Northern Hemisphere (left in the Southern). We show that mesoscale eddy homogenization of topographic potential vorticity (PV) gradients generates momentum fluxes that drive these currents.</p>
   </header>
-  <div class="research-row">
-    <div class="research-row__text">
-      <p>We used idealized simulations of eddying flow over a ridge (panel a). Over the ridge flank, eddy momentum fluxes (black arrows in panel b) drive the prograde flow (red shading).</p>
-      <p>The strength of the prograde flow increases with bottom slope before declining over steep slopes, where rapid topographic-wave propagation suppresses eddy stirring, reducing PV mixing despite the larger background PV gradients. From the leading-order momentum balance, we derived a scaling that links current strength to eddy energy, bottom slope, stratification, and friction (<a href="https://doi.org/10.1175/JPO-D-25-0196.1">Wei et al. 2026</a>).</p>
-    </div>
-    <figure class="research-figure">
-      <a href="/images/Neptune_model.png"><img src="/images/Neptune_model.png" alt="Idealized simulation of abyssal prograde flows" width="2698" height="2059" loading="lazy"></a>
-      <figcaption>Idealized eddying simulation over a ridge (a). In the cross-ridge section (b), red shading marks prograde flow and black arrows mark eddy momentum fluxes.</figcaption>
-    </figure>
-  </div>
+  <figure class="research-figure">
+    <a href="/images/Neptune_PVmixing.png"><img src="/images/Neptune_PVmixing.png" alt="Schematic of an abyssal isopycnal over a ridge. Left: eddies deform the isopycnal; potential vorticity (PV) is larger over the crest and smaller on the flanks. After down-gradient PV fluxes (arrow), the isopycnal is tilted like the seafloor, the PV gradient is reduced, and prograde flow runs along both flanks (Northern Hemisphere, f &gt; 0)." width="3285" height="1163" loading="lazy"></a>
+    <figcaption>How eddy PV mixing drives prograde flow, drawn for the Northern Hemisphere (adapted from <a href="https://doi.org/10.1175/JPO-D-11-048.1">Marshall et al. 2012</a>). The sloping seafloor sets up a strong PV gradient in the abyssal layer. Down-gradient eddy PV fluxes tilt the isopycnal (solid line) in the same direction as the seafloor, and by thermal wind balance the tilt implies a vertical shear that favors prograde flow.</figcaption>
+  </figure>
+  <p>We used idealized simulations of eddying flow over a ridge. Over the ridge flank, eddy momentum fluxes drive the prograde flow.</p>
+  <p>The strength of the prograde flow increases with bottom slope before declining over steep slopes, where rapid topographic-wave propagation suppresses eddy stirring, reducing PV mixing despite the larger background PV gradients. From the leading-order momentum balance, we derived a scaling that links current strength to eddy energy, bottom slope, stratification, and friction (<a href="https://doi.org/10.1175/JPO-D-25-0196.1">Wei et al. 2026</a>).</p>
+  <p>In a realistic Pacific simulation (below), the time-mean flow in the bottom boundary layer is prograde over most of the deep seafloor.</p>
+  <figure class="research-figure research-figure--measure">
+    <a href="/images/Neptune_Pacific.jpg"><img src="/images/Neptune_Pacific.jpg" alt="Prograde bottom flow in a 6-km Pacific simulation: surface vorticity above the seafloor, the time-mean prograde velocity in the bottom boundary layer, and its distribution" width="2000" height="1534" loading="lazy"></a>
+    <figcaption>Realistic 6-km Pacific simulation: surface vorticity on 1 January 2021 (a) above the time-mean (2019–2021) prograde velocity in the bottom boundary layer (b). Over seafloor deeper than 2,000 m, the flow is prograde across 84% of the area (c).</figcaption>
+  </figure>
   <div class="research-papers">
     <h3>Key paper</h3>
     <ul>
@@ -174,11 +175,7 @@ images/thumb_*.jpg, 3:2 landscape, 1200x800 px recommended (600x400 at least), a
     <a href="/images/Neptune_Paradigms.png"><img src="/images/Neptune_Paradigms.png" alt="Schematic. (a) Mixing-dominated paradigm: at the insulating seafloor, water parcels can only gain buoyancy from above, so they upwell along the boundary; further aloft, diapycnal downwelling occurs due to bottom-intensified mixing. (b) Eddy-mediated paradigm: eddies shape diapycnal upwelling by driving prograde flows and downhill advection, inducing eddy buoyancy fluxes, and modulating near-bottom stratification." width="3573" height="1031" loading="lazy"></a>
     <figcaption>Two paradigms of near-bottom diapycnal upwelling over a sloping seafloor: mixing-dominated (a) and eddy-mediated (b).</figcaption>
   </figure>
-  <p>We examine these paradigms in an idealized eddying ridge simulation and a realistic Pacific simulation. The figure below maps the time-mean prograde flow in the Pacific bottom boundary layer and compares near-bottom buoyancy budgets, split into mixing, mean advection, and eddy advection, between the Pacific and the idealized ridge.</p>
-  <figure class="research-figure">
-    <a href="/images/Neptune_Pacific.jpg"><img src="/images/Neptune_Pacific.jpg" alt="Prograde bottom flow and the near-bottom buoyancy budget in a 6-km Pacific simulation, beside the idealized ridge" width="2400" height="1367" loading="lazy"></a>
-    <figcaption>Realistic Pacific simulation: surface vorticity (a), time-mean bottom-boundary-layer prograde flow (b, c), and near-bottom buoyancy budgets compared with the idealized ridge (d, e).</figcaption>
-  </figure>
+  <p>We examine these paradigms in an idealized eddying ridge simulation and a realistic Pacific simulation, comparing their near-bottom buoyancy budgets, split into mixing, mean advection, and eddy advection.</p>
 </section>
 
 <script>

@@ -44,16 +44,6 @@ Since 2024, I have been a Postdoctoral Researcher in the Department of Atmospher
   </a>
 </nav>
 
-## Highlights
-
-<ul class="home-highlights">
-  <li><span class="home-highlights__year">2026</span><span>Preprint: <a href="https://doi.org/10.22541/essoar.15004679/v1">Deep learning unlocks satellite-based monitoring of the global ocean overturning circulation</a>. Explore NeurMOC in the <a href="/neurmoc/">interactive viewer</a>.</span></li>
-  <li><span class="home-highlights__year">2026</span><span>Co-authored preprint (Medvedev et al.): <a href="https://doi.org/10.22541/essoar.15002298/v1">Basin-wide sea-surface observations reveal post-2000 emergence of AMOC weakening</a>.</span></li>
-  <li><span class="home-highlights__year">2026</span><span>Published in the <em>Journal of Physical Oceanography</em>: <a href="https://doi.org/10.1175/JPO-D-25-0196.1">Formation of abyssal downwelling-favorable prograde flows via mesoscale eddy potential vorticity mixing</a>.</span></li>
-  <li><span class="home-highlights__year">2026</span><span>Received UCLA’s Richard P. and Linda S. Turco Exceptional Research Publication Award.</span></li>
-  <li><span class="home-highlights__year">2025</span><span>Published in the <em>Journal of Advances in Modeling Earth Systems</em>: <a href="https://doi.org/10.1029/2024MS004915">Full-depth reconstruction of long-term meridional overturning circulation variability from satellite-measurable quantities via machine learning</a>.</span></li>
-</ul>
-
 ## Contact
 
 Feel free to reach out for discussion or collaboration!  

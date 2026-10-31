@@ -1,4 +1,5 @@
 ---
+published: false
 layout: archive
 title: "Teaching"
 permalink: /teaching/

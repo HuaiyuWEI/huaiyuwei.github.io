@@ -1,4 +1,5 @@
 ---
+published: false
 title: "Paper Title Number 3"
 collection: publications
 permalink: /publication/2015-10-01-paper-title-number-3

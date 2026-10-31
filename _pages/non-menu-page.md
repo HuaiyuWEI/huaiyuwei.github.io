@@ -1,4 +1,5 @@
 ---
+published: false
 permalink: /non-menu-page/
 title: "Page not in menu"
 author_profile: true

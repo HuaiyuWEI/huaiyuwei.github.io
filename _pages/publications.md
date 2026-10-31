@@ -14,7 +14,7 @@ author_profile: true
 
 - <ins>***Wei, H.***</ins>, Stewart, A. L., Medvedev, A.,  Srinivasan, K., Solodoch, A., Manucharyan, G., Hogg, A. Deep learning unlocks satellite-based monitoring of the global ocean overturning circulation. _ESS Open Archive_. [(DOI)](https://doi.org/10.22541/essoar.15004679/v1)
 
-- Medvedev, A., <ins>***Wei, H.***</ins>, Armour, K. C., Srinivasan, K., Solodoch, A., Stewart, A. Basin-wide sea-surface observations reveal post-2000 emergence of AMOC weakening. _ESS Open Archive_. [(DOI)](https://doi.org/10.22541/essoar.15002298/v1)
+- Medvedev, A., <ins>***Wei, H.***</ins>, Armour, K. C., Srinivasan, K., Solodoch, A., Stewart, A. L., Manucharyan, G. Basin-wide sea-surface observations reveal post-2000 emergence of AMOC weakening. _ESS Open Archive_. [(DOI)](https://doi.org/10.22541/essoar.15002298/v1)
 
 ---
 ## 📚 Peer-Reviewed Publications

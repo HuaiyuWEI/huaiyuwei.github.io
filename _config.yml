@@ -108,7 +108,7 @@ staticman:
       options:
         format           : "iso8601" # "iso8601" (default), "timestamp-seconds", "timestamp-milliseconds"
 atom_feed:
-  hide                   : false     # change to true to hide the RSS feed in the footer
+  hide                   : true      # no feed link in the footer: the theme's sample posts are unpublished
   path                   : # blank (default) uses feed.xml
 
 
@@ -171,6 +171,27 @@ exclude:
   - package.json
   - tmp
   - vendor
+  # the theme's sample files and scripts, kept in the repo but not published
+  - files/paper1.pdf
+  - files/paper2.pdf
+  - files/paper3.pdf
+  - files/slides1.pdf
+  - files/slides2.pdf
+  - files/slides3.pdf
+  - markdown_generator
+  - talkmap
+  - talkmap.ipynb
+  - talkmap.py
+  # superseded CVs, kept in the repo but not published (the menu links the current one)
+  - files/CV_HuaiyuWei_July2024.pdf
+  - files/CV_HuaiyuWei_Dec2024.pdf
+  - files/CV_HuaiyuWei_2025May.pdf
+  - files/CV_HuaiyuWei_2025June.pdf
+  - files/CV_HuaiyuWei_2025June12.pdf
+  - files/CV_HuaiyuWei_2025Dec.pdf
+  - files/CV_HuaiyuWei_2026Feb.pdf
+  - files/CV_HuaiyuWei_May2026.pdf
+  - files/CV_HuaiyuWei_June2026.pdf
 keep_files:
   - .git
   - .svn
@@ -198,19 +219,20 @@ kramdown:
   enable_coderay: false
 
 
-# Collections
+# Collections (output off: they hold only the theme's unpublished samples, and the
+# Sitemap page would otherwise print an empty heading for each)
 collections:
   teaching:
-    output: true
+    output: false
     permalink: /:collection/:path/
   publications:
-    output: true
+    output: false
     permalink: /:collection/:path/
   portfolio:
-    output: true
+    output: false
     permalink: /:collection/:path/
   talks:
-    output: true
+    output: false
     permalink: /:collection/:path/
 
 
