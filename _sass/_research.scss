@@ -1,0 +1,219 @@
+/* ==========================================================================
+   RESEARCH PAGE
+   ========================================================================== */
+
+$research-card-border       : mix(#fff, $gray, 80%);
+
+/* Section headings on archive-layout pages (Research, Publications),
+   underlined like the headings in .page__content (Homepage); list entry
+   titles (sitemap, talks) stay as they are */
+.archive h2:not(.archive__item-title) {
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid $border-color;
+}
+
+/*
+   Overview cards linking to each project
+   ========================================================================== */
+
+.research-overview {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75em;
+  margin: 1.5em 0 0.5em;
+
+  @include breakpoint($medium) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    color: $text-color;
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid $research-card-border;
+    border-radius: $border-radius;
+    overflow: hidden;
+
+    &:hover {
+      color: $link-color-hover;
+      text-decoration: none;
+      border-color: $link-color;
+      box-shadow: 0 2px 8px rgba(#000, 0.1);
+
+      img {
+        box-shadow: none;
+      }
+    }
+  }
+
+  img {
+    flex: 0 0 auto;
+    width: 7.5em;
+    height: 5.5em;
+    object-fit: cover;
+  }
+
+  span {
+    padding: 0.5em 0.875em;
+    font-size: 0.875em;
+    font-weight: bold;
+    line-height: 1.35;
+  }
+}
+
+/*
+   Project sections
+   ========================================================================== */
+
+.research-project {
+  margin-top: 2.25em;
+  padding-top: 0.75em;
+  scroll-margin-top: $masthead-height;
+
+  h2 {
+    margin-top: 0;
+  }
+
+  > p {
+    max-width: 46em;
+  }
+
+  p {
+    margin-bottom: 1em;
+  }
+
+  /* NeurMOC viewer link card */
+  .research-cta {
+    display: block;
+    margin-top: 1.25em;
+    color: $text-color;
+    text-decoration: none;
+    border: 1px solid $research-card-border;
+    border-radius: $border-radius;
+    overflow: hidden;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    span {
+      display: block;
+      padding: 0.75em 1em;
+      font-size: 0.875em;
+      line-height: 1.5;
+
+      &::after {
+        content: "\00a0\2192";
+        color: $link-color;
+      }
+    }
+
+    &:hover {
+      color: $link-color-hover;
+      text-decoration: none;
+      border-color: $link-color;
+      box-shadow: 0 2px 8px rgba(#000, 0.1);
+
+      img {
+        box-shadow: none;
+      }
+    }
+  }
+}
+
+/* Text beside a figure; stacks on small screens */
+.research-row {
+  margin: 1.5em 0;
+
+  @include breakpoint($medium) {
+    display: grid;
+    grid-template-columns: 5fr 6fr;
+    gap: 2em;
+    align-items: center;
+  }
+
+  /* figure on the left */
+  &--flip {
+    @include breakpoint($medium) {
+      grid-template-columns: 6fr 5fr;
+
+      .research-row__text {
+        order: 2;
+      }
+    }
+  }
+
+  .research-figure {
+    margin: 1em 0 0;
+
+    @include breakpoint($medium) {
+      margin: 0;
+    }
+  }
+}
+
+.research-row__text > :last-child {
+  margin-bottom: 0;
+}
+
+/* Two videos side by side */
+.research-pair {
+  margin: 1.5em 0;
+
+  @include breakpoint($small) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5em;
+  }
+
+  .research-figure {
+    margin: 0 0 1em;
+
+    @include breakpoint($small) {
+      margin: 0;
+    }
+  }
+
+  figcaption {
+    text-align: center;
+  }
+}
+
+/*
+   Figures and videos
+   ========================================================================== */
+
+.research-figure {
+  display: block;
+  margin: 1.5em 0;
+
+  img,
+  video {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    border-radius: $border-radius;
+  }
+
+  video {
+    background: #000;
+  }
+
+  /* images open full size in the lightbox */
+  > a {
+    cursor: zoom-in;
+  }
+
+  figcaption {
+    margin: 0.6em 0 0;
+    color: mix(#fff, $text-color, 20%);
+    font-family: $global-font-family;
+    font-size: 0.875em;
+    line-height: 1.5;
+  }
+}

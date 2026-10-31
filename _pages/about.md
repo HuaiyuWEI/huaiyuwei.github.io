@@ -15,10 +15,10 @@ I am a Postdoctoral Researcher in the Department of Atmospheric and Oceanic Scie
 
 You can find more information on the [Research](/research/) page.
 
-- [Reconstructing the meridional overturning circulation using Machine Learning](/research/#reconstructing-the-meridional-overturning-circulation-using-machine-learning)
-- [Mesoscale eddy parameterization over sloping topography](/research/#mesoscale-eddy-parameterization-over-sloping-topography)
-- [Formation of abyssal prograde flows via eddy potential vorticity mixing](/research/#formation-of-abyssal-prograde-flows-via-eddy-potential-vorticity-mixing)
-- [Mesoscale eddy-mediated diapycnal upwelling in the ocean’s sloping bottom boundary](/research/#influence-of-abyssal-prograde-flows-on-slope-adjacent-upwelling)
+- [Reconstructing the meridional overturning circulation using Machine Learning](/research/#moc-reconstruction)
+- [Mesoscale eddy parameterization over sloping topography](/research/#eddy-parameterization)
+- [Formation of abyssal prograde flows via eddy potential vorticity mixing](/research/#abyssal-prograde-flows)
+- [Mesoscale eddy-mediated diapycnal upwelling in the ocean’s sloping bottom boundary](/research/#bottom-boundary-upwelling)
 
 ---
 
