@@ -40,13 +40,6 @@ author_profile: true
       <a href="/images/DBNN.png"><img src="/images/DBNN.png" alt="Dual-branch neural network architecture for MOC reconstruction" width="1736" height="1863" loading="lazy"></a>
     </figure>
   </div>
-  <figure class="research-figure">
-    <video controls preload="metadata" playsinline width="2956" height="1998">
-      <source src="/videos/Truth_Vs_Reconstruction.mp4" type="video/mp4">
-      Your browser does not support the video tag.
-    </video>
-    <figcaption>Animation comparing diagnosed vs. reconstructed MOC on decadal and longer timescales in the ACCESS-ESM1.5 preindustrial simulation.</figcaption>
-  </figure>
 </section>
 
 <section class="research-project" id="eddy-parameterization">
@@ -102,6 +95,9 @@ author_profile: true
   <h2>♆ Mesoscale Eddy-Mediated Diapycnal Upwelling in the Ocean’s Sloping Bottom Boundary</h2>
   <p>The modern view of the abyssal overturning circulation return pathway suggests that dense water rises primarily through diapycnal upwelling within thin bottom boundary layers along sloping ocean boundaries. We are investigating how mesoscale eddies and prograde flows influence this slope-adjacent upwelling paradigm.</p>
   <figure class="research-figure">
-    <a href="/images/Neptune_Upwelling.png"><img src="/images/Neptune_Upwelling.png" alt="Schematic of slope-adjacent upwelling in the abyssal overturning circulation" width="3819" height="992" loading="lazy"></a>
+    <a href="/images/Neptune_Paradigms.png"><img src="/images/Neptune_Paradigms.png" alt="Two paradigms of near-bottom diapycnal upwelling over a sloping seafloor: mixing-dominated and eddy-mediated" width="3573" height="1031" loading="lazy"></a>
+  </figure>
+  <figure class="research-figure">
+    <a href="/images/Neptune_Pacific.jpg"><img src="/images/Neptune_Pacific.jpg" alt="Prograde bottom flow and the near-bottom buoyancy budget in a 6-km Pacific simulation, beside the idealized ridge" width="2400" height="1367" loading="lazy"></a>
   </figure>
 </section>
