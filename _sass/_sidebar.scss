@@ -13,11 +13,27 @@
   @include clearfix();
   margin-bottom: 1em;
 
-  @media screen and (min-width: $sidebar-screen-min-width) {
-    height: 100vh;
-    overflow-y: auto;               // Add scrollbar if the sidebar is too long
-    position: fixed;
-    padding-top: $masthead-height;
+  /* Sticks just below the masthead and scrolls by itself when taller than
+     the window. Unlike a fixed sidebar it stays in the page flow, so at the
+     end of a page it moves up with the content and the footer never covers it */
+  @include breakpoint($large) {
+    @media screen {                 // not in print: a page-tall scroll box cannot split across pages
+      position: -webkit-sticky;
+      position: sticky;
+      top: calc(#{$masthead-height} + 2em);
+      max-height: calc(100vh - #{$masthead-height} - 2em);
+      overflow-x: hidden;
+      overflow-y: auto;             // Add scrollbar if the sidebar is too long
+
+      /* Hang into the blank band above the footer (body padding-bottom 9em
+         plus the footer's 3em margin, which main.js sets as the body's
+         inline margin-bottom) rather than lengthen short pages; 1em stays
+         clear of the footer. The band exists only once main.js has run, so
+         the hang waits for that inline margin */
+      body[style*="margin-bottom"] & {
+        margin-bottom: -11em;
+      }
+    }
   }
 
   @include breakpoint($large) {
@@ -130,6 +146,7 @@
 
 .sidebar .author__desktop {
   display: none;
+  white-space: normal;              // wrap, not clip, when a scrollbar narrows the sidebar
   @media screen and (min-width: 1024px) {
     display: block;
   }
@@ -255,6 +272,54 @@
 
     &:hover {
       text-decoration: underline;
+    }
+  }
+}
+
+/* Short laptop screens. Nested in breakpoint($large) so the tiers switch
+   with the layout, which is in em; the heights stay in px like the text */
+@include breakpoint($large) {
+  /* A smaller photo and tighter links and rows keep the whole sidebar,
+     including a page's "On this page" list, in view. Windows 1024-1159px
+     wide need this up to 840px tall: the narrower sidebar wraps more lines */
+  @media screen and (max-height: 780px),
+         screen and (min-width: 1024px) and (max-width: 1159px) and (max-height: 840px) {
+    .sidebar {
+      margin-top: -1em;
+      top: calc(#{$masthead-height} + 1em);
+      max-height: calc(100vh - #{$masthead-height} - 1em);
+    }
+
+    .sidebar .author__avatar img {
+      max-width: 100px;
+    }
+
+    .sidebar .author__urls a {
+      margin-bottom: 0;
+    }
+
+    .sidebar .research-toc a {
+      padding-top: 0.15em;
+      padding-bottom: 0.15em;
+    }
+  }
+
+  /* Shorter still, e.g. a 1080p laptop at 150% scaling (about 1280x600),
+     or below 1280px wide up to 680px tall: an even smaller photo and no
+     gaps between the links. Anything shorter falls back to scrolling the
+     sidebar */
+  @media screen and (max-height: 640px),
+         screen and (max-width: 1279px) and (max-height: 680px) {
+    .sidebar .author__avatar img {
+      max-width: 80px;
+    }
+
+    .sidebar .author__bio {
+      margin-bottom: 10px;
+    }
+
+    .sidebar .author__urls li {
+      margin-bottom: 0;
     }
   }
 }

@@ -6,7 +6,7 @@
 {% endif %}
 {% assign seo_url = seo_url | default: site.github.url %}
 
-{% if page.title %}
+{% if page.title and page.title != site.title %}
   {% assign seo_title = page.title | append: " " | append: site.title_separator | append: " " | append: site.title %}
 {% endif %}
 
@@ -48,7 +48,8 @@
   <meta property="og:url" content="{{ page.url | prepend: seo_url | replace: "/index.html", "/" }}">
 {% endif %}
 
-{% if page.excerpt %}
+{% if seo_description %}
+  <meta name="description" content="{{ seo_description }}">
   <meta property="og:description" content="{{ seo_description }}">
 {% endif %}
 
@@ -87,6 +88,8 @@
   <meta property="og:image" content="{% if page.header.image contains "://" %}{{ page.header.image }}{% else %}{{ page.header.image | prepend: "/images/" | prepend: base_path }}{% endif %}">
 {% elsif page.header.overlay_image %}
   <meta property="og:image" content="{% if page.header.overlay_image contains "://" %}{{ page.header.overlay_image }}{% else %}{{ page.header.overlay_image | prepend: "/images/" | prepend: base_path }}{% endif %}">
+{% elsif site.author.avatar %}
+  <meta property="og:image" content="{{ site.author.avatar | prepend: "/images/" | prepend: base_path }}">
 {% endif %}
 
 {% if page.date %}

@@ -8,10 +8,10 @@
 
 # Basic Site Settings
 locale                   : "en-US"
-title                    : "Homepage"
+title                    : "Huaiyu Wei"
 title_separator          : "-"
 name                     : &name "Huaiyu Wei"
-description              : &description "personal description"
+description              : &description "Huaiyu Wei, a physical oceanographer at UCLA, studies ocean overturning, mesoscale eddies, and abyssal currents with theory, models, and machine learning."
 url                      : https://huaiyuwei.github.io # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : "" # the subpath of your site, e.g. "/blog"
 repository               : "HuaiyuWEI/huaiyuwei.github.io"
@@ -24,9 +24,9 @@ author:
   avatar           : "Photo_HuaiyuWei.jpg"
   name             : "Huaiyu Wei"
   pronouns         : # example: "she/her"  
-  bio              : "Welcome to my website!"
+  bio              : "Postdoctoral researcher in physical oceanography"
   location         : "Los Angeles, California"
-  employer         : "University of California, Los Angeles"
+  employer         : "UCLA"
   uri              : # URL
   email            : "hywei@atmos.ucla.edu" 
 

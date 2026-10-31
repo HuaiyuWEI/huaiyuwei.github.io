@@ -1,34 +1,54 @@
 /* ==========================================================================
-   RESEARCH PAGE
+   RESEARCH PAGE (and the home-page lists that share its look)
    ========================================================================== */
 
 $research-card-border       : mix(#fff, $gray, 80%);
+$research-accent            : mix(#000, $info-color, 40%);   // dark teal, 6:1 on white
+$research-muted             : mix(#fff, $text-color, 15%);   // secondary text, 5:1 on white
+$research-wide              : 1200px;   // four overview cards in a row from here up
 
-/* Section headings on archive-layout pages (Research, Publications),
+/* Top-level section headings on archive-layout pages (Publications),
    underlined like the headings in .page__content (Homepage); list entry
-   titles (sitemap, talks) stay as they are */
-.archive h2:not(.archive__item-title) {
+   titles (sitemap, talks) and the research projects' own headings stay
+   as they are */
+.archive > h2:not(.archive__item-title) {
   padding-bottom: 0.5em;
   border-bottom: 1px solid $border-color;
 }
 
 /*
-   Overview cards linking to each project
+   Opening paragraph
+   ========================================================================== */
+
+.research-intro {
+  max-width: 44em;
+  margin: 0 0 1.5em;
+  font-size: 1.1em;
+  line-height: 1.6;
+}
+
+/*
+   Overview cards linking to each project: image on the left, or on top when
+   four fit in a row; .research-overview--text drops the images and shows
+   the one-line summaries instead
    ========================================================================== */
 
 .research-overview {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75em;
-  margin: 1.5em 0 0.5em;
+  margin: 0 0 1em;
 
   @include breakpoint($medium) {
     grid-template-columns: 1fr 1fr;
   }
 
-  a {
+  @include breakpoint($research-wide) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  > a {
     display: flex;
-    align-items: center;
     color: $text-color;
     text-decoration: none;
     background: #fff;
@@ -36,8 +56,12 @@ $research-card-border       : mix(#fff, $gray, 80%);
     border-radius: $border-radius;
     overflow: hidden;
 
+    @include breakpoint($research-wide) {
+      flex-direction: column;
+    }
+
     &:hover {
-      color: $link-color-hover;
+      color: $text-color;
       text-decoration: none;
       border-color: $link-color;
       box-shadow: 0 2px 8px rgba(#000, 0.1);
@@ -45,23 +69,158 @@ $research-card-border       : mix(#fff, $gray, 80%);
       img {
         box-shadow: none;
       }
+
+      .research-overview__title {
+        color: $research-accent;
+      }
+    }
+
+    &:focus {
+      outline: 2px solid $research-accent;
+      outline-offset: 2px;
+    }
+
+    &:focus:not(:focus-visible) {
+      outline: 0;
     }
   }
 
-  /* 3:2 previews; fill the card height if the title runs longer */
+  /* 3:2 images, shown whole; extra card height becomes white space above */
   img {
-    flex: 0 0 42%;
+    flex: 0 0 40%;
     align-self: stretch;
-    width: 42%;
+    width: 40%;
     height: auto;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: 50% 100%;
+    border-right: 1px solid $research-card-border;
+
+    @include breakpoint($research-wide) {
+      flex: none;
+      align-self: auto;
+      width: 100%;
+      border-right: 0;
+      border-bottom: 1px solid $research-card-border;
+    }
+  }
+}
+
+.research-overview__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.7em 0.9em 0.8em;
+
+  @include breakpoint($research-wide) {
+    justify-content: flex-start;
+  }
+}
+
+.research-overview__num {
+  margin-bottom: 0.3em;
+  font-size: $type-size-7;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  color: $research-accent;
+}
+
+.research-overview__title {
+  font-size: 0.8em;
+  font-weight: bold;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.research-overview__summary {
+  display: none;
+  margin-top: 0.5em;
+  font-size: $type-size-6;
+  line-height: 1.5;
+  color: $research-muted;
+}
+
+.research-overview--text {
+  > a {
+    border-top: 3px solid $research-accent;
   }
 
-  span {
-    padding: 0.5em 0.875em;
-    font-size: 0.875em;
+  img {
+    display: none;
+  }
+
+  .research-overview__body {
+    justify-content: flex-start;
+    padding-top: 0.85em;
+  }
+
+  .research-overview__summary {
+    display: block;
+  }
+}
+
+/*
+   "On this page" list in the sidebar (desktop only)
+   ========================================================================== */
+
+.research-toc {
+  display: none;
+
+  @include breakpoint($large) {
+    display: block;
+    margin-top: 1em;
+    padding-top: 0.75em;
+    border-top: 1px solid $border-color;
+  }
+
+  .research-toc__title {
+    margin: 0 0 0.4em;
+    font-size: $type-size-7;
     font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $research-muted;
+  }
+
+  a {
+    display: flex;
+    padding: 0.3em;
+    border-left: 2px solid transparent;
+    font-size: $type-size-6;
     line-height: 1.35;
+    color: $text-color;
+    text-decoration: none;
+
+    span {
+      flex: 0 0 1.7em;
+      color: $research-muted;
+      font-weight: bold;
+    }
+
+    /* tighter rows on short screens: see the end of _sidebar.scss */
+
+    &:hover,
+    &.is-active {
+      color: $research-accent;
+
+      span {
+        color: $research-accent;
+      }
+    }
+
+    /* the current section is marked by a bar as well as by colour */
+    &.is-active {
+      border-left-color: $research-accent;
+    }
+
+    /* inset, since the scrolling sidebar would clip a ring drawn outside */
+    &:focus {
+      outline: 2px solid $research-accent;
+      outline-offset: -2px;
+    }
+
+    &:focus:not(:focus-visible) {
+      outline: 0;
+    }
   }
 }
 
@@ -70,20 +229,41 @@ $research-card-border       : mix(#fff, $gray, 80%);
    ========================================================================== */
 
 .research-project {
-  margin-top: 2.25em;
-  padding-top: 0.75em;
+  margin-top: 3em;
+  padding-top: 2em;
+  border-top: 1px solid $border-color;
   scroll-margin-top: $masthead-height;
 
   h2 {
-    margin-top: 0;
+    margin: 0.2em 0 0;
+    padding: 0;
+    border: 0;
+    font-size: $type-size-4;
+    line-height: 1.3;
+    text-wrap: balance;
+
+    @include breakpoint($medium) {
+      font-size: 1.3em;
+    }
   }
 
   > p {
-    max-width: 46em;
+    max-width: 44em;
   }
 
-  p {
+  > p,
+  .research-row__text p {
     margin-bottom: 1em;
+  }
+
+  /* keyboard focus: a dark ring instead of the theme's light orange */
+  a:focus {
+    outline: 2px solid $research-accent;
+    outline-offset: 2px;
+  }
+
+  a:focus:not(:focus-visible) {
+    outline: 0;
   }
 
   /* NeurMOC viewer link card */
@@ -127,15 +307,40 @@ $research-card-border       : mix(#fff, $gray, 80%);
   }
 }
 
-/* Text beside a figure; stacks on small screens */
+.research-project__header {
+  margin-bottom: 1.5em;
+}
+
+.research-project__kicker {
+  margin: 0;
+  font-size: $type-size-7;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $research-accent;
+
+  span {
+    margin-right: 0.75em;
+  }
+}
+
+.research-project__lede {
+  max-width: 44em;
+  margin: 0.75em 0 0;
+  font-size: 1.08em;
+  line-height: 1.6;
+  color: mix(#000, $text-color, 20%);
+}
+
+/* Text beside a figure, both starting at the top; stacks on small screens */
 .research-row {
   margin: 1.5em 0;
 
   @include breakpoint($medium) {
     display: grid;
     grid-template-columns: 5fr 6fr;
-    gap: 2em;
-    align-items: center;
+    gap: 2.25em;
+    align-items: start;
   }
 
   /* figure on the left */
@@ -156,6 +361,10 @@ $research-card-border       : mix(#fff, $gray, 80%);
       margin: 0;
     }
   }
+}
+
+.research-row__text > :first-child {
+  margin-top: 0;
 }
 
 .research-row__text > :last-child {
@@ -179,9 +388,34 @@ $research-card-border       : mix(#fff, $gray, 80%);
       margin: 0;
     }
   }
+}
 
-  figcaption {
-    text-align: center;
+/* Related publications at the end of a section */
+.research-papers {
+  max-width: 44em;                  // same right edge as the paragraphs
+  margin: 2em 0 0;
+  padding: 0.9em 1.25em 1em;
+  background: $code-background-color;
+  border-left: 3px solid $research-accent;
+  border-radius: 0 $border-radius $border-radius 0;
+
+  h3 {
+    margin: 0 0 0.5em;
+    font-size: $type-size-7;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $research-muted;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1em;
+  }
+
+  li {
+    margin: 0.35em 0 0;
+    font-size: 0.8em;
+    line-height: 1.5;
   }
 }
 
@@ -212,10 +446,49 @@ $research-card-border       : mix(#fff, $gray, 80%);
   }
 
   figcaption {
+    max-width: 55em;                // 44em of body text, like the paragraphs
     margin: 0.6em 0 0;
-    color: mix(#fff, $text-color, 20%);
+    color: $research-muted;
     font-family: $global-font-family;
-    font-size: 0.875em;
+    font-size: 0.8em;
     line-height: 1.5;
   }
+}
+
+/*
+   Home page: the text-only project cards, two per row, and the dated
+   highlights list
+   ========================================================================== */
+
+.home-overview {
+  margin: 1em 0 0.5em;
+
+  @include breakpoint($research-wide) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.home-highlights {
+  margin: 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 3.25em 1fr;
+    gap: 0.5em;
+    margin: 0;
+    padding: 0.55em 0;
+    line-height: 1.5;
+    border-bottom: 1px solid $border-color;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+}
+
+.home-highlights__year {
+  font-weight: bold;
+  color: $research-accent;
 }
