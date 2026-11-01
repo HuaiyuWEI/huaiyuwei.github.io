@@ -20,7 +20,7 @@ Overview cards: research-overview--text on the nav below shows text-only cards w
 images/thumb_*.jpg, 3:2 landscape, 1200x800 px recommended (600x400 at least), always shown whole. Linking a figure to itself opens it full size in a lightbox.
 Every block of a section, figures included, ends at the text measure (two thirds of the column), so text and figures share both edges. -->
 
-<p class="research-intro">My research asks: <em>How do mesoscale eddies interact with seafloor topography, and how is the ocean’s overturning circulation changing?</em> I combine theory, simulations, and machine learning.</p>
+<p class="research-intro">My research asks: <em>How do mesoscale eddies interact with seafloor topography, and how is the ocean’s overturning circulation changing?</em> I approach it with theory, simulations, and machine learning.</p>
 
 <nav class="research-overview research-overview--text" aria-label="Research projects">
   <a href="#moc-reconstruction">
@@ -59,14 +59,14 @@ Every block of a section, figures included, ends at the text measure (two thirds
 
 <section class="research-project" id="moc-reconstruction">
   <header class="research-project__header">
-    <h2><span class="research-project__num">01</span> Reconstructing the Meridional Overturning Circulation Using Machine Learning</h2>
+    <h2><span class="research-project__num">01</span> Reconstructing the meridional overturning circulation using machine learning</h2>
     <p class="research-project__lede">Observing arrays measure the meridional overturning circulation (MOC) at only a few Atlantic latitudes. I developed NeurMOC, a deep-learning reconstruction of MOC changes since 2003 from satellite observations.</p>
   </header>
   <p>We find evidence of Atlantic MOC declines and, in the Southern Ocean, a strengthening mid-depth cell and a weakening abyssal cell (<a href="https://doi.org/10.22541/essoar.15004679/v1">Wei et al. 2026, preprint</a>).</p>
   <p class="research-cta"><a href="/neurmoc/">Explore the interactive <strong>NeurMOC</strong> viewer</a></p>
   <figure class="research-figure">
     <a href="/images/DBNN.png"><img src="/images/DBNN.png" alt="Dual-branch neural network architecture for MOC reconstruction" width="1834" height="1911" loading="lazy"></a>
-    <figcaption>Dual-branch neural network mapping bottom pressure, sea surface height, and zonal wind to the MOC.</figcaption>
+    <figcaption>Dual-branch neural network mapping bottom pressure, sea surface height, and zonal wind to MOC changes.</figcaption>
   </figure>
   <div class="research-papers">
     <h3>Key papers</h3>
@@ -80,8 +80,8 @@ Every block of a section, figures included, ends at the text measure (two thirds
 
 <section class="research-project" id="eddy-parameterization">
   <header class="research-project__header">
-    <h2><span class="research-project__num">02</span> Mesoscale Eddy Parameterization over Sloping Topography</h2>
-    <p class="research-project__lede">Eddies carry heat across continental slopes, for example toward Antarctic ice shelves, but open-ocean parameterizations poorly represent these eddies. My slope-aware schemes, physics-based and machine-learning-augmented, improve temperature structure and baroclinic transport in idealized simulations.</p>
+    <h2><span class="research-project__num">02</span> Mesoscale eddy parameterization over sloping topography</h2>
+    <p class="research-project__lede">Eddies carry heat across continental slopes, for example toward Antarctic ice shelves, but parameterizations designed for the open ocean represent them poorly. I developed slope-aware schemes, both physics-based and machine-learning-augmented, that improve temperature structure and baroclinic transport in idealized simulations.</p>
   </header>
   <figure class="research-figure">
     <a href="/images/ww21.png"><img src="/images/ww21.png" alt="Schematic of eddy diffusion across continental slopes under upwelling-favorable winds" width="2550" height="1815" loading="lazy"></a>
@@ -101,13 +101,13 @@ Every block of a section, figures included, ends at the text measure (two thirds
 
 <section class="research-project" id="abyssal-prograde-flows">
   <header class="research-project__header">
-    <h2><span class="research-project__num">03</span> Formation of Abyssal Prograde Flows via Eddy Potential Vorticity Mixing</h2>
-    <p class="research-project__lede">Abyssal currents over sloping seafloors tend to flow prograde, with shallower water to the right in the Northern Hemisphere. We show how eddy potential vorticity (PV) mixing drives them.</p>
+    <h2><span class="research-project__num">03</span> Formation of abyssal prograde flows via eddy potential vorticity mixing</h2>
+    <p class="research-project__lede">Abyssal currents over sloping seafloors tend to flow prograde, with shallower water to the right in the Northern Hemisphere. We show how eddy potential vorticity mixing drives them.</p>
   </header>
   <p>Prograde flows strengthen with slope, then weaken over steep slopes, where rapid topographic-wave propagation suppresses eddy stirring. We derive a scaling for their strength.</p>
   <figure class="research-figure">
     <a href="/images/Neptune_Pacific.jpg"><img src="/images/Neptune_Pacific.jpg" alt="Prograde bottom flow in a 6-km Pacific simulation: surface vorticity above the seafloor, the time-mean prograde velocity in the bottom boundary layer, and its distribution" width="2000" height="1534" loading="lazy"></a>
-    <figcaption>Pacific simulation (Wei et al., in prep.): surface vorticity (a) above time‑mean bottom‑boundary‑layer flow (b), prograde over 84% of seafloor deeper than 2,000 m (c).</figcaption>
+    <figcaption>Pacific simulation (Wei et al., in prep.): surface vorticity (a) above time‑mean bottom‑boundary‑layer flow (b), prograde over 84% of the seafloor deeper than 2,000 m (c).</figcaption>
   </figure>
   <div class="research-papers">
     <h3>Key paper</h3>
@@ -119,8 +119,8 @@ Every block of a section, figures included, ends at the text measure (two thirds
 
 <section class="research-project" id="bottom-boundary-upwelling">
   <header class="research-project__header">
-    <h2><span class="research-project__num">04</span> Mesoscale Eddy-Mediated Diapycnal Upwelling in the Ocean’s Sloping Bottom Boundary</h2>
-    <p class="research-project__lede">Dense abyssal waters are thought to upwell diapycnally along sloping boundaries, yet prograde currents there induce near-bottom <em>downslope</em> Ekman transport. We are investigating how these eddy-driven currents interact with mixing-driven upwelling.</p>
+    <h2><span class="research-project__num">04</span> Mesoscale eddy-mediated diapycnal upwelling in the ocean’s sloping bottom boundary</h2>
+    <p class="research-project__lede">Dense abyssal waters are thought to upwell diapycnally along sloping boundaries, yet eddy-driven prograde currents there induce near-bottom <em>downslope</em> Ekman transport. We are investigating how these currents interact with mixing-driven upwelling.</p>
   </header>
   <figure class="research-figure">
     <a href="/images/Neptune_Paradigms.png"><img src="/images/Neptune_Paradigms.png" alt="Schematic. (a) Mixing-dominated paradigm: at the insulating seafloor, water parcels can only gain buoyancy from above, so they upwell along the boundary; further aloft, diapycnal downwelling occurs due to bottom-intensified mixing. (b) Eddy-mediated paradigm: eddies shape diapycnal upwelling by driving prograde flows and downhill advection, inducing eddy buoyancy fluxes, and modulating near-bottom stratification." width="3495" height="986" loading="lazy"></a>
