@@ -246,18 +246,25 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
 }
 
 /*
-   Project sections: one column. Every block of a section (header, text,
-   the figure, Key papers) ends at the text measure, two thirds of the
-   column, so text and figures share both edges. The measure is 80% of the
-   column at 600-767 px; below 600 px everything spans the column. One gap
-   between all the blocks of a section
+   Project sections: one column of cards at the text measure, two thirds of
+   the column (80% at 600-767 px, the whole column below 600 px), each with
+   a thin border and a teal top edge like the overview cards. Inside a card
+   every block spans the card, with one gap between blocks
    ========================================================================== */
 
 .research-project {
-  margin-top: 3em;
-  padding-top: 2em;
-  border-top: 1px solid $border-color;
+  margin-top: 1.75em;
+  padding: 1.25em 1em 1.5em;
+  background: #fff;
+  border: 1px solid $research-card-border;
+  border-top: 3px solid $research-accent;
+  border-radius: $border-radius;
+  box-shadow: 0 1px 4px rgba(#000, 0.06);
   scroll-margin-top: $masthead-height;
+
+  @include breakpoint($medium) {
+    padding: 1.5em 1.75em 1.75em;
+  }
 
   /* the section number beside the title, as on the cards; a long title
      wraps beside the number */
@@ -318,8 +325,8 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
   color: mix(#000, $text-color, 20%);
 }
 
-/* The text measure, from 600 px up: the intro, the project cards and the
-   sections, so every block and the rule above each section end on one line */
+/* The text measure, from 600 px up: the intro, the overview cards and the
+   section cards, so all of them end on one line */
 .research-intro,
 .research-overview,
 .research-project {
