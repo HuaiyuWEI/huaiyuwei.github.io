@@ -318,11 +318,9 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
   color: $research-accent;
 }
 
+/* the opening sentences of a section, set like the paragraphs below them */
 .research-project__lede {
   margin: 0.75em 0 0;
-  font-size: 1.08em;
-  line-height: 1.6;
-  color: mix(#000, $text-color, 20%);
 }
 
 /* The text measure, from 600 px up: the intro, the overview cards and the
