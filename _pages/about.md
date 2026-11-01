@@ -32,14 +32,14 @@ Since 2024, I have been a Postdoctoral Researcher in the Department of Atmospher
     <span class="research-overview__body">
       <span class="research-overview__num">03</span>
       <span class="research-overview__title">Eddy parameterization</span>
-      <span class="research-overview__summary">I developed physics-based and machine-learning-augmented eddy parameterizations that work in both the open ocean and over continental shelves and slopes.</span>
+      <span class="research-overview__summary">We developed physics-based and machine-learning-augmented eddy parameterizations that work in both the open ocean and over continental shelves and slopes.</span>
     </span>
   </a>
   <a href="/research/#moc-reconstruction">
     <span class="research-overview__body">
       <span class="research-overview__num">04</span>
       <span class="research-overview__title">MOC reconstruction</span>
-      <span class="research-overview__summary">I developed NeurMOC, a deep-learning reconstruction of Atlantic and Southern Ocean overturning changes since 2003 from satellite observations.</span>
+      <span class="research-overview__summary">We developed NeurMOC, a deep-learning reconstruction of Atlantic and Southern Ocean overturning changes since 2003 from satellite observations.</span>
     </span>
   </a>
 </nav>
