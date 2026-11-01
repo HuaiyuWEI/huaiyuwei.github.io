@@ -5,8 +5,10 @@
 $research-card-border       : mix(#fff, $gray, 80%);
 $research-accent            : mix(#000, $info-color, 40%);   // dark teal, 6:1 on white
 $research-muted             : mix(#fff, $text-color, 15%);   // secondary text, 5:1 on white
-$research-wide              : 1200px;   // four overview cards in a row from here up
-$research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neurmoc/make_og_image.py)
+$research-wide              : 1200px;   // four image cards in a row from here up
+$research-measure           : 66%;      // the text measure, of the column: 647 px from 1280 px up
+$research-measure-small     : 80%;      // the text measure at 600-767 px, where the column is narrower
+$research-gap               : 1.5rem;   // between the blocks of a section: 27 px from 768 px up
 
 /* Top-level section headings on archive-layout pages (Publications),
    underlined like the headings in .page__content (Homepage); list entry
@@ -22,16 +24,17 @@ $research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neu
    ========================================================================== */
 
 .research-intro {
-  max-width: 44em;
-  margin: 0 0 1.5em;
+  margin: 0 0 $research-gap;
   font-size: 1.1em;
   line-height: 1.6;
+  text-wrap: balance;               // even lines (a no-break space keeps "I" with "combine")
 }
 
 /*
    Overview cards linking to each project: image on the left, or on top when
    four fit in a row; .research-overview--text drops the images and shows
-   the one-line summaries instead
+   the one-line summaries instead, two per row, with the number beside the
+   title
    ========================================================================== */
 
 .research-overview {
@@ -122,6 +125,7 @@ $research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neu
   font-size: $type-size-7;
   font-weight: bold;
   letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;   // equal widths, so titles beside the numbers start level
   color: $research-accent;
 }
 
@@ -138,9 +142,14 @@ $research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neu
   font-size: $type-size-6;
   line-height: 1.5;
   color: $research-muted;
+  text-wrap: pretty;                // no lone word on the last line
 }
 
 .research-overview--text {
+  @include breakpoint($research-wide) {
+    grid-template-columns: 1fr 1fr;
+  }
+
   > a {
     border-top: 3px solid $research-accent;
   }
@@ -149,13 +158,24 @@ $research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neu
     display: none;
   }
 
+  /* the number beside the title, as in the "On this page" list */
   .research-overview__body {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-content: start;
+    align-items: baseline;
+    column-gap: 0.5em;
     padding-top: 0.85em;
   }
 
+  .research-overview__num {
+    margin-bottom: 0;
+  }
+
+  /* "span 2" rather than "1 / -1", which Ruby Sass might read as a division */
   .research-overview__summary {
     display: block;
+    grid-column: span 2;
   }
 }
 
@@ -226,7 +246,11 @@ $research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neu
 }
 
 /*
-   Project sections
+   Project sections: one column. Every block of a section (header, text,
+   the figure, Key papers) ends at the text measure, two thirds of the
+   column, so text and figures share both edges. The measure is 80% of the
+   column at 600-767 px; below 600 px everything spans the column. One gap
+   between all the blocks of a section
    ========================================================================== */
 
 .research-project {
@@ -235,8 +259,14 @@ $research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neu
   border-top: 1px solid $border-color;
   scroll-margin-top: $masthead-height;
 
+  /* the section number beside the title, as on the cards; a long title
+     wraps beside the number */
   h2 {
-    margin: 0.2em 0 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.5em;
+    align-items: baseline;
+    margin: 0;
     padding: 0;
     border: 0;
     font-size: $type-size-4;
@@ -248,13 +278,15 @@ $research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neu
     }
   }
 
-  > p {
-    max-width: 44em;
+  > .research-project__header {
+    margin: 0;
   }
 
   > p,
-  .research-row__text p {
-    margin-bottom: 1em;
+  > ul,
+  > .research-figure,
+  > .research-papers {
+    margin: $research-gap 0 0;
   }
 
   /* keyboard focus: a dark ring instead of the theme's light orange */
@@ -267,175 +299,49 @@ $research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neu
     outline: 0;
   }
 
-  /* NeurMOC viewer link card, above the findings in section 01: the two data
-     panels of the viewer's preview on its own background, with an accent
-     rule like the overview cards */
-  .research-cta {
-    display: block;
-    margin: 0 0 1.25em;
-    color: $text-color;
-    text-decoration: none;
-    background: $research-preview-bg;
-    border: 1px solid $research-card-border;
-    border-top: 3px solid $research-accent;
-    border-radius: $border-radius;
-    overflow: hidden;
-
-    img {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
-
-    span {
-      display: block;
-      padding: 0.6em 1em 0.85em;
-      font-size: 0.9375em;
-      line-height: 1.5;
-      text-wrap: pretty;            // no lone "2003. →" on the last line
-
-      &::after {
-        content: "\00a0\2192";
-        color: $link-color;
-      }
-    }
-
-    &:hover {
-      color: $link-color-hover;
-      text-decoration: none;
-      border-color: $link-color;
-      box-shadow: 0 2px 8px rgba(#000, 0.1);
-
-      img {
-        box-shadow: none;
-      }
-    }
+  /* link to the NeurMOC viewer after the findings in section 01 */
+  .research-cta a::after {
+    content: "\00a0\2192";
+    content: unquote('"\\00a0\\2192" / ""');    // the arrow is decorative: no "right arrow" in the link's name
   }
 }
 
-.research-project__header {
-  margin-bottom: 1.5em;
-}
-
-.research-project__kicker {
-  margin: 0;
-  font-size: $type-size-7;
-  font-weight: bold;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.research-project__num {
+  font-variant-numeric: tabular-nums;
   color: $research-accent;
-
-  span {
-    margin-right: 0.75em;
-  }
 }
 
 .research-project__lede {
-  max-width: 44em;
   margin: 0.75em 0 0;
   font-size: 1.08em;
   line-height: 1.6;
   color: mix(#000, $text-color, 20%);
 }
 
-/* Text beside a figure, both starting at the top; stacks on small screens */
-.research-row {
-  margin: 1.5em 0;
-
-  @include breakpoint($medium) {
-    display: grid;
-    grid-template-columns: 5fr 6fr;
-    gap: 2.25em;
-    align-items: start;
-  }
-
-  /* figure on the left */
-  &--flip {
-    @include breakpoint($medium) {
-      grid-template-columns: 6fr 5fr;
-
-      .research-row__text {
-        order: 2;
-      }
-    }
-  }
-
-  .research-figure {
-    margin: 1em 0 0;
-
-    @include breakpoint($medium) {
-      margin: 0;
-    }
-  }
-}
-
-/* Section 01: the viewer card and the findings beside the network diagram.
-   Stacked below 1200 px, where the two columns cannot end level: the text
-   keeps the paragraphs' measure, and the card and the diagram stay near
-   their desktop size */
-.research-row--feature {
-  @include breakpoint($medium) {
-    display: block;
-  }
-
-  @include breakpoint($research-wide) {
-    display: grid;
-  }
-
-  .research-row__text {
-    max-width: 44em;
-  }
-
-  .research-cta,
-  .research-figure {
-    max-width: 30em;
-
-    @include breakpoint($research-wide) {
-      max-width: none;
-    }
-  }
-
-  .research-figure {
-    margin-top: 1.5em;
-
-    @include breakpoint($research-wide) {
-      margin-top: 0;
-    }
-  }
-}
-
-.research-row__text > :first-child {
-  margin-top: 0;
-}
-
-/* .research-project here outranks the paragraphs' own 1em margin above */
-.research-project .research-row__text > :last-child {
-  margin-bottom: 0;
-}
-
-/* Two videos side by side */
-.research-pair {
-  margin: 1.5em 0;
-
+/* The text measure, from 600 px up: the intro, the project cards and the
+   sections, so every block and the rule above each section end on one line */
+.research-intro,
+.research-overview,
+.research-project {
   @include breakpoint($small) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5em;
+    max-width: $research-measure-small;
   }
 
-  .research-figure {
-    margin: 0 0 1em;
-
-    @include breakpoint($small) {
-      margin: 0;
-    }
+  @include breakpoint($medium) {
+    max-width: $research-measure;
   }
+}
+
+/* no lone word on the last line of a paragraph */
+.research-project__lede,
+.research-project > p,
+.research-project > ul,
+.research-papers li {
+  text-wrap: pretty;
 }
 
 /* Related publications at the end of a section */
 .research-papers {
-  max-width: 44em;                  // same right edge as the paragraphs
-  margin: 2em 0 0;
   padding: 0.9em 1.25em 1em;
   background: $code-background-color;
   border-left: 3px solid $research-accent;
@@ -488,29 +394,30 @@ $research-preview-bg        : #f3f9ff;  // NeurMOC preview background (BG in neu
   }
 
   figcaption {
-    max-width: 55em;                // 44em of body text, like the paragraphs
     margin: 0.6em 0 0;
     color: $research-muted;
     font-family: $global-font-family;
     font-size: 0.8em;
     line-height: 1.5;
+    text-wrap: balance;             // even lines, no lone word on the last
   }
 }
 
-/* A tall figure kept to the text measure, so it fits under the masthead on a
-   laptop screen (the Pacific map in section 03: 792 x 607 px, not 980 x 752) */
-.research-figure--measure {
-  max-width: 44em;
+/* A figure no taller than the window below the masthead, so the network
+   diagram fits a short laptop window; not on phones held sideways (under
+   600 px tall), where it would get too small to read */
+@media (min-width: 48em) and (min-height: 37.5em) {
+  .research-figure img {
+    width: auto;
+    max-height: calc(100vh - #{$masthead-height} - 1em);
+  }
 }
 
 /*
-   Home page: the text-only project cards, two per row
+   Home page: the same text-only project cards, across the whole column
    ========================================================================== */
 
 .home-overview {
+  max-width: none;                  // not the Research page's text measure
   margin: 1em 0 0.5em;
-
-  @include breakpoint($research-wide) {
-    grid-template-columns: 1fr 1fr;
-  }
 }
