@@ -1,77 +1,68 @@
+/* the main site's look (_sass/_research.scss): white page, gray text, one
+   teal accent, one small radius, its system fonts */
 :root {
-  --bg: #ecf6ff;
-  --bg-top-left: rgba(133, 182, 225, 0.30);
-  --bg-top-right: rgba(170, 214, 242, 0.26);
-  --bg-start: #f8fcff;
-  --panel: rgba(252, 255, 255, 0.94);
-  --panel-border: rgba(95, 140, 176, 0.16);
-  --ink: #1b2c3e;
-  --muted: #5c7186;
-  --accent: #5b9dcf;
-  --accent-deep: #2f6f9f;
-  --accent-soft: #d9ebf8;
-  --preset-hover: #cce4f6;
-  --button-start: #4d90c2;
-  --button-end: #78b7df;
-  --button-border: rgba(77, 144, 194, 0.26);
-  --field-border: rgba(95, 140, 176, 0.18);
-  --toggle-bg: rgba(249, 253, 255, 0.88);
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --panel-border: #e4e6e7;
+  --ink: #494e52;
+  --muted: #64696c;
+  --accent: #39798c;
+  --accent-hover: #2b5b69;
+  --accent-deep: #316878;
+  --accent-soft: #eaf3f6;
+  --accent-solid: #316878;
+  --accent-solid-hover: #2b5b69;
+  --preset-hover: #d8e9ee;
+  --button-border: rgba(49, 104, 120, 0.35);
+  --field-border: #d0d3d5;
+  --toggle-bg: #ffffff;
   --toggle-active-text: #ffffff;
-  --hairline: rgba(95, 140, 176, 0.14);
-  --shadow: 0 10px 30px rgba(45, 80, 115, 0.08);
-  --chip-bg: rgba(241, 248, 255, 0.85);
+  --hairline: #f2f3f3;
+  --shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --chip-bg: #fafafa;
   --plot-bg: #ffffff;
-  --plot-border: rgba(95, 140, 176, 0.16);
+  --plot-border: #e4e6e7;
+  --masthead-link: #7a8288;
+  --masthead-link-hover: #5c6266;
+  --footer-bg: #f2f3f3;
+  --footer-border: #bdc1c4;
+  --footer-ink: #7a8288;
   --weakening: #2f6f9f;
   --strengthening: #a53a20;
-  /* RdBu_r endpoints - the manuscript's diverging colormap */
-  --pole-blue: #2166ac;
-  --pole-red: #b2182b;
-  /* one radius scale: lg for cards, md for controls/plots, sm for details */
-  --radius-lg: 20px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-  --tab-bar-bg: linear-gradient(135deg, #245b83, #3b7ba8);
-  --tab-bar-border: rgba(21, 60, 94, 0.35);
-  --tab-bar-label: rgba(255, 255, 255, 0.72);
-  --tab-ink: #ffffff;
-  --tab-ink-strong: #ffffff;
-  --tab-hover: rgba(255, 255, 255, 0.20);
-  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --font-body: "Inter", "Segoe UI", Tahoma, sans-serif;
+  --radius-lg: 4px;
+  --radius-md: 4px;
+  --radius-sm: 4px;
+  --font-body: -apple-system, ".SFNSText-Regular", "San Francisco", "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", Arial, sans-serif;
 }
 
 :root[data-theme="dark"] {
   --bg: #0c1523;
-  --bg-top-left: rgba(43, 82, 126, 0.42);
-  --bg-top-right: rgba(34, 66, 104, 0.38);
-  --bg-start: #101b2d;
-  --panel: rgba(19, 30, 46, 0.92);
+  --panel: #131e2e;
   --panel-border: rgba(122, 160, 196, 0.18);
   --ink: #e6eef7;
   --muted: #9fb2c6;
-  --accent: #6fb1de;
-  --accent-deep: #8ec4e8;
-  --accent-soft: rgba(111, 177, 222, 0.16);
-  --preset-hover: rgba(111, 177, 222, 0.3);
-  --button-start: #3f7fb0;
-  --button-end: #5b9dcf;
-  --button-border: rgba(111, 177, 222, 0.32);
+  --accent: #6fb7cc;
+  --accent-hover: #8fcbdc;
+  --accent-deep: #8fcbdc;
+  --accent-soft: rgba(111, 183, 204, 0.16);
+  --accent-solid: #3a7f93;
+  --accent-solid-hover: #4a93a8;
+  --preset-hover: rgba(111, 183, 204, 0.3);
+  --button-border: rgba(111, 183, 204, 0.32);
   --field-border: rgba(122, 160, 196, 0.26);
-  --toggle-bg: rgba(23, 37, 56, 0.88);
+  --toggle-bg: #172538;
   --hairline: rgba(122, 160, 196, 0.16);
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   --chip-bg: rgba(30, 46, 68, 0.6);
   --plot-bg: #0f1a2b;
   --plot-border: rgba(122, 160, 196, 0.22);
+  --masthead-link: #9fb2c6;
+  --masthead-link-hover: #e6eef7;
+  --footer-bg: #101b2d;
+  --footer-border: rgba(122, 160, 196, 0.28);
+  --footer-ink: #9fb2c6;
   --weakening: #7fc0ee;
   --strengthening: #ff9d80;
-  --tab-bar-bg: linear-gradient(135deg, #14283f, #1f3f61);
-  --tab-bar-border: rgba(122, 160, 196, 0.28);
-  --tab-bar-label: rgba(230, 238, 247, 0.62);
-  --tab-ink: rgba(230, 238, 247, 0.88);
-  --tab-ink-strong: #ffffff;
-  --tab-hover: rgba(255, 255, 255, 0.12);
 }
 
 * {
@@ -123,101 +114,151 @@ select:focus-visible,
 input:focus-visible {
   outline: 2px solid var(--accent-deep);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 body {
   margin: 0;
   color: var(--ink);
   font-family: var(--font-body);
-  background:
-    radial-gradient(circle at top left, var(--bg-top-left), transparent 30%),
-    radial-gradient(circle at top right, var(--bg-top-right), transparent 26%),
-    linear-gradient(180deg, var(--bg-start) 0%, var(--bg) 100%);
+  line-height: 1.5;
+  background: var(--bg);
 }
 
-.app-shell {
-  width: min(1400px, calc(100vw - 32px));
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+/* ---- site menu ---- */
+
+/* The sizes of the site's masthead, so the menu does not move on the way here
+   from another page. It scrolls away, unlike the site's fixed one, to leave
+   the height to the plots; the tab strip stays. Above the loading overlay, so
+   a visitor can leave while the data load. */
+.site-masthead {
+  position: relative;
+  z-index: 41;
+  height: 70px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--hairline);
+  font-size: 18px;
+  line-height: 27px;
+}
+
+.site-masthead__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 18px 0 28px;
+  padding: 18px;
 }
 
-.hero,
+.site-masthead ul {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-masthead a {
+  display: block;
+  margin: 0 18px;
+  padding: 9px 0;
+  color: var(--masthead-link);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-masthead a:hover {
+  color: var(--masthead-link-hover);
+}
+
+.site-masthead li:first-child a {
+  margin-left: 0;
+  font-weight: 700;
+}
+
+.site-masthead li:last-child a {
+  margin-right: 0;
+}
+
+.site-masthead__brand {
+  padding-right: 54px;
+}
+
+/* the site's column, so the page starts level with the name in the menu */
+.app-shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 36px 18px 0;
+}
+
 .control-panel,
-.summary-card,
 .panel {
-  backdrop-filter: blur(8px);
   background: var(--panel);
   border: 1px solid var(--panel-border);
   box-shadow: var(--shadow);
 }
 
-.hero {
-  position: relative;
-  overflow: hidden;
-  display: grid;
-  gap: 14px;
-  padding: 24px;
-  border-radius: var(--radius-lg);
-}
-
-/* a nod to the diverging streamfunction colormap */
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--pole-blue), #f7f7f7 50%, var(--pole-red));
-}
-
 .hero-top {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(250px, 0.45fr);
-  gap: 22px;
-  align-items: start;
+  grid-template-columns: minmax(0, 5fr) minmax(250px, 3fr);
+  gap: 36px;
+}
+
+/* the label sits beside the title, not on a row of its own */
+.hero-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
 }
 
 .eyebrow {
-  margin: 0 0 10px;
-  letter-spacing: 0.12em;
+  margin: 0;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--accent-deep);
-  font-size: 0.78rem;
+  color: var(--muted);
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
 h1,
 h2 {
   margin: 0;
-  font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 h1 {
-  font-size: clamp(2rem, 3.4vw, 3.2rem);
-  line-height: 1.02;
+  font-size: 28.134px;
+  line-height: 1;
 }
 
 h2 {
   font-size: 1.26rem;
+  line-height: 1.3;
 }
 
 .hero-subtitle {
-  margin: 8px 0 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.02rem, 1.5vw, 1.3rem);
-  color: var(--accent-deep);
+  margin: 14px 0 0;
+  font-size: 19.8px;
+  line-height: 1.6;
 }
 
 .hero-copy,
 .panel-header p {
   margin: 8px 0 0;
-  line-height: 1.6;
   color: var(--muted);
 }
 
 .hero-copy {
-  max-width: 68ch;
+  font-size: 18px;
+  color: var(--ink);
 }
 
 /* ---- hero action buttons ---- */
@@ -236,13 +277,13 @@ h2 {
   min-height: 40px;
   padding: 0 16px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--button-border);
+  border: 1px solid var(--field-border);
   background: var(--toggle-bg);
   color: var(--ink);
   font-size: 0.92rem;
   font-weight: 600;
   text-decoration: none;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
 .action-button svg {
@@ -253,35 +294,50 @@ h2 {
 }
 
 .action-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(53, 88, 122, 0.16);
+  color: var(--accent-hover);
+  border-color: var(--accent);
 }
 
 .action-primary {
   color: #fff;
-  background: linear-gradient(135deg, var(--button-start), var(--button-end));
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
+}
+
+.action-primary:hover {
+  color: #fff;
+  background: var(--accent-solid-hover);
+  border-color: var(--accent-solid-hover);
 }
 
 /* ---- key-fact chips ---- */
 
+/* one card, level with the text beside it at top and bottom: the sparkline
+   takes whatever height is left */
 .fact-stack {
-  display: grid;
-  gap: 10px;
-  align-content: start;
-}
-
-.fact-chip {
-  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
   border-radius: var(--radius-md);
   border: 1px solid var(--panel-border);
   background: var(--chip-bg);
 }
 
+.fact-chip {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0 12px;
+  padding: 8px 14px;
+}
+
+.fact-chip + .fact-chip {
+  border-top: 1px solid var(--panel-border);
+}
+
 .fact-label {
-  display: block;
-  margin-bottom: 2px;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -292,20 +348,11 @@ h2 {
 
 /* ---- generic cards ---- */
 
-.meta-link {
-  color: var(--ink);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(91, 157, 207, 0.45);
-}
-
-.meta-link:hover {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
-
 .summary-card {
+  border: 1px solid var(--panel-border);
   border-radius: var(--radius-md);
   padding: 14px 16px;
+  background: var(--chip-bg);
 }
 
 .summary-label {
@@ -313,6 +360,7 @@ h2 {
   margin-bottom: 8px;
   color: var(--muted);
   font-size: 0.8rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -360,7 +408,7 @@ select {
 button {
   width: 120px;
   color: #fff;
-  background: linear-gradient(135deg, var(--button-start), var(--button-end));
+  background: var(--accent-solid);
   cursor: pointer;
 }
 
@@ -373,8 +421,8 @@ button {
 }
 .speed-option.is-active {
   color: var(--toggle-active-text);
-  background: linear-gradient(135deg, var(--button-start), var(--button-end));
-  border-color: var(--button-border);
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
 }
 
 /* ---- location presets ---- */
@@ -396,7 +444,7 @@ button {
   width: auto;
   min-height: 32px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   color: var(--accent-deep);
   background: var(--accent-soft);
   border: 1px solid var(--button-border);
@@ -410,8 +458,8 @@ button {
 
 .preset-option.is-active {
   color: var(--toggle-active-text);
-  background: var(--button-start);
-  border-color: var(--button-border);
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
 }
 
 /* ---- time-series legend ---- */
@@ -495,7 +543,6 @@ button {
   margin-bottom: 12px;
   gap: 10px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: start;
 }
 
 .plot-summary-grid {
@@ -509,20 +556,26 @@ button {
   text-align: center;
 }
 
+/* the values level across the cards, whatever the labels' lengths */
 .embedded-summary-grid .summary-card {
-  padding: 9px 11px;
-  align-self: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 9px 8px;
 }
 
+/* sentence case: capitals would turn the sigma of "2 sigma" into a summation sign */
 .embedded-summary-grid .summary-label {
   margin-bottom: 4px;
-  font-size: 0.67rem;
-  letter-spacing: 0.07em;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .embedded-summary-grid strong {
   display: block;
-  font-size: clamp(0.82rem, 0.96vw, 1.02rem);
+  font-size: 0.9rem;
   line-height: 1.22;
 }
 
@@ -536,7 +589,7 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
-  margin-top: 14px;
+  margin-top: 28px;
   min-width: 0;
 }
 
@@ -585,41 +638,27 @@ button {
 /* One workspace at a time. Every tab shares the selection and the loaded
    data, so switching is a visibility change, not a page load.
 
-   The page is full of pill-shaped control rows - product options, location
-   presets, playback speeds - so a sixth row of pills reads as another
-   filter and gets skipped. This is a solid navigation strip instead: its
-   own colour, its own contrast, icons, and it sticks to the top. */
+   The page is full of filled control rows - product options, location
+   presets, playback speeds - so a sixth row of them reads as another
+   filter and gets skipped. This is a solid navigation strip instead, in
+   the teal of the cards' top edges, and it sticks to the top. The first
+   tab's label starts level with the text inside the cards. */
 .tab-bar {
   position: sticky;
   top: 0;
   z-index: 30;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin: 0 0 8px;
-  padding: 8px 16px;
+  padding: 6px 5px;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--tab-bar-border);
-  background: var(--tab-bar-bg);
-  box-shadow: 0 8px 22px rgba(29, 62, 94, 0.22);
+  background: var(--accent-solid);
+  box-shadow: var(--shadow);
   min-width: 0;
   max-width: 100%;
-}
-
-.tab-bar-label {
-  color: var(--tab-bar-label);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 .tab-bar-options {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
-  flex: 1 1 auto;
   min-width: 0;
   max-width: 100%;
 }
@@ -630,15 +669,14 @@ button {
   align-items: center;
   gap: 8px;
   width: auto;                 /* the generic button rule pins 120px */
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--tab-ink);
+  border: 0;
   border-radius: var(--radius-md);
-  padding: 0 16px;
-  min-height: 46px;
+  background: transparent;
+  color: #ffffff;
+  padding: 0 14px;
+  min-height: 40px;
   font: inherit;
   font-weight: 600;
-  font-size: 1.02rem;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.12s ease, color 0.12s ease;
@@ -653,18 +691,15 @@ button {
 }
 
 .tab-option:hover {
-  background: var(--tab-hover);
-  color: var(--tab-ink-strong);
+  background: rgba(255, 255, 255, 0.18);
 }
 
-/* the selected view is a raised light pill on the dark strip - the
-   inverse of every other control row on the page, so the two never read
-   as the same kind of thing */
+/* the selected view is the page's own colour on the teal strip - the inverse
+   of every other control row on the page, so the two never read as the same
+   kind of thing */
 .tab-option.is-active {
   background: var(--panel);
   color: var(--accent-deep);
-  border-color: transparent;
-  box-shadow: 0 3px 10px rgba(12, 32, 52, 0.28);
 }
 
 .tab-option.is-active svg {
@@ -677,8 +712,7 @@ button {
 }
 
 .tab-hint {
-  margin: 0 0 14px;
-  padding-left: 4px;
+  margin: 0;
   color: var(--muted);
   font-size: 0.84rem;
 }
@@ -705,18 +739,12 @@ button {
   outline-offset: 4px;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 800px) {
   /* keep all five reachable without wrapping into a tall block */
   .tab-bar {
-    gap: 10px;
-    padding: 8px 10px;
-    flex-wrap: nowrap;
-  }
-  .tab-bar-label {
-    flex: none;
+    padding: 6px 7px;
   }
   .tab-bar-options {
-    flex: 1 1 0;
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
@@ -797,9 +825,11 @@ button {
   }
 }
 
+/* a teal top edge, like the cards on the Research page */
 .panel {
+  border-top: 3px solid var(--accent-solid);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 18px;
   min-width: 0;
 }
 
@@ -823,6 +853,15 @@ svg {
 
 canvas {
   cursor: crosshair;
+}
+
+/* the icons are not plots */
+.action-button svg,
+.tab-option svg,
+.theme-toggle svg {
+  background: none;
+  border: 0;
+  border-radius: 0;
 }
 
 #timeseries-svg {
@@ -942,6 +981,7 @@ canvas {
   border: 1px solid var(--field-border);
   background: var(--chip-bg);
   color: var(--ink);
+  font-family: Monaco, Consolas, "Lucida Console", monospace;
   font-size: 0.78rem;
   line-height: 1.5;
 }
@@ -959,15 +999,33 @@ canvas {
 
 /* ---- footer ---- */
 
+/* the site's full-width band */
 .site-footer {
+  margin-top: 54px;
+  border-top: 1px solid var(--footer-border);
+  background: var(--footer-bg);
+  color: var(--footer-ink);
+  font-size: 0.85rem;
+}
+
+.site-footer__inner {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 18px;
-  padding: 0 8px;
-  color: var(--muted);
-  font-size: 0.85rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 36px 18px;
+}
+
+.site-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: var(--masthead-link-hover);
+  text-decoration: underline;
 }
 
 /* ---- loading overlay ---- */
@@ -1028,7 +1086,7 @@ canvas {
   width: 0;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--button-start), var(--button-end));
+  background: var(--accent-solid);
   transition: width 0.15s ease;
 }
 
@@ -1045,8 +1103,8 @@ canvas {
   pointer-events: none;
   padding: 6px 10px;
   border-radius: var(--radius-sm);
-  background: rgba(24, 38, 52, 0.92);
-  color: #f2f8fd;
+  background: rgba(49, 54, 58, 0.94);
+  color: #ffffff;
   font-size: 0.8rem;
   line-height: 1.35;
   white-space: nowrap;
@@ -1056,7 +1114,6 @@ canvas {
 /* ---- responsive ---- */
 
 @media (max-width: 960px) {
-  .hero,
   .summary-grid,
   .top-panels-grid,
   .snapshot-body,
@@ -1075,10 +1132,7 @@ canvas {
 
   .hero-top {
     grid-template-columns: 1fr;
-  }
-
-  .fact-stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
   }
 
   .embedded-summary-grid {
@@ -1093,17 +1147,89 @@ canvas {
     width: 100%;
   }
 
-  .site-footer {
+  .site-footer__inner {
     justify-content: center;
     text-align: center;
   }
 }
 
-@media (max-width: 520px) {
-  .fact-stack {
-    grid-template-columns: 1fr;
+/* the site's smaller type below 768 px */
+@media (max-width: 767px) {
+  .site-masthead {
+    font-size: 16px;
+    line-height: 24px;
   }
 
+  .site-masthead__inner {
+    padding: 16px;
+  }
+
+  .site-masthead a {
+    margin: 0 16px;
+    padding: 8px 0;
+  }
+
+  .site-masthead__brand {
+    padding-right: 48px;
+  }
+
+  .app-shell {
+    padding: 32px 16px 0;
+  }
+
+  h1 {
+    font-size: 25.008px;
+  }
+
+  .hero-subtitle {
+    font-size: 17.6px;
+  }
+
+  .hero-copy {
+    font-size: 16px;
+  }
+
+  .site-footer__inner {
+    padding: 32px 16px;
+  }
+}
+
+/* too narrow for one row, and the site's hamburger menu needs its script:
+   the links wrap below the name instead */
+@media (max-width: 660px) {
+  .site-masthead {
+    height: auto;
+    font-size: 14px;
+  }
+
+  .site-masthead__inner {
+    padding: 8px 16px;
+  }
+
+  .site-masthead ul {
+    flex-wrap: wrap;
+    column-gap: 12px;
+  }
+
+  .site-masthead__brand {
+    flex: 0 0 100%;
+    padding-right: 0;
+    font-size: 16px;
+  }
+
+  .site-masthead a {
+    margin: 0;
+    padding: 2px 0;
+  }
+
+  .theme-toggle {
+    position: absolute;
+    top: 4px;
+    right: 16px;
+  }
+}
+
+@media (max-width: 520px) {
   .hero-actions {
     display: grid;
     grid-template-columns: 1fr;
@@ -1111,10 +1237,6 @@ canvas {
 }
 
 /* ---------------- satellite product selector (2026-07-31) ---------------- */
-
-.product-panel .panel-header p {
-  max-width: 72ch;
-}
 
 .product-bar {
   display: flex;
@@ -1130,9 +1252,9 @@ canvas {
 }
 
 .product-caption {
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -1170,7 +1292,7 @@ canvas {
 
 .product-option.is-active,
 .sig-option.is-active {
-  background: var(--button-start);
+  background: var(--accent-solid);
   color: var(--toggle-active-text);
 }
 
@@ -1182,29 +1304,24 @@ canvas {
 
 /* ---------------- v3 additions (2026-08-02) ---------------- */
 
-/* ---- floating theme toggle ---- */
+/* ---- theme toggle, at the right end of the site menu ---- */
 
 .theme-toggle {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 30;
-  width: 44px;
-  height: 44px;
+  flex: none;
+  width: 36px;
+  height: 36px;
   min-height: 0;
   padding: 0;
   display: grid;
-  place-items: center;
-  border-radius: 999px;
-  border: 1px solid var(--field-border);
-  background: var(--panel);
-  color: var(--muted);
-  box-shadow: var(--shadow);
+  place-items: center end;     /* the icon ends level with the cards below */
+  border: 0;
+  background: transparent;
+  color: var(--masthead-link);
   cursor: pointer;
 }
 
 .theme-toggle:hover {
-  color: var(--accent-deep);
+  color: var(--masthead-link-hover);
 }
 
 .theme-toggle svg {
@@ -1267,8 +1384,9 @@ canvas {
   align-items: center;
   justify-content: space-between;
   gap: 16px 28px;
-  padding: 13px 72px 13px 16px;
+  padding: 13px 18px;
   border: 1px solid var(--panel-border);
+  border-top: 3px solid var(--accent-solid);
   border-radius: var(--radius-lg);
   background: var(--panel);
   box-shadow: var(--shadow);
@@ -1356,7 +1474,7 @@ canvas {
   width: auto;
   min-height: 34px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   color: var(--accent-deep);
   background: var(--accent-soft);
   border: 1px solid var(--button-border);
@@ -1471,17 +1589,22 @@ canvas {
 /* ---- hero sparkline chip ---- */
 
 .fact-spark {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
   cursor: pointer;
-  transition: border-color 0.15s ease;
 }
 
-.fact-spark:hover {
-  border-color: var(--accent);
+.fact-spark:hover .fact-label {
+  color: var(--accent-deep);
 }
 
 .fact-spark svg {
+  flex: 1 1 56px;
   width: 100%;
-  height: 56px;
+  min-height: 56px;
   display: block;
   background: transparent;
   border: none;
@@ -1491,6 +1614,13 @@ canvas {
 /* ---- small-screen refinements ---- */
 
 @media (max-width: 960px) {
+  /* the full-width button rule above would squeeze the segments onto two lines */
+  .product-option,
+  .sig-option {
+    width: auto;
+    white-space: nowrap;
+  }
+
   .panel-tools {
     flex-direction: row;
     flex-wrap: wrap;
@@ -1518,11 +1648,6 @@ canvas {
 }
 
 @media (max-width: 520px) {
-  .theme-toggle {
-    right: 12px;
-    bottom: 12px;
-  }
-
   .product-bar {
     gap: 12px 18px;
   }

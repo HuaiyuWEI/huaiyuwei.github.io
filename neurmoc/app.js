@@ -111,11 +111,11 @@ const THEME_KEY = "neurmoc-theme";
 const PLOT_COLORS = {
   light: {
     bg: "#ffffff",
-    ink: "#1b2c3e",
-    muted: "#5c7186",
-    frame: "rgba(27, 44, 62, 0.42)",
-    grid: "rgba(27, 44, 62, 0.12)",
-    zero: "rgba(27, 44, 62, 0.55)",
+    ink: "#494e52",
+    muted: "#64696c",
+    frame: "rgba(73, 78, 82, 0.42)",
+    grid: "rgba(73, 78, 82, 0.12)",
+    zero: "rgba(73, 78, 82, 0.55)",
     mask: "rgb(233, 236, 239)",
     hatch: "rgba(60, 60, 60, 0.65)",
     hlOuter: "rgba(255, 255, 255, 0.9)",
@@ -136,7 +136,7 @@ const PLOT_COLORS = {
     rapid: "#d55e00",
     rapidBand: "rgba(213, 94, 0, 0.14)",
     trendNot: "#7f8b92",
-    cursor: "#162238",
+    cursor: "#2f3437",
     // one hue per input covariate, shared by the relevance profile and the
     // accounting panel so a curve means the same thing in both
     lrp: ["#1f6f8b", "#c2661b", "#4c7a34"],
@@ -212,13 +212,12 @@ function applyTheme(theme, persist) {
 // the inline <head> script sets data-theme before first paint; this is the
 // fallback if it did not run
 if (!document.documentElement.dataset.theme) {
-  applyTheme(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark" : "light", false);
+  applyTheme("light", false);
 }
 
 /* ---------------- formatting helpers ---------------- */
 
-const FONT_STACK = '"Inter", "Segoe UI", sans-serif';
+const FONT_STACK = '-apple-system, ".SFNSText-Regular", "San Francisco", "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", Arial, sans-serif';
 
 function formatLatitude(value) {
   const deg = Math.abs(value).toFixed(1).replace(".0", "");
@@ -1623,7 +1622,7 @@ function drawTimeSeries() {
     <rect x="0" y="0" width="${width}" height="${height}" fill="${theme.bg}"></rect>
     <rect x="${margins.left}" y="${margins.top}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="${theme.frame}"></rect>
     ${gapX1 !== null && gapX2 !== null ? `<rect x="${gapX1}" y="${margins.top}" width="${Math.max(0, gapX2 - gapX1)}" height="${plotHeight}" fill="${theme.gap}"></rect>` : ""}
-    ${gapX1 !== null && gapX2 !== null && gapX2 - gapX1 > 34 * fs ? `<text x="${(gapX1 + gapX2) / 2}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${Math.round(13 * fs)}" fill="${theme.gapText}" transform="rotate(-90 ${(gapX1 + gapX2) / 2} ${margins.top + plotHeight / 2})">GRACE gap</text>` : ""}
+    ${gapX1 !== null && gapX2 !== null && gapX2 - gapX1 > 24 * fs ? `<text x="${(gapX1 + gapX2) / 2}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${Math.round(13 * fs)}" fill="${theme.gapText}" transform="rotate(-90 ${(gapX1 + gapX2) / 2} ${margins.top + plotHeight / 2})">GRACE gap</text>` : ""}
     ${crossesZero ? `<line x1="${margins.left}" y1="${zeroY}" x2="${width - margins.right}" y2="${zeroY}" stroke="${theme.zero}" stroke-width="1"></line>` : ""}
     ${yTicks
       .map((tick) => {

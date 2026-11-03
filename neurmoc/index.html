@@ -1,18 +1,19 @@
+---
+# Jekyll fills in the site title and menu below (_data/navigation.yml, as on every page of the site);
+# no layout, so the viewer keeps its own page and stylesheet
+layout: null
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>
-    // set the theme before first paint so dark mode does not flash white
+    // set the theme before first paint so dark mode does not flash white;
+    // light like the rest of the site unless the visitor chose dark with the toggle
     (function () {
       try {
-        var theme = localStorage.getItem("neurmoc-theme");
-        if (!theme) {
-          theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark" : "light";
-        }
-        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.theme = localStorage.getItem("neurmoc-theme") || "light";
       } catch (error) { /* default to light */ }
     })();
   </script>
@@ -28,13 +29,10 @@
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://huaiyuwei.github.io/neurmoc/og_image.png">
-  <meta name="theme-color" content="#4d90c2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0c1523" media="(prefers-color-scheme: dark)">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234d90c2'/%3E%3Cpath d='M14 40c0-10 8-18 18-18s18 8 18 18' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M50 40l-5-7M50 40l7-4' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 48h28' stroke='%23bfe0f5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2026-09-25a">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" type="image/png" href="/images/favicon-32x32.png?v=M44lzPylqQ" sizes="32x32">
+  <link rel="shortcut icon" href="/images/favicon.ico?v=M44lzPylqQ">
+  <link rel="stylesheet" href="./styles.css?v=2026-11-02a">
 </head>
 <body>
   <noscript>
@@ -49,10 +47,19 @@
     </div>
   </div>
 
-  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch color theme">
-    <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 14.6A8.6 8.6 0 0 1 9.4 3.4 8.6 8.6 0 1 0 20.6 14.6z"/></svg>
-    <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM11 1h2v3.2h-2V1zm0 18.8h2V23h-2v-3.2zM1 11h3.2v2H1v-2zm18.8 0H23v2h-3.2v-2zM4.2 5.6l1.4-1.4 2.3 2.3-1.4 1.4-2.3-2.3zm11.9 11.9 1.4-1.4 2.3 2.3-1.4 1.4-2.3-2.3zm2.3-13.3 1.4 1.4-2.3 2.3-1.4-1.4 2.3-2.3zM6.5 16.1l1.4 1.4-2.3 2.3-1.4-1.4 2.3-2.3z"/></svg>
-  </button>
+  <header class="site-masthead">
+    <nav class="site-masthead__inner" aria-label="Site menu">
+      <ul>
+        <li class="site-masthead__brand"><a href="/">{{ site.title }}</a></li>
+        {% for link in site.data.navigation.main %}<li><a href="{{ link.url }}">{{ link.title }}</a></li>
+        {% endfor %}
+      </ul>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch color theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 14.6A8.6 8.6 0 0 1 9.4 3.4 8.6 8.6 0 1 0 20.6 14.6z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM11 1h2v3.2h-2V1zm0 18.8h2V23h-2v-3.2zM1 11h3.2v2H1v-2zm18.8 0H23v2h-3.2v-2zM4.2 5.6l1.4-1.4 2.3 2.3-1.4 1.4-2.3-2.3zm11.9 11.9 1.4-1.4 2.3 2.3-1.4 1.4-2.3-2.3zm2.3-13.3 1.4 1.4-2.3 2.3-1.4-1.4 2.3-2.3zM6.5 16.1l1.4 1.4-2.3 2.3-1.4-1.4 2.3-2.3z"/></svg>
+      </button>
+    </nav>
+  </header>
 
   <main class="app-shell">
     <noscript>
@@ -62,8 +69,10 @@
     <section class="hero">
       <div class="hero-top">
         <div class="hero-main">
-          <p class="eyebrow">Interactive data viewer</p>
-          <h1>NeurMOC</h1>
+          <div class="hero-title">
+            <h1>NeurMOC</h1>
+            <p class="eyebrow">Interactive data viewer</p>
+          </div>
           <p class="hero-subtitle">Exploring ocean overturning from space</p>
           <p class="hero-copy">
             How is the ocean's overturning circulation changing? NeurMOC combines satellite observations
@@ -100,7 +109,6 @@
 
     <section class="dashboard-layout">
       <div class="tab-bar" id="tab-bar">
-        <span class="tab-bar-label" aria-hidden="true">View</span>
         <div class="tab-bar-options" role="tablist" aria-label="Viewer sections" aria-orientation="horizontal">
         <button class="tab-option is-active" type="button" role="tab" id="tab-btn-reconstruction"
                 data-tab="reconstruction" aria-controls="tab-reconstruction" aria-selected="true" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3V3zm10 0h8v5h-8V3zM3 13h8v8H3v-8zm10 3h8v5h-8v-5zm0-6h8v4h-8v-4z"/></svg><span>Reconstruction</span></button>
@@ -403,7 +411,7 @@
                  also accounts for estimating a trend from a short, autocorrelated record.</p>
               <p>RAPID agreement was a secondary check during model selection; the default was not chosen
                  to maximize it. Full methods, tests, and limitations are described in the accompanying manuscript.</p>
-              <p><a class="meta-link" href="#cite">Paper and citation</a> &mdash; the currently linked preprint
+              <p><a href="#cite">Paper and citation</a> &mdash; the currently linked preprint
                  is an earlier version and does not include all the revised analyses used in this viewer.</p>
             </details>
           </div>
@@ -419,7 +427,7 @@
             <p class="citation-text">
               Wei, H., Stewart, A. L., Medvedev, A., Srinivasan, K., Solodoch, A., Manucharyan, G. E., &amp; Hogg, A. McC. (2026).
               <em>Deep learning unlocks satellite-based monitoring of the global ocean overturning circulation.</em>
-              ESS Open Archive. <a class="meta-link" href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">doi:10.22541/essoar.15004679/v1</a>
+              ESS Open Archive. <a href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">doi:10.22541/essoar.15004679/v1</a>
             </p>
             <div class="bibtex-block">
               <button class="copy-button" id="copy-bibtex" type="button">Copy BibTeX</button>
@@ -437,27 +445,28 @@
             <p class="prose-note">
                The linked preprint is an earlier version of the study. This viewer uses the revised reconstruction
                and uncertainty estimates. Please cite the study when using the data, and
-               <a class="meta-link" href="mailto:huaiyu.ocean@gmail.com">get in touch</a> with questions.
+               <a href="mailto:huaiyu.ocean@gmail.com">get in touch</a> with questions.
             </p>
           </div>
         </article>
         </section>
       </div>
     </section>
-
-    <footer class="site-footer">
-      <span>&copy; 2026 Huaiyu Wei &middot; Atmospheric and Oceanic Sciences, UCLA</span>
-      <span class="footer-links">
-        <a class="meta-link" href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">Preprint</a>
-        &middot; <a class="meta-link" href="./data/NeurMOC_data.mat" download="NeurMOC_data.mat">Default data (.mat)</a>
-        &middot; <a class="meta-link" href="./data/NeurMOC_data.nc" download="NeurMOC_data.nc">Default data (.nc)</a>
-        &middot; <a class="meta-link" href="https://huaiyuwei.github.io/" target="_blank" rel="noopener">huaiyuwei.github.io</a>
-      </span>
-    </footer>
   </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <span>&copy; {{ site.time | date: '%Y' }} Huaiyu Wei &middot; Atmospheric and Oceanic Sciences, UCLA</span>
+      <span class="footer-links">
+        <a href="https://doi.org/10.22541/essoar.15004679/v1" target="_blank" rel="noopener">Preprint</a>
+        &middot; <a href="./data/NeurMOC_data.mat" download="NeurMOC_data.mat">Default data (.mat)</a>
+        &middot; <a href="./data/NeurMOC_data.nc" download="NeurMOC_data.nc">Default data (.nc)</a>
+      </span>
+    </div>
+  </footer>
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-09-25a"></script>
+  <script src="./app.js?v=2026-11-02a"></script>
 </body>
 </html>

@@ -134,7 +134,10 @@ py -3 -m http.server 8000     # from this directory, then open localhost:8000
 
 or `powershell -ExecutionPolicy Bypass -File .\start_viewer.ps1`. Add
 `-RefreshData` only when you intentionally want to regenerate the viewer files
-from the m26r8 pipeline defaults before serving them.
+from the m26r8 pipeline defaults before serving them. These servers send
+`index.html` as it is, so its front matter and the Liquid of the site menu show
+as text at the top of the page; GitHub Pages fills them in, and the viewer
+itself works either way.
 
 ## Notes
 
