@@ -8,7 +8,7 @@ redirect_from:
   - /about.html
 ---
 
-I am a physical oceanographer studying what governs ocean circulation across scales and how it is changing in a warming climate. I combine physical theory, numerical modeling, and machine learning to improve how ocean circulation is understood, simulated, and observed.
+I am a physical oceanographer studying mesoscale eddies, topography-flow interaction, and overturning circulations. I combine physical theory, numerical modeling, and machine learning to better understand, simulate, and observe ocean circulation.
 
 Since 2024, I have been a Postdoctoral Researcher in the Department of Atmospheric and Oceanic Sciences at UCLA, working with [Andrew Stewart](https://dept.atmos.ucla.edu/stewart/home) and [Jim McWilliams](https://atmos.ucla.edu/jcm/). Before joining UCLA, I completed my Ph.D. at the Hong Kong University of Science and Technology under the guidance of [Yan Wang](https://yanwanghkust.github.io/).
 
