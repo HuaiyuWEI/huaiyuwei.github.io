@@ -1492,7 +1492,7 @@ function drawTimeSeries() {
   if (legendRapid) legendRapid.hidden = !showRapid;
 
   const fs = Math.min(2.2, Math.max(1, 0.68 * (width / Math.max(cssWidth, 1))));
-  const margins = { left: 72 * fs, right: 22, top: 24 * fs, bottom: 38 * fs };
+  const margins = { left: 84 * fs, right: 22, top: 30 * fs, bottom: 38 * fs };
   const plotWidth = width - margins.left - margins.right;
   const plotHeight = height - margins.top - margins.bottom;
   // Fixed axis across the selector: span every combination's series, the
@@ -1616,14 +1616,17 @@ function drawTimeSeries() {
   }
   const crossesZero = ymin < 0 && ymax > 0;
   const zeroY = crossesZero ? yOf(0) : null;
-  const fTick = Math.round(16 * fs);
-  const fTitle = Math.round(18 * fs);
+  const fTick = Math.round(20 * fs);
+  const fTitle = Math.round(22 * fs);
+  const fGap = Math.round(16 * fs);
+  // the trend readout is one long line: smaller than the ticks if it must be, to fit a phone
+  const fReadout = Math.min(fTick, Math.floor((width - 40) / (0.52 * trendLabel.length)));
 
   timeseriesSvg.innerHTML = `
     <rect x="0" y="0" width="${width}" height="${height}" fill="${theme.bg}"></rect>
     <rect x="${margins.left}" y="${margins.top}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="${theme.frame}"></rect>
     ${gapX1 !== null && gapX2 !== null ? `<rect x="${gapX1}" y="${margins.top}" width="${Math.max(0, gapX2 - gapX1)}" height="${plotHeight}" fill="${theme.gap}"></rect>` : ""}
-    ${gapX1 !== null && gapX2 !== null && gapX2 - gapX1 > 24 * fs ? `<text x="${(gapX1 + gapX2) / 2}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${Math.round(13 * fs)}" fill="${theme.gapText}" transform="rotate(-90 ${(gapX1 + gapX2) / 2} ${margins.top + plotHeight / 2})">GRACE gap</text>` : ""}
+    ${gapX1 !== null && gapX2 !== null && gapX2 - gapX1 > 24 * fs ? `<text x="${(gapX1 + gapX2) / 2 + 0.35 * fGap}" y="${height - margins.bottom - 10}" font-size="${fGap}" fill="${theme.gapText}" transform="rotate(-90 ${(gapX1 + gapX2) / 2 + 0.35 * fGap} ${height - margins.bottom - 10})">GRACE gap</text>` : ""}
     ${crossesZero ? `<line x1="${margins.left}" y1="${zeroY}" x2="${width - margins.right}" y2="${zeroY}" stroke="${theme.zero}" stroke-width="1"></line>` : ""}
     ${yTicks
       .map((tick) => {
@@ -1631,7 +1634,7 @@ function drawTimeSeries() {
         return `<g>
           <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="${theme.grid}"></line>
           <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="${theme.frame}"></line>
-          <text x="${margins.left - 10}" y="${y + 5}" text-anchor="end" font-size="${fTick}" fill="${theme.muted}">${tick}</text>
+          <text x="${margins.left - 10}" y="${y + 0.35 * fTick}" text-anchor="end" font-size="${fTick}" fill="${theme.muted}">${tick}</text>
         </g>`;
       })
       .join("")}
@@ -1653,14 +1656,14 @@ function drawTimeSeries() {
       })
       .join("")}
     ${hasStd ? `<path d="${areaPath}" fill="${directionBand}"></path>` : ""}
-    ${showDefault ? `<path d="${defaultPath}" fill="none" stroke="${theme.defaultLine}" stroke-width="2"></path>` : ""}
+    ${showDefault ? `<path d="${defaultPath}" fill="none" stroke="${theme.defaultLine}" stroke-width="3" stroke-linejoin="round"></path>` : ""}
     ${rapidBandPath ? `<path d="${rapidBandPath}" fill="${theme.rapidBand}"></path>` : ""}
-    ${showRapid ? `<path d="${rapidPath}" fill="none" stroke="${theme.rapid}" stroke-width="2.4"></path>` : ""}
-    <path d="${linePath}" fill="none" stroke="${directionColor}" stroke-width="3"></path>
-    ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${trendColor}" stroke-width="2.5" stroke-dasharray="9 6"></path>` : ""}
+    ${showRapid ? `<path d="${rapidPath}" fill="none" stroke="${theme.rapid}" stroke-width="4.5" stroke-linejoin="round"></path>` : ""}
+    <path d="${linePath}" fill="none" stroke="${directionColor}" stroke-width="4.5" stroke-linejoin="round"></path>
+    ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${trendColor}" stroke-width="3.5" stroke-dasharray="12 8"></path>` : ""}
     <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>
     <text x="${22 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="${theme.muted}" transform="rotate(-90 ${22 * fs} ${margins.top + plotHeight / 2})">${plotSign < 0 ? "−Ψ" : "Ψ"} anomaly (Sv)</text>
-    <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fTick}" fill="${trendColor}">
+    <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fReadout}" fill="${trendColor}">
       ${trendLabel}
     </text>
     ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="${theme.gapText}">Uncertainty unavailable here</text>`}

@@ -473,7 +473,7 @@ button {
   gap: 4px 18px;
   margin: 0 0 8px;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.95rem;
 }
 
 .legend-item {
@@ -493,7 +493,7 @@ button {
 
 .swatch-recon {
   width: 18px;
-  height: 3px;
+  height: 4px;
   border-radius: 2px;
   background: #8f2d1b;
 }
@@ -1575,7 +1575,7 @@ canvas {
 .swatch-rapid {
   width: 18px;
   height: 0;
-  border-top: 3px solid #d55e00;
+  border-top: 4px solid #d55e00;
 }
 
 /* ---- hero sparkline chip ---- */
