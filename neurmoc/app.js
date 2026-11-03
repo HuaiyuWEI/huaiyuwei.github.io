@@ -1492,7 +1492,7 @@ function drawTimeSeries() {
   if (legendRapid) legendRapid.hidden = !showRapid;
 
   const fs = Math.min(2.2, Math.max(1, 0.68 * (width / Math.max(cssWidth, 1))));
-  const margins = { left: 84 * fs, right: 22, top: 30 * fs, bottom: 38 * fs };
+  const margins = { left: 84 * fs, right: 22, top: 40 * fs, bottom: 38 * fs };
   const plotWidth = width - margins.left - margins.right;
   const plotHeight = height - margins.top - margins.bottom;
   // Fixed axis across the selector: span every combination's series, the
@@ -1604,8 +1604,8 @@ function drawTimeSeries() {
   const fTick = Math.round(20 * fs);
   const fTitle = Math.round(22 * fs);
   const fGap = Math.round(16 * fs);
-  // the trend readout is one long line: smaller than the ticks if it must be, to fit a phone
-  const fReadout = Math.min(fTick, Math.floor((width - 40) / (0.52 * trendLabel.length)));
+  // the trend readout is one long line: larger than the ticks, unless that would not fit a phone
+  const fReadout = Math.min(Math.round(24 * fs), Math.floor((width - 40) / (0.52 * trendLabel.length)));
   const xminYear = Math.floor(xYears[0]);
   const xmaxYear = Math.ceil(xYears[xYears.length - 1]);
   // a year label as often as the width allows: about one and a half label widths apart
@@ -1668,7 +1668,7 @@ function drawTimeSeries() {
     ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${trendColor}" stroke-width="3.5" stroke-dasharray="12 8"></path>` : ""}
     ${state.timeIndex < nt - 1 ? `<line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>` : ""}
     <text x="${22 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="${theme.muted}" transform="rotate(-90 ${22 * fs} ${margins.top + plotHeight / 2})">${plotSign < 0 ? "−Ψ" : "Ψ"} anomaly (Sv)</text>
-    <text x="${width - margins.right}" y="${fTitle}" text-anchor="end" font-size="${fReadout}" fill="${trendColor}">
+    <text x="${width - margins.right}" y="${margins.top - 0.4 * fReadout}" text-anchor="end" font-size="${fReadout}" fill="${trendColor}">
       ${trendLabel}
     </text>
     ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="${theme.gapText}">Uncertainty unavailable here</text>`}
