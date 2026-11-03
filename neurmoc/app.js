@@ -1454,7 +1454,7 @@ function drawTimeSeries() {
   // directly than a bracketed range. Always annotated, significant or not.
   const ciHalf = trendDefined ? ciHalfRaw : NaN;
   const trendLabel = trendDefined
-    ? `Trend = ${formatTrend(plottedSlope)} ± ${formatTrend(ciHalf)} Sv yr⁻¹`
+    ? `Trend = ${formatTrend(plottedSlope).replace("-", "−")} ± ${formatTrend(ciHalf)} Sv yr⁻¹`
       + (sigShown ? "" : " (not significant)")
     : "No trend estimate at this cell";
   const xMean = xYears.reduce((sum, value) => sum + value, 0) / xYears.length;
@@ -1589,7 +1589,8 @@ function drawTimeSeries() {
   const targetTicks = Math.max(6, Math.min(14, Math.round(plotHeight / 40)));
   const yTickStep = Math.max(1, Math.ceil(((ymax - ymin) / targetTicks) * (fs > 1.6 ? 2 : 1)));
   const yTicks = [];
-  for (let tick = ymin; tick <= ymax; tick += yTickStep) {
+  // on multiples of the step, so a coarser axis still marks zero
+  for (let tick = Math.ceil(ymin / yTickStep) * yTickStep; tick <= ymax; tick += yTickStep) {
     yTicks.push(tick);
   }
   // One significance convention everywhere: whichever mask the trend
@@ -1600,9 +1601,16 @@ function drawTimeSeries() {
   const gapEnd = d.gap_time_range ? d.gap_time_range[1] : null;
   const gapX1 = gapStart !== null ? margins.left + ((gapStart - xYears[0]) / (xYears[xYears.length - 1] - xYears[0])) * plotWidth : null;
   const gapX2 = gapEnd !== null ? margins.left + ((gapEnd - xYears[0]) / (xYears[xYears.length - 1] - xYears[0])) * plotWidth : null;
+  const fTick = Math.round(20 * fs);
+  const fTitle = Math.round(22 * fs);
+  const fGap = Math.round(16 * fs);
+  // the trend readout is one long line: smaller than the ticks if it must be, to fit a phone
+  const fReadout = Math.min(fTick, Math.floor((width - 40) / (0.52 * trendLabel.length)));
   const xminYear = Math.floor(xYears[0]);
   const xmaxYear = Math.ceil(xYears[xYears.length - 1]);
-  const majorStep = fs > 1.6 ? 8 : 4;
+  // a year label as often as the width allows: about one and a half label widths apart
+  const yearWidth = plotWidth / (xYears[xYears.length - 1] - xYears[0]);
+  const majorStep = [1, 2, 4].find((step) => step * yearWidth >= 3.6 * fTick) || 8;
   const majorYears = [];
   const firstMajor = Math.ceil(xYears[0] / majorStep) * majorStep;
   for (let year = firstMajor; year <= Math.floor(xYears[xYears.length - 1]); year += majorStep) {
@@ -1616,15 +1624,11 @@ function drawTimeSeries() {
   }
   const crossesZero = ymin < 0 && ymax > 0;
   const zeroY = crossesZero ? yOf(0) : null;
-  const fTick = Math.round(20 * fs);
-  const fTitle = Math.round(22 * fs);
-  const fGap = Math.round(16 * fs);
-  // the trend readout is one long line: smaller than the ticks if it must be, to fit a phone
-  const fReadout = Math.min(fTick, Math.floor((width - 40) / (0.52 * trendLabel.length)));
 
   timeseriesSvg.innerHTML = `
     <rect x="0" y="0" width="${width}" height="${height}" fill="${theme.bg}"></rect>
-    <rect x="${margins.left}" y="${margins.top}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="${theme.frame}"></rect>
+    <line x1="${margins.left}" y1="${margins.top}" x2="${margins.left}" y2="${height - margins.bottom}" stroke="${theme.frame}"></line>
+    <line x1="${margins.left}" y1="${height - margins.bottom}" x2="${width - margins.right}" y2="${height - margins.bottom}" stroke="${theme.frame}"></line>
     ${gapX1 !== null && gapX2 !== null ? `<rect x="${gapX1}" y="${margins.top}" width="${Math.max(0, gapX2 - gapX1)}" height="${plotHeight}" fill="${theme.gap}"></rect>` : ""}
     ${gapX1 !== null && gapX2 !== null && gapX2 - gapX1 > 24 * fs ? `<text x="${(gapX1 + gapX2) / 2 + 0.35 * fGap}" y="${height - margins.bottom - 10}" font-size="${fGap}" fill="${theme.gapText}" transform="rotate(-90 ${(gapX1 + gapX2) / 2 + 0.35 * fGap} ${height - margins.bottom - 10})">GRACE gap</text>` : ""}
     ${crossesZero ? `<line x1="${margins.left}" y1="${zeroY}" x2="${width - margins.right}" y2="${zeroY}" stroke="${theme.zero}" stroke-width="1"></line>` : ""}
@@ -1634,7 +1638,7 @@ function drawTimeSeries() {
         return `<g>
           <line x1="${margins.left}" y1="${y}" x2="${width - margins.right}" y2="${y}" stroke="${theme.grid}"></line>
           <line x1="${margins.left - 6}" y1="${y}" x2="${margins.left}" y2="${y}" stroke="${theme.frame}"></line>
-          <text x="${margins.left - 10}" y="${y + 0.35 * fTick}" text-anchor="end" font-size="${fTick}" fill="${theme.muted}">${tick}</text>
+          <text x="${margins.left - 10}" y="${y + 0.35 * fTick}" text-anchor="end" font-size="${fTick}" fill="${theme.muted}">${tick < 0 ? `−${-tick}` : tick}</text>
         </g>`;
       })
       .join("")}
@@ -1650,20 +1654,21 @@ function drawTimeSeries() {
       .map((year) => {
         const x = xToSvg(year, xYears[0], xYears[xYears.length - 1], margins, plotWidth);
         return `<g>
+          <line x1="${x}" y1="${margins.top}" x2="${x}" y2="${height - margins.bottom}" stroke="${theme.grid}"></line>
           <line x1="${x}" y1="${height - margins.bottom}" x2="${x}" y2="${height - margins.bottom + 8}" stroke="${theme.frame}"></line>
           <text x="${x}" y="${height - margins.bottom + 8 + fTick}" text-anchor="middle" font-size="${fTick}" fill="${theme.muted}">${year}</text>
         </g>`;
       })
       .join("")}
     ${hasStd ? `<path d="${areaPath}" fill="${directionBand}"></path>` : ""}
-    ${showDefault ? `<path d="${defaultPath}" fill="none" stroke="${theme.defaultLine}" stroke-width="3" stroke-linejoin="round"></path>` : ""}
+    ${showDefault ? `<path d="${defaultPath}" fill="none" stroke="${theme.defaultLine}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></path>` : ""}
     ${rapidBandPath ? `<path d="${rapidBandPath}" fill="${theme.rapidBand}"></path>` : ""}
-    ${showRapid ? `<path d="${rapidPath}" fill="none" stroke="${theme.rapid}" stroke-width="4.5" stroke-linejoin="round"></path>` : ""}
-    <path d="${linePath}" fill="none" stroke="${directionColor}" stroke-width="4.5" stroke-linejoin="round"></path>
+    ${showRapid ? `<path d="${rapidPath}" fill="none" stroke="${theme.rapid}" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"></path>` : ""}
+    <path d="${linePath}" fill="none" stroke="${directionColor}" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"></path>
     ${trendDefined ? `<path d="${trendPath}" fill="none" stroke="${trendColor}" stroke-width="3.5" stroke-dasharray="12 8"></path>` : ""}
-    <line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>
+    ${state.timeIndex < nt - 1 ? `<line x1="${currentX}" y1="${margins.top}" x2="${currentX}" y2="${height - margins.bottom}" stroke="${theme.cursor}" stroke-width="1.5" stroke-dasharray="6 4"></line>` : ""}
     <text x="${22 * fs}" y="${margins.top + plotHeight / 2}" text-anchor="middle" font-size="${fTitle}" fill="${theme.muted}" transform="rotate(-90 ${22 * fs} ${margins.top + plotHeight / 2})">${plotSign < 0 ? "−Ψ" : "Ψ"} anomaly (Sv)</text>
-    <text x="${width - 20}" y="${fTitle}" text-anchor="end" font-size="${fReadout}" fill="${trendColor}">
+    <text x="${width - margins.right}" y="${fTitle}" text-anchor="end" font-size="${fReadout}" fill="${trendColor}">
       ${trendLabel}
     </text>
     ${hasStd ? "" : `<text x="${margins.left + 8}" y="${fTitle}" font-size="${fTick}" fill="${theme.gapText}">Uncertainty unavailable here</text>`}
