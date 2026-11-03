@@ -15,7 +15,7 @@
   height: auto;
   /* sticky footer fix end */
   margin-top: 3em;
-  color: mix(#fff, $gray, 25%);
+  color: $gray;
   -webkit-animation: intro 0.3s both;
           animation: intro 0.3s both;
   -webkit-animation-delay: 0.45s;
@@ -44,49 +44,13 @@
       text-decoration: underline;
     }
   }
-
-  .fas,
-  .fab,
-  .far,
-  .fal {
-    color: mix(#fff, $gray, 25%);
-  }
 }
 
-.page__footer-copyright {
-  font-family: $global-font-family;
-  font-size: $type-size-7;
-}
-
-.page__footer-follow {
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-  }
-
-  li {
-    display: inline-block;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    font-family: $sans-serif-narrow;
-    font-size: $type-size-6;
-    text-transform: uppercase;
-  }
-
-  li + li:before {
-    content: "";
-    padding-right: 5px;
-  }
-
-  a {
-    padding-right: 10px;
-    font-weight: bold;
-  }
-
-  .social-icons {
-    a {
-      white-space: nowrap;
-    }
-  }
+/* One row, like the NeurMOC viewer's footer */
+.page__footer-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35em 1.5em;
+  font-size: $type-size-6;
 }

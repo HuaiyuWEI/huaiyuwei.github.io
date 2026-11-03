@@ -1,6 +1,7 @@
 ---
 permalink: /
 title: "Huaiyu Wei"
+hide_title: true
 author_profile: true
 redirect_from:
   - /about/

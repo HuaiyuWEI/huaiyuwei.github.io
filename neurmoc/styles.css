@@ -5,6 +5,7 @@
   --panel: #ffffff;
   --panel-border: #e4e6e7;
   --ink: #494e52;
+  --heading: #313436;
   --muted: #64696c;
   --accent: #39798c;
   --accent-hover: #2b5b69;
@@ -40,6 +41,7 @@
   --panel: #131e2e;
   --panel-border: rgba(122, 160, 196, 0.18);
   --ink: #e6eef7;
+  --heading: #f2f6fa;
   --muted: #9fb2c6;
   --accent: #6fb7cc;
   --accent-hover: #8fcbdc;
@@ -231,6 +233,7 @@ a:hover {
 h1,
 h2 {
   margin: 0;
+  color: var(--heading);
   font-weight: 700;
 }
 

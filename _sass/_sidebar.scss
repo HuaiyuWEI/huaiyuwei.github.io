@@ -179,12 +179,6 @@
   position: relative;
   cursor: pointer;
 
-  li:last-child {
-    a {
-      margin-bottom: 0;
-    }
-  }
-
   @include breakpoint($large) {
     display: block;
   }
@@ -256,16 +250,20 @@
     }
   }
 
+  /* the same height for every row, with a link or without */
   li {
+    margin-bottom: 0;
+    padding: 5px 0;
     white-space: nowrap;
+
+    @include breakpoint($large) {
+      padding: 3px 0;
+    }
   }
 
   a {
     display: block;
-    margin-bottom: 5px;
     padding-right: 5px;
-    padding-top: 2px;
-    padding-bottom: 2px;
     color: inherit;
     font-size: $type-size-5;
     text-decoration: none;
@@ -276,11 +274,19 @@
   }
 }
 
+/* One icon column, so the labels start level, and one icon colour */
+.sidebar .author__urls i {
+  width: 1.5em;
+  padding: 0;
+  color: mix(#fff, $text-color, 15%);
+  text-align: left;
+}
+
 /* Short laptop screens. Nested in breakpoint($large) so the tiers switch
    with the layout, which is in em; the heights stay in px like the text */
 @include breakpoint($large) {
-  /* A smaller photo and tighter links and rows keep the whole sidebar,
-     including a page's "On this page" list, in view. Windows 1024-1159px
+  /* A smaller photo and tighter rows keep the whole sidebar, including
+     a page's "On this page" list, in view. Windows 1024-1159px
      wide need this up to 840px tall: the narrower sidebar wraps more lines */
   @media screen and (max-height: 780px),
          screen and (min-width: 1024px) and (max-width: 1159px) and (max-height: 840px) {
@@ -292,10 +298,6 @@
 
     .sidebar .author__avatar img {
       max-width: 100px;
-    }
-
-    .sidebar .author__urls a {
-      margin-bottom: 0;
     }
 
     .sidebar .research-toc a {
@@ -319,7 +321,7 @@
     }
 
     .sidebar .author__urls li {
-      margin-bottom: 0;
+      padding: 1px 0;
     }
   }
 }

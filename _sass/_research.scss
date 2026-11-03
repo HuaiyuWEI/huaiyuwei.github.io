@@ -6,9 +6,16 @@ $research-card-border       : mix(#fff, $gray, 80%);
 $research-accent            : mix(#000, $info-color, 40%);   // dark teal, 6:1 on white
 $research-muted             : mix(#fff, $text-color, 15%);   // secondary text, 5:1 on white
 $research-wide              : 1200px;   // four image cards in a row from here up
-$research-measure           : 66%;      // the text measure, of the column: 647 px from 1280 px up
-$research-measure-small     : 80%;      // the text measure at 600-767 px, where the column is narrower
 $research-gap               : 1.5rem;   // between the blocks of a section: 27 px from 768 px up
+
+/* One text width on every page: archive-layout pages keep the same right
+   margin as .page (_page.scss), so the text ends on one line as you switch
+   pages */
+.archive {
+  @include breakpoint($large) {
+    @include suffix(2 of 12);
+  }
+}
 
 /* Top-level section headings on archive-layout pages (Publications),
    underlined like the headings in .page__content (Homepage); list entry
@@ -17,6 +24,24 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
 .archive > h2:not(.archive__item-title) {
   padding-bottom: 0.5em;
   border-bottom: 1px solid $border-color;
+}
+
+/* Publications: the lists sit directly in .archive. Underlines would run
+   through most of every entry, so links are underlined only on hover */
+.archive > ol,
+.archive > ul,
+.archive > p {
+  a {
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.archive > ol > li::marker {
+  color: $research-muted;
 }
 
 /*
@@ -246,10 +271,9 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
 }
 
 /*
-   Project sections: one column of cards at the text measure, two thirds of
-   the column (80% at 600-767 px, the whole column below 600 px), each with
-   a thin border and a teal top edge like the overview cards. Inside a card
-   every block spans the card, with one gap between blocks
+   Project sections: one column of cards, each with a thin border and a teal
+   top edge like the overview cards. Inside a card every block spans the
+   card, with one gap between blocks
    ========================================================================== */
 
 .research-project {
@@ -321,20 +345,6 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
 /* the opening sentences of a section, set like the paragraphs below them */
 .research-project__lede {
   margin: 0.75em 0 0;
-}
-
-/* The text measure, from 600 px up: the intro, the overview cards and the
-   section cards, so all of them end on one line */
-.research-intro,
-.research-overview,
-.research-project {
-  @include breakpoint($small) {
-    max-width: $research-measure-small;
-  }
-
-  @include breakpoint($medium) {
-    max-width: $research-measure;
-  }
 }
 
 /* no lone word on the last line of a paragraph */
@@ -409,12 +419,14 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
 }
 
 /* A figure no taller than the window below the masthead, so the network
-   diagram fits a short laptop window; not on phones held sideways (under
-   600 px tall), where it would get too small to read */
+   diagram fits a short laptop window, centered when that leaves it narrower
+   than the text; not on phones held sideways (under 600 px tall), where it
+   would get too small to read */
 @media (min-width: 48em) and (min-height: 37.5em) {
   .research-figure img {
     width: auto;
     max-height: calc(100vh - #{$masthead-height} - 1em);
+    margin: 0 auto;
   }
 }
 
@@ -423,6 +435,5 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
    ========================================================================== */
 
 .home-overview {
-  max-width: none;                  // not the Research page's text measure
   margin: 1em 0 0.5em;
 }
