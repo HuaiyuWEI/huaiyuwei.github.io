@@ -613,21 +613,14 @@ button {
   flex-direction: column;
 }
 
+/* at the foot of the card, so the two maps in a row stay level however long
+   the text above them is */
 .panel-center-figure > canvas,
 .panel-center-figure > .plot-frame {
   margin-top: auto;
-  margin-bottom: auto;
 }
 
-/* local time series: right column, spanning both map rows */
-.panel-span-rows {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Hovmoller: a full-width row of its own */
+/* local time series: a full-width row of its own, below the maps */
 .panel-full-row {
   grid-column: 1 / -1;
 }
@@ -868,15 +861,12 @@ canvas {
 }
 
 #timeseries-svg {
-  /* a time series wants to stay wide: hold a 2:1 box and center it in the
-     panel's spare height (auto margins) rather than stretching to fill */
-  flex: 0 1 auto;
+  /* a time series wants to stay wide: 3:1 across the whole row, 2:1 once the
+     cards stack */
   width: 100%;
   height: auto;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 3 / 1;
   min-height: 240px;
-  margin-top: auto;
-  margin-bottom: auto;
 }
 
 #timeseries-svg text {
@@ -1124,13 +1114,12 @@ canvas {
     grid-template-columns: 1fr;
   }
 
-  .panel-span-rows {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
   .panel-full-row {
     grid-column: auto;
+  }
+
+  #timeseries-svg {
+    aspect-ratio: 2 / 1;
   }
 
   .hero-top {

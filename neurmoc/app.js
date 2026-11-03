@@ -1340,11 +1340,12 @@ function drawTimeSeries() {
   const d = state.data;
   const theme = pc();
   const nt = d.dims.nt;
-  // the panel spans both map rows on wide screens and the SVG flexes to
-  // fill it - match the drawing height to the CSS box (no letterboxing)
-  const width = 900;
-  const cssWidth = timeseriesSvg.clientWidth || width;
+  // the panel spans the whole row on wide screens - draw wider with it so the
+  // labels keep their size, and match the drawing height to the CSS box (no
+  // letterboxing)
+  const cssWidth = timeseriesSvg.clientWidth || 900;
   const cssHeight = timeseriesSvg.clientHeight || 0;
+  const width = Math.max(900, Math.round(cssWidth * 1.25));
   const height = cssHeight > 40
     ? Math.max(300, Math.min(720, Math.round((cssHeight / Math.max(cssWidth, 1)) * width)))
     : 320;

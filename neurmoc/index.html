@@ -33,7 +33,7 @@ layout: null
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=2026-11-02b">
+  <link rel="stylesheet" href="./styles.css?v=2026-11-03a">
 </head>
 <body>
   <noscript>
@@ -194,7 +194,25 @@ layout: null
           <canvas id="trend-canvas" width="1200" height="520" role="img" aria-label="Linear trend heatmap"></canvas>
         </article>
 
-<article class="panel panel-span-rows" id="timeseries-panel" tabindex="-1" aria-labelledby="timeseries-heading">
+<article class="panel panel-center-figure">
+          <div class="panel-header">
+            <div>
+              <h2>Reference circulation</h2>
+              <p>The climate model's mean circulation, shown for orientation &mdash; not an estimate of the observed ocean mean.</p>
+              <details class="method-note">
+                <summary>Reading the maps and units</summary>
+                <p>AMOC denotes Atlantic overturning; SMOC denotes Southern Ocean overturning.
+                   The vertical axis follows water density (&sigma;&sub2;), with denser water toward the bottom.
+                   Transport is measured in Sverdrups: 1 Sv is one million cubic meters per second.</p>
+                <p>This reference is the ACCESS model's 2004&ndash;2009 mean. Red shows clockwise circulation;
+                   blue shows counterclockwise circulation.</p>
+              </details>
+            </div>
+          </div>
+          <canvas id="section-canvas" width="1200" height="520" role="img" aria-label="Time-mean overturning streamfunction heatmap"></canvas>
+        </article>
+
+<article class="panel panel-full-row" id="timeseries-panel" tabindex="-1" aria-labelledby="timeseries-heading">
           <div class="panel-header">
             <div>
               <h2 id="timeseries-heading">Changes at this location</h2>
@@ -248,24 +266,6 @@ layout: null
               <strong id="selected-std">-</strong>
             </article>
           </section>
-        </article>
-
-<article class="panel panel-center-figure">
-          <div class="panel-header">
-            <div>
-              <h2>Reference circulation</h2>
-              <p>The climate model's mean circulation, shown for orientation &mdash; not an estimate of the observed ocean mean.</p>
-              <details class="method-note">
-                <summary>Reading the maps and units</summary>
-                <p>AMOC denotes Atlantic overturning; SMOC denotes Southern Ocean overturning.
-                   The vertical axis follows water density (&sigma;&sub2;), with denser water toward the bottom.
-                   Transport is measured in Sverdrups: 1 Sv is one million cubic meters per second.</p>
-                <p>This reference is the ACCESS model's 2004&ndash;2009 mean. Red shows clockwise circulation;
-                   blue shows counterclockwise circulation.</p>
-              </details>
-            </div>
-          </div>
-          <canvas id="section-canvas" width="1200" height="520" role="img" aria-label="Time-mean overturning streamfunction heatmap"></canvas>
         </article>
         </section>
       </div>
@@ -464,6 +464,6 @@ layout: null
 
   <div id="plot-tooltip" role="presentation" hidden></div>
 
-  <script src="./app.js?v=2026-11-02a"></script>
+  <script src="./app.js?v=2026-11-03a"></script>
 </body>
 </html>
