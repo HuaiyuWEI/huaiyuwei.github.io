@@ -854,7 +854,8 @@ canvas {
 /* the icons are not plots */
 .action-button svg,
 .tab-option svg,
-.theme-toggle svg {
+.theme-toggle svg,
+.plot-hint svg {
   background: none;
   border: 0;
   border-radius: 0;
@@ -1102,6 +1103,65 @@ canvas {
   line-height: 1.35;
   white-space: nowrap;
   transform: translate(12px, -50%);
+}
+
+/* ---- hint that the line plot has changed ---- */
+
+/* The maps and the line plot share a tab, but the plot can be below the fold
+   when a visitor clicks a map. This button says so, and takes them there. */
+.plot-hint {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 20px;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 0 auto;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--accent-solid);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+  font-size: 0.95rem;
+  font-weight: 600;
+  animation: nm-hint-in 0.2s ease-out;
+}
+
+.plot-hint[hidden] {
+  display: none;
+}
+
+.plot-hint:hover {
+  background: var(--accent-solid-hover);
+}
+
+.plot-hint svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+@keyframes nm-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* the line plot's card lights up briefly when it has just changed */
+.panel.is-updated {
+  animation: nm-card-flash 1.8s ease-out;
+}
+
+@keyframes nm-card-flash {
+  from {
+    box-shadow: 0 0 0 3px var(--accent), var(--shadow);
+  }
 }
 
 /* ---- responsive ---- */

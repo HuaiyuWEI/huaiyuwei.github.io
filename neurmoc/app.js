@@ -81,6 +81,8 @@ const controls = {
   loadingBarFill: document.getElementById("loading-bar-fill"),
   loadingStatus: document.getElementById("loading-status"),
   tooltip: document.getElementById("plot-tooltip"),
+  plotHint: document.getElementById("plot-hint"),
+  plotHintText: document.getElementById("plot-hint-text"),
 };
 
 const PLAYBACK_INTERVALS = {
@@ -255,6 +257,64 @@ function selectedCellDescription() {
 
 function announceSelection() {
   announceViewer(`Selected cell: ${selectedCellDescription()}. Local plots and summaries updated.`);
+}
+
+/* The maps and the line plot share the Reconstruction tab, but the plot can be
+   below the fold when a visitor picks a point, so the pick could seem to do
+   nothing. With the plot out of view, a button says it changed and takes them
+   there; with it in view, its card lights up. */
+let plotHintTimer = null;
+
+function seriesInView() {
+  const box = timeseriesSvg.getBoundingClientRect();
+  const top = Math.max(box.top, document.getElementById("tab-bar").getBoundingClientRect().bottom);
+  return Math.min(box.bottom, window.innerHeight) - top >= box.height / 2;
+}
+
+function flashSeriesPanel() {
+  const panel = document.getElementById("timeseries-panel");
+  panel.classList.remove("is-updated");
+  void panel.offsetWidth;   // restarts the animation
+  panel.classList.add("is-updated");
+}
+
+function hidePlotHint() {
+  window.clearTimeout(plotHintTimer);
+  controls.plotHint.hidden = true;
+}
+
+function showSeriesUpdate() {
+  if (state.tab !== "reconstruction") {
+    return;
+  }
+  if (seriesInView()) {
+    hidePlotHint();
+    flashSeriesPanel();
+    return;
+  }
+  const latitude = formatLatitude(state.data.latitudes[state.latitudeIndex]);
+  const density = formatDensity(state.data.densities[state.densityIndex]);
+  controls.plotHintText.textContent = `Plot below updated: ${latitude}, σ₂ = ${density}`;
+  controls.plotHint.hidden = false;
+  window.clearTimeout(plotHintTimer);
+  plotHintTimer = window.setTimeout(hidePlotHint, 6000);
+}
+
+function bindPlotHint() {
+  controls.plotHint.addEventListener("click", () => {
+    hidePlotHint();
+    const panel = document.getElementById("timeseries-panel");
+    panel.focus({ preventScroll: true });
+    panel.scrollIntoView({ behavior: preferredScrollBehavior(), block: "start" });
+    flashSeriesPanel();
+  });
+  // scrolling down to the plot answers the hint
+  window.addEventListener("scroll", () => {
+    if (!controls.plotHint.hidden && seriesInView()) {
+      hidePlotHint();
+      flashSeriesPanel();
+    }
+  }, { passive: true });
 }
 
 function syncCellControls() {
@@ -2933,6 +2993,7 @@ const TAB_OF_ANCHOR = { about: "about", cite: "about" };
 function setTab(name, options) {
   const target = TAB_NAMES.includes(name) ? name : "reconstruction";
   state.tab = target;
+  hidePlotHint();
   TAB_NAMES.forEach((tab) => {
     const panel = document.getElementById(`tab-${tab}`);
     const button = document.getElementById(`tab-btn-${tab}`);
@@ -3246,6 +3307,7 @@ function bindCanvasInteractions() {
       if (updateSelectionFromDualBasin(entry.geom, x, y)) {
         render();
         announceSelection();
+        showSeriesUpdate();
       }
     });
     bindHover(canvas);
@@ -3428,12 +3490,14 @@ function bindControls() {
     state.latitudeIndex = Number(event.target.value);
     render();
     announceSelection();
+    showSeriesUpdate();
   });
 
   controls.cellDensitySelect.addEventListener("change", (event) => {
     state.densityIndex = Number(event.target.value);
     render();
     announceSelection();
+    showSeriesUpdate();
   });
 
   controls.climSlider.addEventListener("input", (event) => {
@@ -3862,6 +3926,7 @@ async function init() {
 
   bindControls();
   bindCanvasInteractions();
+  bindPlotHint();
   bindTabs();
   [trendCanvas, timeseriesSvg, sectionCanvas, lrpPanel, hovmollerCanvas,
    snapshotCanvas, lrpTrendCanvas, lrpMeanCanvas].forEach(registerPaintTarget);
