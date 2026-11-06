@@ -75,7 +75,7 @@ I am now a Postdoctoral Researcher at UCLA, working with [Andrew Stewart](https:
   <a href="/research/#moc-reconstruction">
     <span class="research-overview__body">
       <span class="research-overview__num">04</span>
-      <span class="research-overview__title">MOC reconstruction</span>
+      <span class="research-overview__title">MOC reconstruction using AI</span>
       <span class="research-overview__summary">We developed NeurMOC, a deep-learning reconstruction of Atlantic and Southern Ocean overturning changes since 2003 from satellite observations.</span>
     </span>
   </a>

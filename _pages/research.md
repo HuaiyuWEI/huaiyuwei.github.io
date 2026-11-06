@@ -11,7 +11,7 @@ sidebar:
         <a href="#abyssal-prograde-flows"><span>01</span>Abyssal prograde flows</a>
         <a href="#bottom-boundary-upwelling"><span>02</span>Eddy-mediated upwelling</a>
         <a href="#eddy-parameterization"><span>03</span>Eddy parameterization</a>
-        <a href="#moc-reconstruction"><span>04</span>MOC reconstruction</a>
+        <a href="#moc-reconstruction"><span>04</span>MOC reconstruction using&nbsp;AI</a>
       </nav>
 ---
 
@@ -51,7 +51,7 @@ Every block of a section, figures included, ends at the text measure (two thirds
     <img src="/images/thumb_DBNN.jpg" alt="" width="600" height="400" loading="lazy">
     <span class="research-overview__body">
       <span class="research-overview__num">04</span>
-      <span class="research-overview__title">MOC reconstruction</span>
+      <span class="research-overview__title">MOC reconstruction using AI</span>
       <span class="research-overview__summary">We use deep learning to reconstruct the meridional overturning circulation from satellite observations.</span>
     </span>
   </a>
