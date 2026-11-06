@@ -11,7 +11,7 @@ redirect_from:
 
 I am a physical oceanographer studying mesoscale eddies, topography-flow interaction, and overturning circulations. I combine physical theory, numerical modeling, and machine learning to better understand, simulate, and observe ocean circulation.
 
-I am now a Postdoctoral Researcher working with [Andrew Stewart](https://dept.atmos.ucla.edu/stewart/home) and [Jim McWilliams](https://atmos.ucla.edu/jcm/). Before joining UCLA, I completed my Ph.D. under the guidance of [Yan Wang](https://yanwanghkust.github.io/).
+I am now a Postdoctoral Researcher at UCLA, working with [Andrew Stewart](https://dept.atmos.ucla.edu/stewart/home) and [Jim McWilliams](https://atmos.ucla.edu/jcm/). Before that, I completed my Ph.D. at HKUST under the guidance of [Yan Wang](https://yanwanghkust.github.io/).
 
 ## Work experience
 
@@ -37,12 +37,12 @@ I am now a Postdoctoral Researcher working with [Andrew Stewart](https://dept.at
     <span class="home-cv__place">Sun Yat-sen University</span>
   </li>
   <li>
-    <span class="home-cv__years">2023</span>
+    <span class="home-cv__years">2023 summer</span>
     <span class="home-cv__title">Visiting Student</span>
     <span class="home-cv__place">Boston University</span>
   </li>
   <li>
-    <span class="home-cv__years">2017</span>
+    <span class="home-cv__years">2017 summer</span>
     <span class="home-cv__title">Summer Program on Ocean and Atmosphere Systems</span>
     <span class="home-cv__place">University of British Columbia</span>
   </li>
