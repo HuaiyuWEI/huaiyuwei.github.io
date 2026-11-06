@@ -437,3 +437,55 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
 .home-overview {
   margin: 1em 0 0.5em;
 }
+
+/* Education and work experience: the years in a column on the left, wide
+   enough for "2024-present" in bold, with the title and the place beside
+   them; on phones the years go above the title */
+.home-cv {
+  margin: 0 0 1em;
+  padding: 0;
+  list-style: none;
+
+  li {
+    margin: 0 0 0.9em;
+    line-height: 1.5;
+
+    @include breakpoint($small) {
+      display: grid;
+      grid-template-columns: 7.5em 1fr;
+      column-gap: 1em;
+    }
+  }
+}
+
+.home-cv__years,
+.home-cv__title,
+.home-cv__place {
+  display: block;
+}
+
+/* a long name that wraps splits into even lines */
+.home-cv__title,
+.home-cv__place {
+  text-wrap: balance;
+}
+
+.home-cv__years {
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;   // the years line up from row to row
+  white-space: nowrap;
+  color: $research-accent;
+
+  @include breakpoint($small) {
+    grid-row: span 2;
+  }
+}
+
+.home-cv__title {
+  font-weight: bold;
+  color: $darker-gray;
+}
+
+.home-cv__place {
+  color: $research-muted;
+}

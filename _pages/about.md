@@ -1,7 +1,7 @@
 ---
 permalink: /
 title: "Huaiyu Wei"
-hide_title: true
+heading: "About me"
 author_profile: true
 redirect_from:
   - /about/
@@ -11,6 +11,31 @@ redirect_from:
 I am a physical oceanographer studying mesoscale eddies, topography-flow interaction, and overturning circulations. I combine physical theory, numerical modeling, and machine learning to better understand, simulate, and observe ocean circulation.
 
 Since 2024, I have been a Postdoctoral Researcher in the Department of Atmospheric and Oceanic Sciences at UCLA, working with [Andrew Stewart](https://dept.atmos.ucla.edu/stewart/home) and [Jim McWilliams](https://atmos.ucla.edu/jcm/). Before joining UCLA, I completed my Ph.D. at the Hong Kong University of Science and Technology under the guidance of [Yan Wang](https://yanwanghkust.github.io/).
+
+## Work experience
+
+<ul class="home-cv">
+  <li>
+    <span class="home-cv__years">2024–present</span>
+    <span class="home-cv__title">Postdoctoral Researcher</span>
+    <span class="home-cv__place">Department of Atmospheric and Oceanic Sciences, UCLA</span>
+  </li>
+</ul>
+
+## Education
+
+<ul class="home-cv">
+  <li>
+    <span class="home-cv__years">2019–2024</span>
+    <span class="home-cv__title">Ph.D. in Marine Environmental Science</span>
+    <span class="home-cv__place">The Hong Kong University of Science and Technology</span>
+  </li>
+  <li>
+    <span class="home-cv__years">2015–2019</span>
+    <span class="home-cv__title">B.S. in Physical Oceanography</span>
+    <span class="home-cv__place">Sun Yat-sen University</span>
+  </li>
+</ul>
 
 ## Research
 

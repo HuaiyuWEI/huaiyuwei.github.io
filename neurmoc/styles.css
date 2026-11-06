@@ -1205,8 +1205,9 @@ canvas {
   }
 }
 
-/* the site's smaller type below 768 px */
-@media (max-width: 767px) {
+/* the menu's smaller type: below 900 px the six links and the theme button
+   no longer fit at full size, with room for a wider font such as the Mac's */
+@media (max-width: 899px) {
   .site-masthead {
     font-size: 16px;
     line-height: 24px;
@@ -1224,7 +1225,10 @@ canvas {
   .site-masthead__brand {
     padding-right: 48px;
   }
+}
 
+/* the site's smaller type below 768 px */
+@media (max-width: 767px) {
   .app-shell {
     padding: 32px 16px 0;
   }
@@ -1248,7 +1252,7 @@ canvas {
 
 /* too narrow for one row, and the site's hamburger menu needs its script:
    the links wrap below the name instead */
-@media (max-width: 660px) {
+@media (max-width: 799px) {
   .site-masthead {
     height: auto;
     font-size: 14px;
@@ -1267,6 +1271,11 @@ canvas {
     flex: 0 0 100%;
     padding-right: 0;
     font-size: 16px;
+  }
+
+  /* only the name is a link, not the rest of its row under the theme button */
+  .site-masthead__brand a {
+    width: max-content;
   }
 
   .site-masthead a {
