@@ -52,7 +52,7 @@ Every block of a section, figures included, ends at the text measure (two thirds
     <span class="research-overview__body">
       <span class="research-overview__num">04</span>
       <span class="research-overview__title">MOC reconstruction</span>
-      <span class="research-overview__summary">We use deep learning to reconstruct the MOC from satellite observations.</span>
+      <span class="research-overview__summary">We use deep learning to reconstruct the meridional overturning circulation from satellite observations.</span>
     </span>
   </a>
 </nav>
