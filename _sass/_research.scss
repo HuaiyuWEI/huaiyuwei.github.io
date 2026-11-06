@@ -18,7 +18,7 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
 }
 
 /* Top-level section headings on archive-layout pages (Publications),
-   underlined like the headings in .page__content (Homepage); list entry
+   underlined like the theme's headings in .page__content; list entry
    titles (sitemap, talks) and the research projects' own headings stay
    as they are */
 .archive > h2:not(.archive__item-title) {
@@ -438,6 +438,17 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
   margin: 1em 0 0.5em;
 }
 
+/* Home sections: titles at the page title's size, and a thin line between
+   sections, midway between the end of one and the next title, in place of
+   the faint rule under each title */
+.page--home .page__content > h2 {
+  margin-top: 1.1em;
+  padding: 1.1em 0 0;
+  font-size: $type-size-3;
+  border-top: 1px solid $research-card-border;
+  border-bottom: 0;
+}
+
 /* Education and work experience: the years in a column on the left, wide
    enough for "2024-present" in bold, with the title and the place beside
    them; on phones the years go above the title */
@@ -481,9 +492,9 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
   }
 }
 
+/* the title in the years' teal but not bold, so each row has one bold item */
 .home-cv__title {
-  font-weight: bold;
-  color: $darker-gray;
+  color: $research-accent;
 }
 
 .home-cv__place {
