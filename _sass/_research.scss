@@ -450,8 +450,8 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
 }
 
 /* Education and work experience: the years in a column on the left, wide
-   enough for "2024-present" in bold, with the title and the place beside
-   them; on phones the years go above the title */
+   enough for "2024-present", with the title and the place beside them; on
+   phones the years go above the title */
 .home-cv {
   margin: 0 0 1em;
   padding: 0;
@@ -482,7 +482,6 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
 }
 
 .home-cv__years {
-  font-weight: bold;
   font-variant-numeric: tabular-nums;   // the years line up from row to row
   white-space: nowrap;
   color: $research-accent;
@@ -492,7 +491,7 @@ $research-gap               : 1.5rem;   // between the blocks of a section: 27 p
   }
 }
 
-/* the title in the years' teal but not bold, so each row has one bold item */
+/* the title in the years' teal; nothing in the lists is bold */
 .home-cv__title {
   color: $research-accent;
 }

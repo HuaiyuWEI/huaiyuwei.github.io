@@ -36,6 +36,16 @@ I am now a Postdoctoral Researcher working with [Andrew Stewart](https://dept.at
     <span class="home-cv__title">B.S. in Physical Oceanography</span>
     <span class="home-cv__place">Sun Yat-sen University</span>
   </li>
+  <li>
+    <span class="home-cv__years">2023</span>
+    <span class="home-cv__title">Visiting Student</span>
+    <span class="home-cv__place">Boston University</span>
+  </li>
+  <li>
+    <span class="home-cv__years">2017</span>
+    <span class="home-cv__title">Summer Program on Ocean and Atmosphere Systems</span>
+    <span class="home-cv__place">University of British Columbia</span>
+  </li>
 </ul>
 
 ## Research
