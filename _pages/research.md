@@ -109,9 +109,8 @@ Every block of a section, figures included, ends at the text measure (two thirds
 <section class="research-project" id="moc-reconstruction">
   <header class="research-project__header">
     <h2><span class="research-project__num">04</span> Reconstructing the meridional overturning circulation using machine learning</h2>
-    <p class="research-project__lede">Observing arrays measure the meridional overturning circulation (MOC) at only a few Atlantic latitudes. We developed NeurMOC, a deep-learning reconstruction of MOC changes since 2003 from satellite observations.</p>
+    <p class="research-project__lede">Observing arrays measure the meridional overturning circulation (MOC) at only a few Atlantic latitudes. We developed NeurMOC, a deep-learning reconstruction of MOC changes since 2003 from satellite observations. We find evidence of Atlantic MOC declines and, in the Southern Ocean, a strengthening mid-depth cell and a weakening abyssal cell.</p>
   </header>
-  <p>We find evidence of Atlantic MOC declines and, in the Southern Ocean, a strengthening mid-depth cell and a weakening abyssal cell.</p>
   <p class="research-cta"><a href="/neurmoc/">Explore the interactive <strong>NeurMOC</strong> viewer</a></p>
   <figure class="research-figure">
     <a href="/images/global_moc_from_space.gif"><img src="/images/global_moc_from_space.gif" alt="Animated schematic: gravimetry, altimetry, and scatterometry satellites above a map of the global ocean conveyor; the ocean bottom pressure, sea surface height, and surface wind they measure feed a neural network trained on CMIP6 climate-model output, which returns the Southern Ocean and Atlantic overturning streamfunctions" width="1280" height="720" loading="lazy"></a>
