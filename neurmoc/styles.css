@@ -313,40 +313,26 @@ h2 {
   border-color: var(--accent-solid-hover);
 }
 
-/* ---- key-fact chips ---- */
+/* ---- hero animation ---- */
 
-/* one card, level with the text beside it at top and bottom: the sparkline
-   takes whatever height is left */
-.fact-stack {
-  display: flex;
-  flex-direction: column;
+/* the AGU schematic beside the intro, level with its top; a click opens the
+   How it works tab, which shows it at full size */
+.hero-figure {
+  display: block;
+  align-self: start;
   border-radius: var(--radius-md);
-  border: 1px solid var(--panel-border);
-  background: var(--chip-bg);
 }
 
-.fact-chip {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  align-items: baseline;
-  gap: 0 12px;
-  padding: 8px 14px;
+.hero-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  transition: box-shadow 0.12s ease;
 }
 
-.fact-chip + .fact-chip {
-  border-top: 1px solid var(--panel-border);
-}
-
-.fact-label {
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.fact-chip strong {
-  font-size: 0.94rem;
+.hero-figure:hover img {
+  box-shadow: 0 0 0 2px var(--button-border);
 }
 
 /* ---- generic cards ---- */
@@ -735,11 +721,9 @@ button {
   outline-offset: 4px;
 }
 
-@media (max-width: 800px) {
-  /* keep all five reachable without wrapping into a tall block */
-  .tab-bar {
-    padding: 6px 7px;
-  }
+/* the six tabs need about 900 px, more with a wider font: below 1024 px they
+   stay in one row and scroll sideways rather than wrap into a tall block */
+@media (max-width: 1024px) {
   .tab-bar-options {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -750,7 +734,14 @@ button {
   }
   .tab-option {
     flex: 0 0 auto;
-    width: auto;
+  }
+}
+
+@media (max-width: 800px) {
+  .tab-bar {
+    padding: 6px 7px;
+  }
+  .tab-option {
     padding: 0 12px;
     font-size: 0.96rem;
   }
@@ -924,6 +915,28 @@ canvas {
 }
 
 /* ---- about / citation ---- */
+
+/* ---- how it works ---- */
+
+/* the AGU schematic across the panel, close to its own 1280 px at full width,
+   so its labels stay readable */
+.method-figure {
+  margin: 0;
+}
+
+.method-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+.method-figure figcaption {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
 
 .info-grid {
   display: grid;
@@ -1645,31 +1658,6 @@ canvas {
   width: 18px;
   height: 0;
   border-top: 4px solid #d55e00;
-}
-
-/* ---- hero sparkline chip ---- */
-
-.fact-spark {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 2px;
-  cursor: pointer;
-}
-
-.fact-spark:hover .fact-label {
-  color: var(--accent-deep);
-}
-
-.fact-spark svg {
-  flex: 1 1 56px;
-  width: 100%;
-  min-height: 56px;
-  display: block;
-  background: transparent;
-  border: none;
-  border-radius: 0;
 }
 
 /* ---- small-screen refinements ---- */

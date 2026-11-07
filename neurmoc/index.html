@@ -33,7 +33,7 @@ layout: null
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=2026-11-05a">
+  <link rel="stylesheet" href="./styles.css?v=2026-11-06a">
 </head>
 <body>
   <noscript>
@@ -92,15 +92,9 @@ layout: null
             </a>
           </div>
         </div>
-        <aside class="fact-stack" aria-label="Key facts">
-          <div class="fact-chip fact-spark" id="hero-spark-chip" role="button" tabindex="0" title="Jump to this time series">
-            <span class="fact-label">AMOC anomaly at 26.5°N (Sv)</span>
-            <svg id="hero-spark" viewBox="0 0 300 64" preserveAspectRatio="none" aria-hidden="true"></svg>
-          </div>
-          <div class="fact-chip"><span class="fact-label">Period</span><strong>Apr 2003 – Dec 2024, monthly</strong></div>
-          <div class="fact-chip"><span class="fact-label">Coverage</span><strong>Atlantic &amp; Southern Oceans</strong></div>
-          <div class="fact-chip"><span class="fact-label">Focus</span><strong>Interannual variability and long-term trends</strong></div>
-        </aside>
+        <a class="hero-figure" id="hero-figure" href="#v=method" title="Open the How it works tab">
+          <img src="../images/global_moc_from_space.gif" alt="How NeurMOC works: satellites measure ocean bottom pressure, sea surface height, and surface wind, and a neural network turns them into the overturning circulation" width="1280" height="720">
+        </a>
       </div>
     </section>
 
@@ -115,6 +109,8 @@ layout: null
                 data-tab="evolution" aria-controls="tab-evolution" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v4H3V4zm0 6h18v4H3v-4zm0 6h18v4H3v-4z"/></svg><span>Evolution</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-animation"
                 data-tab="animation" aria-controls="tab-animation" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7L8 5z"/></svg><span>Animation</span></button>
+        <button class="tab-option" type="button" role="tab" id="tab-btn-method"
+                data-tab="method" aria-controls="tab-method" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3h7zM7 9H4V5h3v4zm10 6h3v4h-3v-4zm0-10h3v4h-3V5z"/></svg><span>How it works</span></button>
         <button class="tab-option" type="button" role="tab" id="tab-btn-about"
                 data-tab="about" aria-controls="tab-about" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg><span>About &amp; cite</span></button>
         </div>
@@ -374,6 +370,20 @@ layout: null
       </article>
       </div>
 
+      <div class="tab-panel" id="tab-method" role="tabpanel" aria-labelledby="tab-btn-method" hidden>
+<article class="panel method-panel">
+          <div class="panel-header">
+            <div>
+              <h2>How NeurMOC works</h2>
+            </div>
+          </div>
+          <figure class="method-figure">
+            <img src="../images/global_moc_from_space.gif" alt="Animated schematic: gravimetry, altimetry, and scatterometry satellites above a map of the global ocean conveyor; the ocean bottom pressure, sea surface height, and surface wind they measure feed a neural network trained on CMIP6 climate-model output, which returns the Southern Ocean and Atlantic overturning streamfunctions" width="1280" height="720" loading="lazy">
+            <figcaption>Satellite measurements of ocean bottom pressure, sea surface height, and surface wind feed a neural network that reconstructs the overturning circulation. Ocean circulation map adapted from NASA.</figcaption>
+          </figure>
+        </article>
+      </div>
+
       <div class="tab-panel" id="tab-about" role="tabpanel" aria-labelledby="tab-btn-about" hidden>
         <section class="info-grid">
 <article class="panel" id="about" tabindex="-1" aria-labelledby="about-heading">
@@ -469,6 +479,6 @@ layout: null
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 4v12.2l5.3-5.3 1.4 1.4-7.7 7.7-7.7-7.7 1.4-1.4 5.3 5.3V4h2z"/></svg>
   </button>
 
-  <script src="./app.js?v=2026-11-04a"></script>
+  <script src="./app.js?v=2026-11-06a"></script>
 </body>
 </html>

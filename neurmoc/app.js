@@ -207,7 +207,6 @@ function applyTheme(theme, persist) {
   }
   if (state.data) {
     render();
-    renderHeroSpark();
   }
 }
 
@@ -1796,45 +1795,6 @@ function updateTrendReading() {
   el.hidden = false;
 }
 
-/* ---------------- hero sparkline ---------------- */
-
-function renderHeroSpark() {
-  const svg = document.getElementById("hero-spark");
-  if (!svg || !state.data) {
-    return;
-  }
-  const { latIdx, densityIdx } = PRESETS.rapid();
-  const nt = state.data.dims.nt;
-  const vals = [];
-  for (let t = 0; t < nt; t += 1) {
-    vals.push(predAtCombo(0, t, densityIdx, latIdx));
-  }
-  const finite = vals.filter(Number.isFinite);
-  if (!finite.length) {
-    return;
-  }
-  const w = 300;
-  const h = 64;
-  const pad = 6;
-  let lo = Math.min(...finite);
-  let hi = Math.max(...finite);
-  if (lo === hi) {
-    lo -= 1;
-    hi += 1;
-  }
-  const x = (i) => pad + (i / (nt - 1)) * (w - 2 * pad);
-  const y = (v) => pad + ((hi - v) / (hi - lo)) * (h - 2 * pad);
-  const line = vals
-    .map((v, i) => `${i === 0 ? "M" : "L"} ${x(i).toFixed(1)} ${y(v).toFixed(1)}`)
-    .join(" ");
-  const theme = pc();
-  const zero = lo < 0 && hi > 0 ? y(0) : null;
-  svg.innerHTML = `
-    ${zero !== null ? `<line x1="${pad}" x2="${w - pad}" y1="${zero.toFixed(1)}" y2="${zero.toFixed(1)}" stroke="${theme.frame}" stroke-width="1" stroke-dasharray="3 3"></line>` : ""}
-    <path d="${line} L ${x(nt - 1).toFixed(1)} ${h - pad} L ${x(0).toFixed(1)} ${h - pad} Z" fill="${theme.band}"></path>
-    <path d="${line}" fill="none" stroke="${theme.recon}" stroke-width="1.8" stroke-linejoin="round"></path>`;
-}
-
 /* ---------------- hover tooltips ---------------- */
 
 const hoverRegistry = new Map();
@@ -2986,7 +2946,7 @@ function shouldPaint(element) {
    and a hidden panel costs nothing to keep current because the paint gate
    above skips it. */
 
-const TAB_NAMES = ["reconstruction", "attribution", "evolution", "animation", "about"];
+const TAB_NAMES = ["reconstruction", "attribution", "evolution", "animation", "method", "about"];
 // Panels that live inside a tab, so a link to one can open its tab first.
 const TAB_OF_ANCHOR = { about: "about", cite: "about" };
 
@@ -3007,10 +2967,10 @@ function setTab(name, options) {
     }
   });
   if (controls.productPanel) {
-    controls.productPanel.hidden = target === "attribution" || target === "about";
+    controls.productPanel.hidden = target === "attribution" || target === "method" || target === "about";
   }
   if (controls.cellPicker) {
-    controls.cellPicker.hidden = target === "about";
+    controls.cellPicker.hidden = target === "method" || target === "about";
   }
   // the newly shown panels have just gained a box, and shouldPaint reads
   // that at paint time, so this render draws them
@@ -3588,30 +3548,18 @@ function bindControls() {
     });
   }
 
-  const sparkChip = document.getElementById("hero-spark-chip");
-  if (sparkChip) {
-    const jumpToRapid = () => {
-      if (!state.data) {
+  // the animation in the hero opens the tab that shows it at full size,
+  // without the hash change that would reset the view; a modified click
+  // still opens #v=method in a new browser tab
+  const heroFigure = document.getElementById("hero-figure");
+  if (heroFigure) {
+    heroFigure.addEventListener("click", (event) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return;
       }
-      const preset = PRESETS.rapid();
-      state.latitudeIndex = preset.latIdx;
-      state.densityIndex = preset.densityIdx;
-      setTab("reconstruction");         // the time series lives there
-      render();
-      announceSelection();
-      const panel = document.getElementById("timeseries-panel");
-      if (panel) {
-        panel.focus({ preventScroll: true });
-        panel.scrollIntoView({ behavior: preferredScrollBehavior(), block: "start" });
-      }
-    };
-    sparkChip.addEventListener("click", jumpToRapid);
-    sparkChip.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        jumpToRapid();
-      }
+      event.preventDefault();
+      setTab("method", { scrollToTop: true });
+      scheduleUrlUpdate();
     });
   }
 
@@ -3931,7 +3879,6 @@ async function init() {
   [trendCanvas, timeseriesSvg, sectionCanvas, lrpPanel, hovmollerCanvas,
    snapshotCanvas, lrpTrendCanvas, lrpMeanCanvas].forEach(registerPaintTarget);
   setTab(state.tab);                    // renders, and reveals the right tab
-  renderHeroSpark();
   // the first render can measure the SVG box before the flex/grid layout
   // has settled; one more pass on the next frame locks the aspect in
   window.requestAnimationFrame(() => {
@@ -3952,7 +3899,6 @@ async function init() {
     document.fonts.ready.then(() => {
       if (state.data) {
         render();
-        renderHeroSpark();
       }
     });
   }
