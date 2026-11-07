@@ -114,8 +114,8 @@ Every block of a section, figures included, ends at the text measure (two thirds
   <p>We find evidence of Atlantic MOC declines and, in the Southern Ocean, a strengthening mid-depth cell and a weakening abyssal cell (<a href="https://doi.org/10.22541/essoar.15004679/v1">Wei et al. 2026, preprint</a>).</p>
   <p class="research-cta"><a href="/neurmoc/">Explore the interactive <strong>NeurMOC</strong> viewer</a></p>
   <figure class="research-figure">
-    <a href="/images/DBNN.png"><img src="/images/DBNN.png" alt="Dual-branch neural network architecture for MOC reconstruction" width="1834" height="1911" loading="lazy"></a>
-    <figcaption>Dual-branch neural network mapping bottom pressure, sea surface height, and zonal wind to MOC changes.</figcaption>
+    <a href="/images/global_moc_from_space.gif"><img src="/images/global_moc_from_space.gif" alt="Animated schematic: gravimetry, altimetry, and scatterometry satellites above a map of the global ocean conveyor; the ocean bottom pressure, sea surface height, and surface wind they measure feed a neural network trained on CMIP6 climate-model output, which returns the Southern Ocean and Atlantic overturning streamfunctions" width="1280" height="720" loading="lazy"></a>
+    <figcaption>Satellite measurements of ocean bottom pressure, sea surface height, and surface wind feed a neural network that reconstructs the overturning circulation. Ocean circulation map adapted from NASA.</figcaption>
   </figure>
   <div class="research-papers">
     <h3>Key papers</h3>
