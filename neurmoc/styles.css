@@ -247,12 +247,6 @@ h2 {
   line-height: 1.3;
 }
 
-.hero-subtitle {
-  margin: 14px 0 0;
-  font-size: 19.8px;
-  line-height: 1.6;
-}
-
 .hero-copy,
 .panel-header p {
   margin: 8px 0 0;
@@ -1248,10 +1242,6 @@ canvas {
 
   h1 {
     font-size: 25.008px;
-  }
-
-  .hero-subtitle {
-    font-size: 17.6px;
   }
 
   .hero-copy {
