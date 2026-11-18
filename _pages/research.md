@@ -113,7 +113,7 @@ Every block of a section, figures included, ends at the text measure (two thirds
   </header>
   <p class="research-cta"><a href="/neurmoc/">Explore the interactive <strong>NeurMOC</strong> viewer</a></p>
   <figure class="research-figure">
-    <a href="/images/global_moc_from_space.gif"><img src="/images/global_moc_from_space.gif" alt="Animated schematic: gravimetry, altimetry, and scatterometry satellites above a map of the global ocean conveyor; the ocean bottom pressure, sea surface height, and surface wind they measure feed a neural network trained on CMIP6 climate-model output, which returns the Southern Ocean and Atlantic overturning streamfunctions" width="1280" height="720" loading="lazy"></a>
+    <a href="/images/global_moc_from_space.gif"><img src="/images/global_moc_from_space.gif" alt="Animated schematic: gravimetry, altimetry, and scatterometry satellites above a map of the global ocean conveyor; the ocean bottom pressure, sea surface height, and zonal wind speed they measure feed a neural network trained on CMIP6 simulations, whose output is remapped through EOFs into the Southern Ocean and Atlantic overturning streamfunctions" width="1600" height="900" loading="lazy"></a>
     <figcaption>Satellite measurements of ocean bottom pressure, sea surface height, and surface wind feed a neural network that reconstructs the overturning circulation. Ocean circulation map adapted from NASA.</figcaption>
   </figure>
   <div class="research-papers">

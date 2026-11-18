@@ -912,8 +912,8 @@ canvas {
 
 /* ---- how it works ---- */
 
-/* the AGU schematic across the panel, close to its own 1280 px at full width,
-   so its labels stay readable */
+/* the AGU schematic across the full width of the panel, so its labels stay
+   readable */
 .method-figure {
   margin: 0;
 }
