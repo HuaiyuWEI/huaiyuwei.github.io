@@ -12,6 +12,8 @@ author_profile: true
 ## Preprints
 
 
+- **Wei, H.**, Stewart, A. L., McWilliams, J. C., Damien, P., Molemaker, J. Eddy-structured upwelling of abyssal waters near the seafloor. Preprint available upon request.
+
 - **Wei, H.**, Stewart, A. L., Medvedev, A.,  Srinivasan, K., Solodoch, A., Manucharyan, G., Hogg, A. Deep learning unlocks satellite-based monitoring of the global ocean overturning circulation. _ESS Open Archive_. [(DOI)](https://doi.org/10.22541/essoar.15004679/v1)
 
 - Medvedev, A., **Wei, H.**, Armour, K. C., Srinivasan, K., Solodoch, A., Stewart, A. L., Manucharyan, G. Basin-wide sea-surface observations reveal post-2000 emergence of AMOC weakening. _ESS Open Archive_. [(DOI)](https://doi.org/10.22541/essoar.15002298/v1)
