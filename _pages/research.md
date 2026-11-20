@@ -83,6 +83,12 @@ Every block of a section, figures included, ends at the text measure (two thirds
     <a href="/images/Neptune_Paradigms.png"><img src="/images/Neptune_Paradigms.png" alt="Schematic. (a) Mixing-dominated paradigm: at the insulating seafloor, water parcels can only gain buoyancy from above, so they upwell along the boundary; further aloft, diapycnal downwelling occurs due to bottom-intensified mixing. (b) Eddy-mediated paradigm: eddies shape diapycnal upwelling by driving prograde flows and downhill advection, inducing eddy buoyancy fluxes, and modulating near-bottom stratification." width="3495" height="986" loading="lazy"></a>
     <figcaption>Two paradigms of near-bottom diapycnal upwelling: mixing‑dominated (a, adapted from <a href="https://doi.org/10.1175/JPO-D-15-0244.1">Ferrari et al. 2016</a>) and eddy-mediated (b, based on our diagnostics).</figcaption>
   </figure>
+  <div class="research-papers">
+    <h3>Key paper</h3>
+    <ul>
+      <li><b>Wei, H.</b>, Stewart, A. L., McWilliams, J. C., Damien, P., &amp; Molemaker, J. (2026). Eddy-structured upwelling of abyssal waters near the seafloor. Preprint available upon request.</li>
+    </ul>
+  </div>
 </section>
 
 <section class="research-project" id="eddy-parameterization">
