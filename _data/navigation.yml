@@ -21,8 +21,10 @@ main:
 #  - title: "Blog Posts"
 #    url: /year-archive/
     
+  # the CV lives at one permanent address: to update it, overwrite
+  # files/CV_HuaiyuWei.pdf and change the date in the title below
   - title: "CV (Oct 2026)"
 #    url: /cv/
-    url: /files/CV_HuaiyuWei_Oct2026.pdf
+    url: /files/CV_HuaiyuWei.pdf
 #  - title: "Guide"
 #   url: /markdown/

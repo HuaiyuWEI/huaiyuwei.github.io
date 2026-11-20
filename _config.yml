@@ -182,7 +182,10 @@ exclude:
   - talkmap
   - talkmap.ipynb
   - talkmap.py
-  # superseded CVs, kept in the repo but not published (the menu links the current one)
+  # dated CVs, kept in the repo as an archive but not published: the current CV is
+  # files/CV_HuaiyuWei.pdf, overwritten at each update so its address never changes.
+  # CV_HuaiyuWei_Oct2026.pdf is not listed yet, so links to it still work while it
+  # is current; add it here at the next CV update.
   - files/CV_HuaiyuWei_July2024.pdf
   - files/CV_HuaiyuWei_Dec2024.pdf
   - files/CV_HuaiyuWei_2025May.pdf
@@ -291,6 +294,12 @@ defaults:
       layout: talk
       author_profile: true
       share: true
+  # the dated copy of the current CV is still served, but stays out of sitemap.xml
+  # so that search engines index the permanent files/CV_HuaiyuWei.pdf instead
+  - scope:
+      path: "files/CV_HuaiyuWei_Oct2026.pdf"
+    values:
+      sitemap: false
 
 
 # Sass/SCSS
